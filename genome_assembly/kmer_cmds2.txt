@@ -1,0 +1,220 @@
+                                                                     
+                                                                     
+                                                                     
+                                             
+#------------------------------------------------
+#
+# Some commands for kmer indexing
+# and position counting using kmer package
+#
+# start: 8.17.10 SES
+# last visit: 8.25.10
+#------------------------------------------------
+
+==================================
+ Ex: build the meryl database
+==================================
+meryl -v -B -m 20 -s ha412ho.fna.15 -o testdb
+
+#####This creates two files:
+
+-rw-------  1 statonse jmblab 82818192 Aug  3 22:58 testdb.mcdat
+-rw-------  1 statonse jmblab  9435232 Aug  3 22:58 testdb.mcidx
+
+#### can opitonally add the -p flag to add position counts or create a positionDB
+
+===============================
+ Ex: count the number of mers 
+===============================
+meryl -s testdb -Dc        
+
+Found 20435644 mers.
+Found 15862938 distinct mers.
+Found 13997806 unique mers.
+
+=================================
+ Ex: dump a histogram of counts
+=================================
+meryl -s testdb -Dh > test_hist.txt
+
+[statonse@compute-2-10 for_kmer]$ head -n 10 test_hist.txt 
+1	13997806	0.8824	0.6850
+2	1070290	0.9499	0.7897
+3	346623	0.9717	0.8406
+4	156135	0.9816	0.8712
+5	86587	0.9870	0.8923
+6	51731	0.9903	0.9075
+7	33943	0.9924	0.9192
+8	24174	0.9940	0.9286
+9	17789	0.9951	0.9365
+10	13024	0.9959	0.9428
+
+[statonse@compute-2-10 for_kmer]$ tail -n 10 test_hist.txt 
+423	1	1.0000	0.9997
+424	1	1.0000	0.9997
+426	1	1.0000	0.9998
+431	1	1.0000	0.9998
+436	1	1.0000	0.9998
+451	1	1.0000	0.9998
+452	2	1.0000	0.9999
+455	1	1.0000	0.9999
+992	1	1.0000	0.9999
+1036	1	1.0000	1.0000      <============ one 20mer occurs 1036 times
+
+==========================================================================
+ Ex: dump the mers >= a threshold [or find the mers with the above count]
+==========================================================================
+meryl -s testdb -Dt 100 20mers_100t.txt
+
+[statonse@compute-2-10 for_kmer]$ tail -n 20 20mers_100t.txt
+TAATAATAATAATAATAATA
+>452
+TACATACATACATACATACA
+>1036                               <============= here it is, a simple repeat
+TATATATATATATATATATA
+>224
+TATGTATGTATGTATGTATG
+...
+
+========================================================================
+ Ex: map the mers in the database to a BAC sequence (P396I22.fasta) 
+                          and record depth at each position in BAC 
+========================================================================
+
+~/apps/kmer/trunk/meryl/mapMers-depth -m 20 -mers testdb -seq P396I22.fasta > output
+
+#### The file "output" holds the mer depth in a two column file:
+
+[statonse@compute-2-10 for_kmer]$ head -n 10 output 
+0     0
+1     0
+2     0
+3     0
+4     0
+5     0
+6     0
+7     0
+8     0
+9     0
+...
+
+#### import into R for a quick look, convert to gff somehow?
+
+===============================================================
+ Ex: Get the position of mers in a sequence using positionDB 
+ (haven't determined the utility of this yet), same as looking at depth?
+===============================================================
+
+[statonse@compute-2-10 for_kmer]$ ~/apps/kmer/trunk/libkmer/positionDB
+usage: /home/jmblab/statonse/apps/kmer/trunk/libkmer/positionDB [args]
+       -mersize k         The size of the mers, default=20.
+       -merskip k         The skip between mers, default=0
+       -use a-b,c         Specify which sequences to use, default=all
+       -merbegin b        Build on a subset of the mers, starting at mer #b, default=all mers
+       -merend e          Build on a subset of the mers, ending at mer #e, default=all mers
+       -sequence s.fasta  Input sequences.
+       -output p.posDB    Output filename.
+
+       To dump information about an image:
+         -dump datafile
+
+       To run sanity tests:
+         -buildonly [build opts] sequence.fasta
+           --  just builds a table and exits
+         -existence [build opts] sequence.fasta
+           --  builds (or reads) a table reports if any mers
+               in sequence.fasta cannot be found
+         -extra [build opts] sequence.fasta
+           --  builds (or reads) a table reports if any mers
+               NOT in sequence.fasta are be found
+         -test1 sequence.fasta
+           --  Tests if each and every mer is found in the
+               positionDB.  Reports if it doesn't find a mer
+               at the correct position.  Doesn't report if table
+               has too much stuff.
+         -test2 db.fasta sequence.fasta
+           --  Builds a positionDB from db.fasta, then searches
+               the table for each mer in sequence.fasta.  Reports
+               all mers it finds.
+            -- This is a silly test and you shouldn't do it.
+
+[statonse@compute-2-10 for_kmer]$ ~/apps/kmer/trunk/libkmer/positionDB -mersize 20 -sequence P396I22.fasta -output P396I22_pos.posDB
+seqStream::seqStream()--  Allocating 0MB for seqStreamIndex on 1 sequences.
+Building table with merSize 20, merSkip 0
+potential configurations for approximately 107161 20-mers (posnW=17).
+tblBits=16 shifts=24,12 -- size    0.000GB -- work    0.000 ***
+tblBits=17 shifts=23,11 -- size    0.000GB -- work    0.000
+tblBits=18 shifts=22,11 -- size    0.001GB -- work    0.000
+tblBits=19 shifts=21,10 -- size    0.001GB -- work    0.000
+tblBits=20 shifts=20,10 -- size    0.002GB -- work    0.000
+tblBits=21 shifts=19,09 -- size    0.004GB -- work    0.000
+tblBits=22 shifts=18,09 -- size    0.008GB -- work    0.000
+tblBits=23 shifts=17,08 -- size    0.017GB -- work    0.000
+tblBits=24 shifts=16,08 -- size    0.033GB -- work    0.000
+tblBits=25 shifts=15,07 -- size    0.066GB -- work    0.000
+tblBits=26 shifts=14,07 -- size    0.133GB -- work    0.000
+tblBits=27 shifts=13,06 -- size    0.266GB -- work    0.000
+tblBits=28 shifts=12,06 -- size    0.531GB -- work    0.000
+tblBits=29 shifts=11,05 -- size    1.062GB -- work    0.000
+tblBits=30 shifts=10,05 -- size    2.125GB -- work    0.000
+tblBits=31 shifts=09,04 -- size    4.250GB -- work    0.000
+tblBits=32 shifts=08,04 -- size    8.500GB -- work    0.000
+tblBits=33 shifts=07,03 -- size   17.000GB -- work    0.000
+tblBits=34 shifts=06,03 -- size   34.000GB -- work    0.000
+tblBits=35 shifts=05,02 -- size   68.000GB -- work    0.000
+tblBits=36 shifts=04,02 -- size  136.000GB -- work    0.000
+tblBits=16 s1=24 s2=12 -- merSize=20 bits + posnWidth=17 bits (est 107161 mers) FINAL
+    Allocated bucket size counting space with total size 256 KB
+    Found 107142 mers (max position = 107141)
+    Allocated 549KB for buckets (70313 64-bit words)
+    Building lists with positions.
+    Sorting and repacking buckets (65536 buckets).
+    Found       107142 total mers
+    Found       101464 distinct mers
+    Found        96132 unique mers
+    Need 16342 non-unique position list entries (11 maximum count)
+    Reusing bucket counting space for hash table.
+    Reusing bucket space; Have: 70313  Need: 66586 (64-bit words)
+    Allocated         33KB for positions  (4341 64-bit words)
+    Transferring to final structure (65536 buckets).
+    Avail: Bucket        70313    Position         4341 (64-bit words)
+    Avail: Bucket       101464    Position        11010 (entries)
+    Used:  Bucket        66585    Position         4340 (64-bit words)
+    Used:  Bucket       101464    Position        16342 (entries)
+    Found       107142 total mers
+    Found       101464 distinct mers
+    Found        96132 unique mers
+    Need 16342 non-unique position list entries (11 maximum count)
+Dumping positions table to 'P396I22_pos.posDB'
+Saving positionDB to 'P396I22_pos.posDB'
+
+#### This creates the binary file:
+
+-rw-------  1 statonse jmblab   706936 Aug 17 11:36 P396I22_pos.posDB
+
+===========================================
+ Ex: Map kmers to the BAC using the index
+===========================================
+
+[statonse@compute-2-10 for_kmer]$ ~/apps/kmer/trunk/meryl/mapMers -m 20 -mers testdb -seq P396I22.fasta > mappedmers.out
+      15.86 Mmers --  8.08 Mmers/second
+existDB::createFromMeryl()-- Found 31725876 mers between count of 0 and 4294967295
+existDB::createFromMeryl()-- hashTable is 8MB
+existDB::createFromMeryl()-- buckets is 75MB
+      15.86 Mmers --  3.36 Mmers/second
+numCovReg: 675
+lenCovReg: 51067
+
+#### The file "mappedmers.out" looks like:
+
+[statonse@compute-2-10 for_kmer]$ head -n 10 mappedmers.out 
+P396I22       83    103         20
+P396I22      149    169         20
+P396I22      187    211         24
+P396I22      336    357         21
+P396I22      388    411         23
+P396I22      412    442         30
+P396I22      667    687         20
+P396I22      708    751         43
+P396I22      752    794         42
+P396I22      807    831         24
