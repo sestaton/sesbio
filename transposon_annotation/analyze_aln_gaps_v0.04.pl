@@ -28,7 +28,7 @@ use Statistics::Descriptive;
 use Getopt::Long;
 use File::Basename;
 use File::Temp;
-use List::MoreUtils qw(uniq);
+#use List::MoreUtils qw(uniq);
 
 my $aln_file;
 my $outfile;
@@ -51,13 +51,15 @@ GetOptions(
 
 if (!$aln_file) {
     &usage();
-    exit(0);
+    exit(1);
 }
 
 $dr_pid = defined($dr_pid) ? $dr_pid : '10';
 my $cwd = getcwd();
+my $statstmp = $statsfile.".tmp";
 open(my $out, '>>', $outfile) or die "\nERROR: Could not open file: $outfile\n";
-open(my $stats_out, '>>', $statsfile) or die "\nERROR: Could not open file: $statsfile\n";
+open(my $stats_out_tmp, '>>', $statstmp) or die "\nERROR: Could not open file: $statstmp\n";
+print $stats_out_tmp "#LTR_retro_name\tTotal_num_gap_sites\tNum_diff_gap_sizes\tPercent_gap_sites\tMean_gap_size\tMin_gap_size\tMax_gap_size\n";
 
 my ($seqs_in_aln,$count) = split_aln($aln_file);
 
@@ -93,11 +95,11 @@ foreach my $fas (@$seqs_in_aln) {
 	    $del++;
 	    my ($indel_len, $indel_spos, $indel_epos) = split(/\t/,$line); 
 
-	    next unless $indel_len >= 10; # Ma et al. 2004, Genome Research
+	    next unless $indel_len >= 10; # Only analyze repeats flanking deletions > 10 bp; Ma et al. 2004, Genome Research
 	    
-	    # What we want to do is search 20 bp around the gap. 
-	    # this is based on the 1-15 direct repeats found in Arabidopsis... (Devos et al. 2002)
-	    # sunflower may be different
+	    # What we want to do is search 20 bp on either side of the gap. 
+	    # This is based on the 1-15 direct repeats found in Arabidopsis... (Devos et al. 2002)
+	    # Sunflower may be different so we search 20 bp.
 	    my $upstream_spos = $indel_spos - 20;
 	    my $upstream_epos = $indel_spos - 1;
 	    my $downstream_spos = $indel_epos + 1;
@@ -140,14 +142,18 @@ foreach my $fas (@$seqs_in_aln) {
     $del = 0;
     close($each_out);
     collate($seq_out,$out);
-    collate($gap_stats,$stats_out);
+    collate($gap_stats,$stats_out_tmp);
     unlink($fas);
     unlink($seq_out);
     unlink($gap_stats);
 }
 
 close($out);
-close($stats_out);
+close($stats_out_tmp);
+#unlink($statstmp);
+
+collate_gap_stats($statstmp,$statsfile);     ###### pick up the errors here 2-27 9:04
+unlink($statstmp);
 
 exit;
 #
@@ -194,8 +200,8 @@ sub split_aln {
         $count++;
     }
 
-    my @unique_split_files = uniq(@split_files);
-    return (\@unique_split_files,$count);
+    #my @unique_split_files = uniq(@split_files);
+    return (\@split_files,$count);
 }
 
 sub get_indel_range {
@@ -276,8 +282,8 @@ sub blast_compare {
 		    my $match_hit_string = uc($hstring);
 		
 		    if ($hitstr !~ m/$match_hit_string/i) {
-			#print "$match_hit_string\t$hitstr\n";
-			next;
+			#print "$match_hit_string\t$hitstr\n"; #BioPerl bug? Why is $qstring being reported for $hstring sometimes?
+			next;                                  #This just ensures the $hstring came from the actual Hit sequence
 		    }
 		    print $each_out join("\t",("Query_ID","Hit_ID","HSP_len","Hit_start","Hit_stop","Query_start","Query_stop","HSP_PID")),"\n";
 		    print $each_out join("\t",($query,$hitid,$hsplen,$hstart,$hstop,$qstart,$qstop,$hpid)),"\n\n";     
@@ -337,6 +343,94 @@ sub collate {
     close($fh_in);
 
 }
+
+sub collate_gap_stats {
+
+    my ($statstmp, $statsfile) = @_;
+
+    open( my $gap_stats_fh_in, '<', $statstmp) or die "\nERROR: Could not open file: $statstmp\n";
+    open( my $gap_stats_fh_out, '>', $statsfile) or die "\nERROR: Could not open file: $statsfile\n";
+
+    my (@repeat_names, @total_gap_char, @diff_gap_sizes, @gap_char_perc, @mean_gap_size, @min_gap_size, @max_gap_size);
+
+    while (<$gap_stats_fh_in>) {
+	if (/^\#/) {
+	    print $gap_stats_fh_out $_;
+	} else {
+	    my @all_gap_stats = split(/\t/,$_);
+	    push(@repeat_names,$all_gap_stats[0]);
+	    push(@total_gap_char,$all_gap_stats[1]);
+	    push(@diff_gap_sizes,$all_gap_stats[2]);
+	    push(@gap_char_perc,$all_gap_stats[3]);
+	    push(@mean_gap_size,$all_gap_stats[4]);
+	    push(@min_gap_size,$all_gap_stats[5]);
+	    push(@max_gap_size,$all_gap_stats[6]);
+	    
+	    print $gap_stats_fh_out $_;
+	}
+    }
+
+    my $fam_name = pop(@repeat_names);
+    $fam_name =~ s/\_\d\_....$//;
+    $fam_name =~ s/all\_//;
+
+    #my @total_gap_char = map +(split "\t")[1], <$gap_stats_fh_in>;
+    #my @diff_gap_sizes = map +(split "\t")[2], <$gap_stats_fh_in>;
+    #my @gap_char_perc  = map +(split "\t")[3], <$gap_stats_fh_in>;
+    #my @mean_gap_size  = map +(split "\t")[4], <$gap_stats_fh_in>;
+    #my @min_gap_size   = map +(split "\t")[5], <$gap_stats_fh_in>;
+    #my @max_gap_size   = map +(split "\t")[6], <$gap_stats_fh_in>;
+    
+    #print @total_gap_char."\n";
+
+    my $total_gap_char_stats = Statistics::Descriptive::Full->new;
+    my $gap_size_stats       = Statistics::Descriptive::Full->new;
+    my $gap_char_perc_stats  = Statistics::Descriptive::Full->new;
+    my $mean_gap_size_stats  = Statistics::Descriptive::Full->new;
+    my $min_gap_size_stats   = Statistics::Descriptive::Full->new;
+    my $max_gap_size_stats   = Statistics::Descriptive::Full->new;
+
+    $total_gap_char_stats->add_data(@total_gap_char);
+    $gap_size_stats->add_data(@diff_gap_sizes);
+    $gap_char_perc_stats->add_data(@gap_char_perc);
+    $mean_gap_size_stats->add_data(@mean_gap_size);
+    $min_gap_size_stats->add_data(@min_gap_size);
+    $max_gap_size_stats->add_data(@max_gap_size);
+
+    my $grand_mean_fam_count = $total_gap_char_stats->count;
+    my $grand_gap_char_mean  = sprintf("%.2f",$total_gap_char_stats->mean);
+    my $grand_gap_size_mean  = sprintf("%.2f",$gap_size_stats->mean);
+    my $grand_gap_char_perc  = sprintf("%.2f",$gap_char_perc_stats->mean);
+    my $grand_mean_gap_size  = sprintf("%.2f",$mean_gap_size_stats->mean);
+    my $grand_gap_size_min   = sprintf("%.2f",$min_gap_size_stats->mean);
+    my $grand_gap_size_max   = sprintf("%.2f",$max_gap_size_stats->mean);
+
+    my $grand_gap_char_sd       = sprintf("%.2f",$total_gap_char_stats->standard_deviation);
+    my $grand_gap_size_sd       = sprintf("%.2f",$gap_size_stats->standard_deviation);
+    my $grand_gap_char_perc_sd  = sprintf("%.2f",$gap_char_perc_stats->standard_deviation);
+    my $grand_gap_size_mean_sd  = sprintf("%.2f",$mean_gap_size_stats->standard_deviation);
+    my $grand_gap_size_min_sd   = sprintf("%.2f",$min_gap_size_stats->standard_deviation);
+    my $grand_gap_size_max_sd   = sprintf("%.2f",$max_gap_size_stats->standard_deviation);
+
+    print $gap_stats_fh_out "\nFamily_name\tTotal_fam_gap_count\tMean_fam_gap_count ".
+                            "(stddev)\tMean_fam_gap_size (stddev)\tMean_fam_gap_perc ".
+	                    "(stdev)\tMean_fam_gap_size (stddev)\tMean_gap_min_size ".
+                            "(stddev)\tMean_gap_max_size\n";
+
+    print $gap_stats_fh_out $fam_name."\t".$grand_mean_fam_count."\t".
+	                    $grand_gap_char_mean." (".$grand_gap_char_sd.")"."\t".
+			    $grand_gap_size_mean." (".$grand_gap_size_sd.")"."\t".
+			    $grand_gap_char_perc." (".$grand_gap_char_perc_sd.")"."\t".
+			    $grand_mean_gap_size." (".$grand_gap_size_mean_sd.")"."\t".
+			    $grand_gap_size_min." (".$grand_gap_size_min_sd.")"."\t".
+			    $grand_gap_size_max." (".$grand_gap_size_max_sd.")"."\n\n";
+
+
+    close($gap_stats_fh_in);
+    close($gap_stats_fh_out);
+
+}
+
 
 sub usage {
     my $script = basename($0);
