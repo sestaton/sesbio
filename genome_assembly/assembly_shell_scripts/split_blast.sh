@@ -1,10 +1,14 @@
 #!/bin/bash
 
-
-# -- screening searches: large contaminant hit expected; that is, 
-#    at least 60% of the query should get a hit of at least 96% identity
-#megablast -d ~/db/screendb -i SRR349656_prinseq_trimmed.fasta -p 96 -W18 -JF -F "m D" -X30 -D3 -a 8 | grep -v "^#" | sort -k1,1 -k12,12 -nr > $tabout
-#blastall -p blastn -i -d 
+# split_blast.sh - split a large sequence file and run BLAST on each 
+#                  subset
+#
+# NB - This script runs megablast with parameters appropriate for screening
+#      sequence reads. Parameters are from SeqClean.
+# 
+#      I create a single screening database with organellar, repeat, vector,
+#      etc. sequences. Edit lines 66 and 67 to what is appropriate.
+#       
 
 usage() {
 cat <<EOF
