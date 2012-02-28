@@ -28,13 +28,13 @@ use Statistics::Descriptive;
 use Getopt::Long;
 use File::Basename;
 use File::Temp;
-#use List::MoreUtils qw(uniq);
 
 my $aln_file;
 my $outfile;
 my $statsfile;
 my $dr_pid;
 my $gap_stats;
+my $help;
 
 my $pos = 0;
 my $gap = 0;
@@ -47,7 +47,13 @@ GetOptions(
 	   'o|outfile=s'    => \$outfile,
 	   's|statsfile=s'  => \$statsfile,
 	   'p|repeat_pid=i' => \$dr_pid,
+           'h|help'         => \$help,
 	   );
+
+if ($help) {
+    &usage();
+    exit(0);
+}
 
 if (!$aln_file) {
     &usage();
@@ -72,7 +78,6 @@ foreach my $fas (@$seqs_in_aln) {
     my $seq_out = $fname;
     $seq_out .= "_gap_flanking_sequences.fasta";
     open(my $each_out, '>>', $seq_out) or die "\nERROR: Could not open file: $seq_out\n";
-    #print $each_out join("\t",("Query_ID","Hit_ID","HSP_len","Hit_start","Hit_stop","Query_start","Query_stop","HSP_PID")),"\n";
 
     while ( my $aln = $aln_in->next_aln() ) {
 	my $aln_len = $aln->length;
@@ -150,9 +155,8 @@ foreach my $fas (@$seqs_in_aln) {
 
 close($out);
 close($stats_out_tmp);
-#unlink($statstmp);
 
-collate_gap_stats($statstmp,$statsfile);     ###### pick up the errors here 2-27 9:04
+collate_gap_stats($statstmp,$statsfile);     
 unlink($statstmp);
 
 exit;
@@ -200,7 +204,6 @@ sub split_aln {
         $count++;
     }
 
-    #my @unique_split_files = uniq(@split_files);
     return (\@split_files,$count);
 }
 
@@ -273,8 +276,7 @@ sub blast_compare {
 
 		    my $qustr = $upstream_seqobj->seq;
                     my $hitstr = $downstream_seqobj->seq;
-		    #$hitstr =~ s/^\-.*?// while $hitstr =~ /^\-/;
-
+		
 		    #if ($hstring !~ /$downstream_seqobj->seq/i) {
 			#print "Why the lack of match?\n";
 			#next;
@@ -371,17 +373,8 @@ sub collate_gap_stats {
     }
 
     my $fam_name = pop(@repeat_names);
-    $fam_name =~ s/\_\d\_....$//;
-    $fam_name =~ s/all\_//;
-
-    #my @total_gap_char = map +(split "\t")[1], <$gap_stats_fh_in>;
-    #my @diff_gap_sizes = map +(split "\t")[2], <$gap_stats_fh_in>;
-    #my @gap_char_perc  = map +(split "\t")[3], <$gap_stats_fh_in>;
-    #my @mean_gap_size  = map +(split "\t")[4], <$gap_stats_fh_in>;
-    #my @min_gap_size   = map +(split "\t")[5], <$gap_stats_fh_in>;
-    #my @max_gap_size   = map +(split "\t")[6], <$gap_stats_fh_in>;
-    
-    #print @total_gap_char."\n";
+    $fam_name =~ s/\_\d+\_.*//;
+    $fam_name =~ s/^all\_//;
 
     my $total_gap_char_stats = Statistics::Descriptive::Full->new;
     my $gap_size_stats       = Statistics::Descriptive::Full->new;
