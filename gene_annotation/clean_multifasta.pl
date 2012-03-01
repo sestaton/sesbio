@@ -16,21 +16,6 @@
  IDs being modified without intent. This script also replaces non-ATGCN
  characters with an "N."
 
-=head1 LICENSE
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 =head1 AUTHOR 
 
 S. Evan Staton                                                
@@ -75,7 +60,6 @@ use File::Basename;
 use Time::HiRes qw(gettimeofday);
 use Getopt::Long;
 use Pod::Usage;
-#use lib qw(/usr/local/bioperl/latest/);
 use Bio::SeqIO;
 
 # 
@@ -96,10 +80,14 @@ GetOptions(# Required
 
 pod2usage( -verbose => 2 ) if $man;
 
-if (!$infile || !$outfile || $help) {
-    print "\nERROR: No input was given.\n";
+if ($help) {
     &usage();
     exit(0);
+
+if (!$infile || !$outfile) {
+    print "\nERROR: No input was given.\n";
+    &usage();
+    exit(1);
 }
 
 my $seq_in  = Bio::SeqIO->new( -format => 'fasta', 
@@ -143,7 +131,7 @@ while (my ($seqname, $seq) = each(%seqhash)) {
 	if ($seqname =~ m/\_+/g) {
 	    $seqname =~ s/\_+/\_/g;
 	}
-	# TODO: $head = length($line); $head =~ s/\>//; substr(...   shorten the header
+	# TODO: shorten the header, optionally
     }
 
     if ($seq =~ m/\r|\n/) { # Mac
@@ -161,7 +149,7 @@ while (my ($seqname, $seq) = each(%seqhash)) {
     my $dna = join('',@nt);
     $dna =~ s/\s//g;
 
-    my $nucleic_bc = ($dna =~ tr/NACGTacgtn//);       # faster, added N, 5:45
+    my $nucleic_bc = ($dna =~ tr/NACGTacgtn//);
     my $nonnucleic = (length($dna) - $nucleic_bc);
     $dna =~ s/(.{60})/$1\n/gs;        
 

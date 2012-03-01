@@ -4,7 +4,7 @@ use strict;
 #use Data::Dumper;
 use Getopt::Long;
 
-my $usage = "USAGE: perl $0 -i inreport -o outreport
+my $usage = "USAGE: $0 -i inreport -o outreport
 
 This script takes as input a list of contigs with the length of each
 contig separated by tabs such as:
@@ -39,8 +39,8 @@ my $outfile;
 #my $unique_hits = 0;
 
 GetOptions(# Required arguments
-           "i|infile=s"         => \$infile,
-           "o|outfile=s"        => \$outfile,
+           'i|infile=s'         => \$infile,
+           'o|outfile=s'        => \$outfile,
            );
 
 # open the infile or die with a usage statement

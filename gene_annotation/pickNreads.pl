@@ -64,7 +64,6 @@ Print the full documentation.
 =cut   
 
 use strict;
-use lib qw(/usr/local/bioperl/latest/);
 use Bio::SeqIO;
 use Getopt::Long;
 use Pod::Usage;
@@ -91,10 +90,15 @@ GetOptions(# Required
 
 pod2usage( -verbose => 2 ) if $man;
 
-if (!$infile || !$num || $help) {
+if ($help) {
+    &usage();
+    exit(0);
+}
+
+if (!$infile || !$num) {
     print "\nERROR: No input was given.\n";
     &usage;
-    exit(0);
+    exit(1);
 }
 
 # counters
@@ -131,7 +135,7 @@ while( my $seqs = $seq_in->next_seq() ) {
 my $seqtot = $seqct + $seqover;
 my $outfafter = $outfile1;
 $outfafter =~ s/$num/$seqover/;
-move("$outfile2","$outfafter");
+move("$outfile2","$outfafter") or die "Copy failed: $!";
 
 my $t1 = gettimeofday();
 my $elapsed = $t1 - $t0;
