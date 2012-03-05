@@ -408,7 +408,7 @@ sub collate_gap_stats {
     print $gap_stats_fh_out "\nFamily_name\tTotal_fam_gap_count\tMean_fam_gap_count ".
                             "(stddev)\tMean_fam_gap_size (stddev)\tMean_fam_gap_perc ".
 	                    "(stdev)\tMean_fam_gap_size (stddev)\tMean_gap_min_size ".
-                            "(stddev)\tMean_gap_max_size\n";
+                            "(stddev)\tMean_gap_max_size (stddev)\n";
 
     print $gap_stats_fh_out $fam_name."\t".$grand_mean_fam_count."\t".
 	                    $grand_gap_char_mean." (".$grand_gap_char_sd.")"."\t".
