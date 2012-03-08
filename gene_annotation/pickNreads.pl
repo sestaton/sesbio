@@ -96,9 +96,9 @@ GetOptions(# Required
 
 pod2usage( -verbose => 2 ) if $man;
 
-if ($help) {
-    &usage();
-    exit(0);
+if ($help) { 
+    &usage(); 
+    exit(0); 
 }
 
 if (!$infile || !$num) {
@@ -122,7 +122,6 @@ $outfile1 .= "_".$num.".fasta";
 my $seqs_out = Bio::SeqIO->new( -format => 'fasta',
 				-file => ">$outfile1");
 
-
 my $outfile2 = $outfile1;
 my $rem = "after";
 $outfile2 =~ s/$num/$rem/;
@@ -132,7 +131,6 @@ my $seqs_out_over = Bio::SeqIO->new( -format => 'fasta',
 while( my $seqs = $seq_in->next_seq() ) {
     $seq_ct++;
     if ($seq_ct <= $num) {
-	#$seqct++;
 	$seqs_out->write_seq($seqs);
     } else {
 	if ($write_all) {
@@ -142,11 +140,9 @@ while( my $seqs = $seq_in->next_seq() ) {
     }
 }
 
-
 my $out_over = $outfile1;
 $out_over =~ s/$num/$seq_over/;
 move("$outfile2","$out_over") or die "Copy failed: $!" if $write_all;
-
 
 my $t1 = gettimeofday();
 my $elapsed = $t1 - $t0;
