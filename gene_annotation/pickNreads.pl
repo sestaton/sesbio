@@ -84,6 +84,11 @@ my $write_all;
 my $help;
 my $man;
 
+my $outfile1;
+my $outfile2;
+my $seqs_out;
+my $seqs_out_over;
+
 GetOptions(# Required
            'i|infile=s'   => \$infile,
 	   'n|numseqs=i'  => \$num,
@@ -116,17 +121,19 @@ my $t0 = gettimeofday();
 my $seq_in  = Bio::SeqIO->new( -format => 'fasta', 
 			       -file => $infile); 
 
-my $outfile1 = $infile;
+$outfile1 = $infile;
 $outfile1 =~ s/\.fa.*//;
 $outfile1 .= "_".$num.".fasta";
-my $seqs_out = Bio::SeqIO->new( -format => 'fasta',
-				-file => ">$outfile1");
+$seqs_out = Bio::SeqIO->new(-format => 'fasta',
+			    -file => ">$outfile1");
 
-my $outfile2 = $outfile1;
-my $rem = "after";
-$outfile2 =~ s/$num/$rem/;
-my $seqs_out_over = Bio::SeqIO->new( -format => 'fasta',
+if ($write_all) {
+    $outfile2 = $outfile1;
+    my $rem = "after";
+    $outfile2 =~ s/$num/$rem/;
+    $seqs_out_over = Bio::SeqIO->new(-format => 'fasta',
 				     -file => ">$outfile2");
+}
 
 while( my $seqs = $seq_in->next_seq() ) {
     $seq_ct++;
