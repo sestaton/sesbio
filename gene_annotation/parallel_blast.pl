@@ -161,10 +161,10 @@ GetOptions(# Required
            "m|man"              => \$man,
            ) || pod2usage( "Try '$0 --man' for more information." );
 
-if ($help) {
-    &usage();
-    exit(0);
-};
+#
+# Check @ARGV
+#
+usage() and exit(0) if $help;
 
 pod2usage( -verbose => 2 ) if $man;
 
@@ -172,7 +172,7 @@ if (!$infile || !$format ||
     !$outfile || !$database || 
     !$numseqs) {
     print "\nERROR: No input was given.\n";
-    &usage();
+    usage();
     exit(1);
 }
 

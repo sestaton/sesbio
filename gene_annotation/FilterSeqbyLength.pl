@@ -70,18 +70,17 @@ Print the full documentation.
 =cut                                          
 
 #
-#-----------+
-# INCLUDES  |
-#-----------+
+# 
+#
 use strict; 
 use Bio::SeqIO;
 use Getopt::Long;
 use File::Basename;
 use Pod::Usage;
        
-#----------------+
-# VARIABLE SCOPE |
-#----------------+
+#
+# Vars 
+#
 my $infile;       
 my $outfile;
 my $excluded;      
@@ -108,21 +107,24 @@ GetOptions(
 	   'm|man'          => \$man,
 ) || pod2usage( "Try 'basename($0) --man' for more information." );
 
+#
+# Check @ARGV
+#
+usage() and exit(0) if $help;
+
 pod2usage( -verbose => 2 ) if $man;
 
-# get command-line arguments
 if (!$infile || !$outfile 
-    || !$length || !$excluded
-    || $help) {
+    || !$length || !$excluded) {
     print "\nERROR: No input was given.\n";
-    &usage();      
-    exit(0);
+    usage();      
+    exit(1);
 }
 
 if ($over && $under) {
     print "\nERROR: Cannot choose both --over and --under. Exiting.\n";
-    &usage();
-    exit(0);
+    usage();
+    exit(1);
 }
 
 # create SeqIO objects to read in and to write outfiles
@@ -137,9 +139,9 @@ my %seqs_out = (
 					    '-format' => 'fasta'),
 		);
 
-#------------------+
+#
 # 
-#------------------+
+#
 while ( my $seq = $seqs_in->next_seq() ) {
   #partition the sequences by length
     if ($over) {
@@ -170,9 +172,9 @@ my $count = $overCount + $underCount;
 my $total = $overTotal + $underTotal;
 my $mean  = sprintf("%.2f", $total/$count);
 
-#-----------------------+
+#
 #   
-#-----------------------+
+#
 print "=======================  $infile length summary","\n";
 print "Total -------> $count; Mean length $mean bp\n";
 print "=========================================================","\n";

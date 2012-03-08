@@ -91,7 +91,9 @@ pod2usage( -verbose => 2 ) if $man;
 #
 # Check @ARGVs
 #
-if (!$qseq || !$fastq || $help) {
+usage() and exit(0) if $help;
+
+if (!$qseq || !$fastq) {
     print "\nERROR: Command line not parsed correctly.\n";
     &usage();
     exit(1);
