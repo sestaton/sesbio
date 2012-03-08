@@ -10,22 +10,26 @@ pickNreads.pl -i seqs.fasta -n 1000
 
 =head1 DESCRIPTION
                                                                    
-Takes a Fasta file and picks the first N, where N
-can be any number, sequences. The selection of sequences
-is sequential and is based on the order in the file so, 
-the sequences are NOT picked randomly. There are many 
+Takes a Fasta file and picks the first N, where N can be any number, sequences. The selection of sequences
+is sequential and is based on the order in the file so, the sequences are NOT picked randomly. There are many 
 programs for randomly picking sequences from a file.
 
-The output is two files where the first is named
-based on the selected number of sequences and the second
-will contain every other sequence in the file. For
-example if "seqs.fasta" contains 100 sequences and we 
-want 10 we would do:
+The output is a single file that is named based on the selected number, N, of sequences. If the --write_all 
+option is specified at the command line, a second file with n-N sequences will be written, where n is the total
+number of sequences in the input.
 
-perl pickNreads.pl -i seqs.fasa -n 10
+For example if "seqs.fasta" contains 100 sequences and we want 10 we would do:
+
+perl pickNreads.pl -i seqs.fasta -n 10
 
 and the output would be:  seqs_10.fasta
-                          seqs_90.fasfa
+
+If we want to create a split after N, and write all the sequences we would do:
+
+perl pickNreads.pl -i seqs.fasta -n 10 --write_all
+
+and the output would be:  seqs_10.fasta
+                          seqs_90.fasta                          
 
 =head1 AUTHOR 
 
@@ -76,6 +80,7 @@ use File::Copy;
 #
 my $infile;
 my $num;
+my $write_all;
 my $help;
 my $man;
 
@@ -84,8 +89,9 @@ GetOptions(# Required
 	   'n|numseqs=i'  => \$num,
 	  
            # Options
-           'h|help'         => \$help,
-           'm|man'          => \$man,
+	   'write_all'    => \$write_all,
+           'h|help'       => \$help,
+           'm|man'        => \$man,
            ) || pod2usage( "Try 'basename($0) --man' for more information." );
 
 pod2usage( -verbose => 2 ) if $man;
@@ -102,8 +108,8 @@ if (!$infile || !$num) {
 }
 
 # counters
-my $seqct = 0;
-my $seqover = 0;
+my $seq_ct = 0;
+my $seq_over = 0;
 my $t0 = gettimeofday();
 
 # create SeqIO objects to read in and to write outfiles
@@ -116,32 +122,38 @@ $outfile1 .= "_".$num.".fasta";
 my $seqs_out = Bio::SeqIO->new( -format => 'fasta',
 				-file => ">$outfile1");
 
+
 my $outfile2 = $outfile1;
-my $rem = "after"; 
+my $rem = "after";
 $outfile2 =~ s/$num/$rem/;
-my $seqs_out2 = Bio::SeqIO->new( -format => 'fasta',
-				 -file => ">$outfile2");
+my $seqs_out_over = Bio::SeqIO->new( -format => 'fasta',
+				     -file => ">$outfile2");
 
 while( my $seqs = $seq_in->next_seq() ) {
-    if ($seqct < $num) {
-	$seqct++;
+    $seq_ct++;
+    if ($seq_ct <= $num) {
+	#$seqct++;
 	$seqs_out->write_seq($seqs);
     } else {
-	$seqover++;
-	$seqs_out2->write_seq($seqs);
+	if ($write_all) {
+	    $seq_over++;
+	    $seqs_out_over->write_seq($seqs);
+	}
     }
 }
 
-my $seqtot = $seqct + $seqover;
-my $outfafter = $outfile1;
-$outfafter =~ s/$num/$seqover/;
-move("$outfile2","$outfafter") or die "Copy failed: $!";
+
+my $out_over = $outfile1;
+$out_over =~ s/$num/$seq_over/;
+move("$outfile2","$out_over") or die "Copy failed: $!" if $write_all;
+
 
 my $t1 = gettimeofday();
 my $elapsed = $t1 - $t0;
 my $time = sprintf("%.2f",$elapsed/60);
 
-print "\n$seqtot reads ($seqct in file $outfile1, $seqover in file $outfafter) written in $time minutes.\n\n";
+print "\n$seq_ct reads ($num in file $outfile1, $seq_over in file $out_over) written in $time minutes.\n\n" if $write_all;
+print "\n$num reads in file $outfile1 written in $time minutes.\n\n" if !$write_all;
 
 exit;
 
@@ -156,6 +168,7 @@ Required:
     -n|num      :    The number of reads to select.
 
 Options:
+    --write_all :    Write all the sequences minus [--num] to a separate file.
     -h|help     :    Print usage statement.
     -m|man      :    Print full documentation.
 END
