@@ -80,9 +80,7 @@ GetOptions(# Required
 
 pod2usage( -verbose => 2 ) if $man;
 
-if ($help) {
-    &usage();
-    exit(0);
+usage() and exit(0) if $help;
 
 if (!$infile || !$outfile) {
     print "\nERROR: No input was given.\n";
