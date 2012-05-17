@@ -121,13 +121,13 @@ if (!$infile || !$outfile) {
 }
 
 my $fasnum = `grep -c ">" $infile`;
-my $orf = defined($orflen) ? $orflen : "80";
 if ($fasnum >= 1) {
     print "\n========== Translating sequences with minimum ORF length of $orf.\n";
 } else {
     die "\nERROR: No fasta files were found! Must end with .fasta, .fas, or .fna.\n";
 }
 
+my $orf = defined($orflen) ? $orflen : "80";
 my $seq_in = Bio::SeqIO->new(-file => $infile, -format => 'fasta');
 my ($iname, $ipath, $isuffix) = fileparse($infile, qr/\.[^.]*/);
 
