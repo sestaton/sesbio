@@ -11,9 +11,6 @@ my $seq_in = Bio::SeqIO->new(-file => $infile,
 
 #open( my $in, '<', $infile) or die "\nERROR: Could not open file: $infile\n";
 
-my $header;
-my @seq;
-
 #while(my $line = <$in>) {
 while(my $seq = $seq_in->next_seq) {
     #chomp $line;
@@ -24,6 +21,7 @@ while(my $seq = $seq_in->next_seq) {
     #}
     #my $fa = join('',@seq);
     #$fa =~ s/\s//g;
+    my 
     print join("\t",($seq->id,$seq->seq)),"\n";
     #print "$header\t$fa\n";
 }
