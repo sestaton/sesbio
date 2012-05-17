@@ -1,7 +1,6 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Bio::SeqIO;
 
 my $usage = "$0 infile > out\n";
 my $infile = shift or die $usage;
@@ -12,7 +11,7 @@ while(my $line = <$in>) {
     chomp $line;
     my ($header, $seq) = split(/\t/,$line);
     $seq =~ s/(.{60})/$1\n/gs;  
-    print ">".$header."\n$seq\n";
+    print join("\n",">".$header,$seq), "\n";
 }
 
 close($in);
