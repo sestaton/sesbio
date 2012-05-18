@@ -11,7 +11,6 @@ BEGIN {
 }
 use AnyDBM_File;
 use vars qw( $DB_BTREE &R_DUP );
-use lib qw(/iob_home/jmblab/statonse/apps/perlmod/AnyDBM_File-Importer-0.012/blib/lib);
 use AnyDBM_File::Importer qw(:bdb);
 
 my ($fread, $rread, $fpread, $rpread, $fsread, $rsread);
@@ -190,13 +189,13 @@ sub readfq {
     }
     ################################ SES mod 5/17/12
     my $name;
-    if (/^.?(\S+\s\S+)/) {
+    if (/^.?(\S+\s\S+)/) {          # Illumina 1.8+
 	$name = $1;
     }
-    elsif (/^.?(\S+)/) {
+    elsif (/^.?(\S+)/) {            # Illumina 1.3+
 	$name = $1;
     } else {
-	$name = '';
+	$name = '';                 # ?
     }
     #my $name = /^.(\S+)/? $1 : ''; # original REGEX
     ################################
