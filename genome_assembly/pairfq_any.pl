@@ -53,7 +53,7 @@ while (($rname, $rseq, $rqual) = readfq(\*$r, \@raux)) {
     if ($rname =~ /(\/\d)$/) {
 	$rname =~ s/$1//;
     } 
-    elsif ($rname =~ /\s(\d\:\w\:\d\:\w+)$/) {
+    elsif ($rname =~ /\s(\d\:\w\:\d\:\w+)$/) { # as below, may need to add some abstraction to this regex 
 	$rid = $1; chomp($rid);
 	$rid =~ s/^.//;
 	$rname =~ s/\s.*//;
@@ -73,7 +73,7 @@ while (($fname, $fseq, $fqual) = readfq(\*$f, \@faux)) {
     if ($fname =~ /(\/\d)$/) {
 	$fname =~ s/\/\d//;
     }
-    elsif ($fname =~ /\s(\d\:\w\:\d\:\w+)$/) {
+    elsif ($fname =~ /\s(\d\:\w\:\d\:\w+)$/) {   # may need to add some abstraction to this regex
         $fid = $1; chomp($fid);
         $fid =~ s/^.//;
 	$fname =~ s/\s.*//;
@@ -197,7 +197,7 @@ sub readfq {
     } else {
 	$name = '';                 # ?
     }
-    #my $name = /^.(\S+)/? $1 : ''; # original REGEX
+    #my $name = /^.(\S+)/? $1 : ''; # Heng Li's original regex
     ################################
     my $seq = '';
     my $c;
