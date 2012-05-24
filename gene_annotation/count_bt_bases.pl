@@ -55,15 +55,16 @@ if (!$infile && !$outfile) {
 my $length_threshold = defined($length) ? $length : "0";
 my $percentID_threshold = defined($percentID) ? $percentID : "80";
 
-my ($file,$dir,$ext) = fileparse($infile, qr/\.[^.]*/);
-open( INREP, $infile ) || die "\nERROR: Can't open file: $infile\n";
-open( OUT, ">$outfile" ) || die "\nERROR: Can't open file: $outfile\n";
+my ($file, $dir, $ext) = fileparse($infile, qr/\.[^.]*/);
+open( my $in, '<' $infile ) or die "\nERROR: Can't open file: $infile\n";
+open( my $out, '>', $outfile ) or die "\nERROR: Can't open file: $outfile\n";
 
 my @matches;
 my $total = 0;
 
-while (<INREP>) {
+while (<$in>) {
     chomp;
+    next if /^#/;
     my @hits = split(/\t/,$_);
     if ( ($hits[3] >= $length_threshold) && ($hits[2] >= $percentID_threshold) ) {
 	push(@matches,$hits[3]);
@@ -73,8 +74,8 @@ while (<INREP>) {
 	print $_."\n";
     }
 }
-print OUT join("\t",($file,$total)),"\n";
-close(INREP);
-close(OUT);
+print $out join("\t",($file,$total)),"\n";
+close($in);
+close($out);
 
 exit;
