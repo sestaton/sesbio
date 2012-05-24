@@ -12,7 +12,7 @@ use File::Temp qw(tempfile);
 use Cwd;
 
 #
-# 
+# Vars 
 #
 my $infile; 
 my $outfile;
@@ -64,9 +64,7 @@ if ($tophit) {
     $search_in = Bio::SearchIO->new(-format => $format, -file => $infile, -tempfile => 1);
 }
 
-#$search_in->best_hit_only if $tophit;
-
-my $header = "#Query\tTotal_hits\tHit\tHSP_Length\tPercent_ID\tPercent_Cov\tHit_Description\tHit_Significance\n";
+my $header = "#Query\tHit\tPercent_ID\tHSP_len\tNum_mismatch\tNum_gaps\tQuery_start\tQuery_end\tHit_start\tHit_end\tE-value\tBit_score\n";
 print $blastout $header;
 
 while ( my $result = $search_in->next_result ) {
@@ -79,22 +77,30 @@ while ( my $result = $search_in->next_result ) {
 	    
 	    if ($length_thresh && $pid_thresh) {
 		
-		if( $hsp->length('total') > $length_thresh ) {
+		if( $hsplen > $length_thresh ) {
 		    
 		    if ( $hsp->percent_identity >= $pid_thresh ) {
 			
 			my $percent_identity = sprintf("%.2f",$hsp->percent_identity);
 			my $percent_coverage = sprintf("%.2f",$hsplen/$hitlen); 
 			
-			my $bl_hits = $result->query_name."\t".
-			    $result->num_hits."\t".
-			    $hit->name."\t".
-			    $hsp->length('total')."\t".
-			    $percent_identity."\t".
-			    $percent_coverage."\t".
-			    $hit->description."\t".
-			    $hit->significance."\n";
+			my @matches = $hsp->matches('hit');
+			my $matches = @matches;
+			my $mismatches = $hsplen - $matches;
 			
+			my $bl_hits = $result->query_name."\t".
+			    $hit->name."\t".
+			    $percent_identity."\t".
+			    $hsplen."\t".
+			    $mismatches."\t".
+			    $hsp->gaps."\t".
+			    $hsp->start('query')."\t".
+			    $hsp->end('query')."\t".
+			    $hsp->start('hit')."\t".
+			    $hsp->end('hit')."\t".
+			    $hsp->evalue."\t".
+			    $hsp->bits."\n";
+			    			
 			print $blastout $bl_hits;
 			
 		    }  
@@ -102,20 +108,28 @@ while ( my $result = $search_in->next_result ) {
 	    }
 	    if ($length_thresh && !$pid_thresh) {
 		
-		if( $hsp->length('total') > $length_thresh ) {
+		if( $hsplen > $length_thresh ) {
 		    
 		    my $percent_identity = sprintf("%.2f",$hsp->percent_identity);
 		    my $percent_coverage = sprintf("%.2f",$hsplen/$hitlen);
 		    
+		    my @matches = $hsp->matches('hit');
+		    my $matches = @matches;
+		    my $mismatches = $hsplen - $matches;
+
 		    my $bl_hits = $result->query_name."\t".
-			$result->num_hits."\t".
-			$hit->name."\t".
-			$hsp->length('total')."\t".
-			$percent_identity."\t".
-			$percent_coverage."\t".
-			$hit->description."\t".
-			$hit->significance."\n";
-		    
+                            $hit->name."\t".
+                            $percent_identity."\t".
+			    $hsplen."\t".
+                            $mismatches."\t".
+                            $hsp->gaps."\t".
+                            $hsp->start('query')."\t".
+                            $hsp->end('query')."\t".
+                            $hsp->start('hit')."\t".
+                            $hsp->end('hit')."\t".
+                            $hsp->evalue."\t".
+                            $hsp->bits."\n";
+                            
 		    print $blastout $bl_hits;
 		    
 		}
@@ -127,15 +141,23 @@ while ( my $result = $search_in->next_result ) {
 		    my $percent_identity = sprintf("%.2f",$hsp->percent_identity);
 		    my $percent_coverage = sprintf("%.2f",$hsplen/$hitlen);
 		    
+		    my @matches = $hsp->matches('hit');
+		    my $matches = @matches;
+		    my $mismatches = $hsplen - $matches;
+
 		    my $bl_hits = $result->query_name."\t".
-			$result->num_hits."\t".
-			$hit->name."\t".
-			$hsp->length('total')."\t".
-			$percent_identity."\t".
-			$percent_coverage."\t".
-			$hit->description."\t".
-			$hit->significance."\n";
-		    
+                            $hit->name."\t".
+                            $percent_identity."\t".
+			    $hsplen."\t".
+                            $mismatches."\t".
+                            $hsp->gaps."\t".
+                            $hsp->start('query')."\t".
+                            $hsp->end('query')."\t".
+                            $hsp->start('hit')."\t".
+                            $hsp->end('hit')."\t".
+                            $hsp->evalue."\t".
+                            $hsp->bits."\n";
+                            		    
 		    print $blastout $bl_hits;
 		    
 		}
@@ -145,14 +167,22 @@ while ( my $result = $search_in->next_result ) {
 		my $percent_identity = sprintf("%.2f",$hsp->percent_identity);
 		my $percent_coverage = sprintf("%.2f",$hsplen/$hitlen);
 		
+		my @matches = $hsp->matches('hit');
+		my $matches = @matches;
+		my $mismatches = $hsplen - $matches;
+
 		my $bl_hits = $result->query_name."\t".
-		    $result->num_hits."\t".
-		    $hit->name."\t".
-		    $hsp->length('total')."\t".
-		    $percent_identity."\t".
-		    $percent_coverage."\t".
-		    $hit->description."\t".
-		    $hit->significance."\n";
+                            $hit->name."\t".
+                            $percent_identity."\t".
+			    $hsplen."\t".
+                            $mismatches."\t".
+                            $hsp->gaps."\t".
+                            $hsp->start('query')."\t".
+                            $hsp->end('query')."\t".
+                            $hsp->start('hit')."\t".
+                            $hsp->end('hit')."\t".
+                            $hsp->evalue."\t".
+                            $hsp->bits."\n";
 		
 		print $blastout $bl_hits;
 		
@@ -185,5 +215,7 @@ Required:
    -v|verbose    :     Print information about the number of BLAST hits (ignored unless
                        used in conjunction with --top option).
 
+NB: The output format is identical to the blasttable format (i.e., "-m 8" with legacy BLAST)
+    except a column header is included.
 END
 }
