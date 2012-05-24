@@ -21,23 +21,23 @@
 use strict;
 
 my $usage   = "USAGE: blasttable2tophit.pl blasttablein tophitsout\n\n";
-my $infile  = $ARGV[0] || die "\nERROR: No infile was found!\n\n",$usage;
-my $outfile = $ARGV[1] || die "\nERROR: No outfile was found!\n\n",$usage;
+my $infile  = shift or die "\nERROR: No infile was found!\n\n",$usage;
+my $outfile = shift or die "\nERROR: No outfile was found!\n\n",$usage;
 
-open( INFILE , $infile ) || die "\nERROR: Could not open file: $infile\n";
-open( OUTFILE , ">$outfile" ) || die "\nERROR: Could not open file: $outfile\n";
+open( my $in , '<', $infile ) or die "\nERROR: Could not open file: $infile\n";
+open( my $out, '>' , $outfile ) or die "\nERROR: Could not open file: $outfile\n";
 
 my $allq = 0;
 my $uniqq = 0;
 my %seen = ();
 
-while (<INFILE>) { 
+while (<$in>) { 
   chomp; 
   $allq++;
   my @blfields = split(/\t/, $_);
   my $key = $blfields[0];
   if (! $seen{ $key }++) {
-    print OUTFILE $_."\n";
+    print $out $_."\n";
   }
 }
 
@@ -46,7 +46,7 @@ $uniqq += keys %seen;
 print "$allq Total sequences in report.\n";
 print "$uniqq Unique sequences have been written to: $outfile\n";
 
-close(INFILE);
-close(OUTFILE);  
+close($in);
+close($out);  
 
 exit;
