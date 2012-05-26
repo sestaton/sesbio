@@ -6,7 +6,7 @@ parallel_blast.pl - Run multiple BLAST threads concurrently
 
 =head1 SYNOPSIS    
  
-parallel_blast.pl -i seqs.fas -o seqs_nt.bln -f fasta -t 2 -n 100000 -cpu 2
+parallel_blast.pl -i seqs.fas -d nt -o seqs_nt.bln -sf fasta -t 2 -n 100000 --cpu 2
 
 =head1 DESCRIPTION
      
