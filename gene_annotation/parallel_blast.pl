@@ -27,6 +27,9 @@ Tested with:
 =item *
 L<BioPerl> 1.069, L<Parallel::ForkManger> 0.7.9 and Perl 5.8.5 (Red Hat Enterprise Linux AS release 4 (Nahant Update 9))
 
+=item *
+L<BioPerl> 1.069, L<Parallel::ForkManager> 0.7.9 and Perl 5.14.1 (Red Hat Enterprise Linux Server release 5.7 (Tikanga))
+
 =back
 
 =head1 AUTHOR 
@@ -236,9 +239,9 @@ sub run_blast {
     $evalue = defined($evalue) ? $evalue : '1e-5';
 
     my ($dbfile,$dbdir,$dbext) = fileparse($database, qr/\.[^.]*/);
+    my ($subfile,$subdir,$subext) = fileparse($subseq_file, qr/\.[^.]*/);
 
-    my $subseq_out = $subseq_file;
-    $subseq_out .= "_".$dbfile.".bln";
+    my $subseq_out = $subfile."_".$dbfile.".bln";
 
     my $blast_cmd = "blastall -p $blast_program ".
 	            "-e $evalue ". 

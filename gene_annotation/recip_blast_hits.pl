@@ -34,21 +34,25 @@ while (my $qline = <$query>) {
     chomp $qline;
     next if $qline =~ /^#/;
     my @query_fields = split(/\t/,$qline);
-    my $hkey = join(",",($query_fields[0],$query_fields[2]));
-    $qhash{$hkey} = join("\t",($query_fields[3],$query_fields[4],$query_fields[5]));
+    my $hkey = join(",",($query_fields[0],$query_fields[1]));
+    $qhash{$hkey} = join("\t",($query_fields[2],$query_fields[3],$query_fields[10],$query_fields[11]));
 }
 
-print $out "Hit\tHit\tHSP_len\tPID\tPCov\tHSP_len\tPID\n";
+print $out "Query\tHit\tPID_query\tHSP_len_query\tEval_query\tBits_query\tPID_hit\tHSP_len_hit\tEval_hit\tEval_hit\n";
 
 while (my $sline = <$subj>) {
     chomp $sline;
     next if $sline =~ /^#/;
     my @subj_fields = split(/\t/,$sline);
+    #my $key = join(",",($subj_fields[1],$subj_fields[0]));
+    #if (exists $qhash{$key}) {
     while( my ($qid, $qhit) = each(%qhash)) {
 	my ($qq, $qh) = split(",",$qid);
+	my ($qpid, $qaln_len, $qeval, $qbits) = split(/\t/,$qhit);
 	if ($qq =~ /$subj_fields[1]/ && $qh =~ /$subj_fields[0]/) {
 	    $recip_hit++;
-	    print $out "HIT $recip_hit : ", join("\t",$qq,$subj_fields[0],$qhit,$subj_fields[3],$subj_fields[2]),"\n";
+	    print $out join("\t",$qq,$qh,$qpid,$qaln_len,$qeval,$qbits,$subj_fields[2],$subj_fields[3],$subj_fields[10],$subj_fields[11]),"\n";
+	    #print $out "HIT $recip_hit : ", join("\t",$qq,$subj_fields[0],$qhit,$subj_fields[3],$subj_fields[2]),"\n";
 	    #print $out "HIT $recip_hit : ", join("\t",@subj_fields),"\n";
 	}
     }
@@ -58,7 +62,7 @@ close($query);
 close($subj);
 close($out);
 
-print "\nWe found $recip_hit !\n\n";
+print "\nWe found $recip_hit reciprocal hits\n\n";
 
 
 exit;
