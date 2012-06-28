@@ -1,5 +1,84 @@
 #!/usr/bin/env perl
 
+=head1 NAME 
+                                                                       
+pairfq.pl - Match paired-end sequences from separate Fasta/q files
+
+=head1 SYNOPSIS    
+ 
+pairfq.pl -f s_1_1_trim.fq -r s_1_2_trim.fq -fp s_1_1_trim_paired.fq -rp s_1_2_trim_paired.fq -fs s_1_1_trim_unpaired.fq -rs s_1_2_trim_unpaired.fq
+
+=head1 DESCRIPTION
+     
+Re-pair paired-end sequences that may have been separated by quality trimming.
+This script also writes the unpaired forward and reverse sequences to separate 
+files so that they may be used for assembly or mapping.
+
+=head1 DEPENDENCIES
+
+This script uses the Perl modules AnyDBM_File and AnyDBM_File::Importer. AnyDBM_File
+is used to create a database with either DB_File or SQLite and AnyDBM_File::Importer
+allows symbols from other packages to be imported. In this script, symbols from DB_File
+are imported so that the database may be stored in memory.
+
+Tested with:
+
+=over
+
+=item *
+Perl 5.14.1 (Red Hat Enterprise Linux Server release 5.7 (Tikanga))
+
+=back
+
+=head1 AUTHOR 
+
+S. Evan Staton                                                
+
+=head1 CONTACT
+ 
+statonse at gmail dot com
+
+=head1 REQUIRED ARGUMENTS
+
+=over 2
+
+=item -f, --forward
+
+The file of forward sequences from an Illumina paired-end sequencing run.
+
+=item -r, --reverse                                                                                                                                                       
+The file of reverse sequences from an Illumina paired-end sequencing run.
+
+=item -fp, --forw_paired
+
+The output file to place the paired forward reads.
+
+=item -rp, --rev_paired                                                                                                                                                  
+
+The output file to place the paired reverse reads. 
+
+=item -fs, --forw_unpaired                                                                                                                                                  
+The output file to place the unpaired forward reads. 
+
+=item -rs, --rev_unpaired                                                                                                                                                  
+The output file to place the unpaired reverse reads. 
+
+=back
+
+=head1 OPTIONS
+
+=over 2
+
+=item -h, --help
+
+Print a usage statement. 
+
+=item -m, --man
+
+Print the full documentation.
+
+=cut      
+
 use strict;
 use warnings;
 use File::Basename;
@@ -12,8 +91,9 @@ BEGIN {
 use AnyDBM_File;
 use vars qw( $DB_BTREE &R_DUP );
 use AnyDBM_File::Importer qw(:bdb);
+use Pod::Usage;
 
-my ($fread, $rread, $fpread, $rpread, $fsread, $rsread);
+my ($fread, $rread, $fpread, $rpread, $fsread, $rsread, $help, $man);
 
 GetOptions(
            'f|forward=s'        => \$fread,
@@ -22,7 +102,16 @@ GetOptions(
            'rp|rev_paired=s'    => \$rpread,
            'fs|forw_unpaired=s' => \$fsread,
            'rs|rev_unpaired=s'  => \$rsread,
-          );
+           'h|help'             => \$help,
+           'm|man'              => \$man,
+          ) || pod2usage( "Try '$0 --man' for more information." );
+
+#
+# Check @ARGV
+#
+usage() and exit(0) if $help;
+
+pod2usage( -verbose => 2 ) if $man;
 
 if (!$fread  || !$rread  ||
     !$fpread || !$rpread ||
