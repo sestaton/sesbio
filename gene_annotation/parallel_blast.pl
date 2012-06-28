@@ -148,21 +148,21 @@ my $num_descriptions;
 my $evalue;
 
 GetOptions(# Required
-           "i|infile=s"         => \$infile,
-	   "o|outfile=s"        => \$outfile,
-	   "d|database=s"       => \$database,
-	   "n|numseqs=i"        => \$numseqs,
-	   "sf|seq_format=s"    => \$format,
+           'i|infile=s'         => \$infile,
+	   'o|outfile=s'        => \$outfile,
+	   'd|database=s'       => \$database,
+	   'n|numseqs=i'        => \$numseqs,
+	   'sf|seq_format=s'    => \$format,
 	   # Options
-	   "a|cpu=i"            => \$cpu,
-	   "b|num_aligns=i"     => \$num_alignments,
-	   "v|num_desc=i"       => \$num_descriptions,
-	   "p|blast_prog=s"     => \$blast_program,
-	   "e|evalue=f"         => \$evalue,
-	   "bf|blast_format=i"  => \$blast_format,
-	   "t|threads=i"        => \$thread,
-           "h|help"             => \$help,
-           "m|man"              => \$man,
+	   'a|cpu=i'            => \$cpu,
+	   'b|num_aligns=i'     => \$num_alignments,
+	   'v|num_desc=i'       => \$num_descriptions,
+	   'p|blast_prog=s'     => \$blast_program,
+	   'e|evalue=f'         => \$evalue,
+	   'bf|blast_format=i'  => \$blast_format,
+	   't|threads=i'        => \$thread,
+           'h|help'             => \$help,
+           'm|man'              => \$man,
            ) || pod2usage( "Try '$0 --man' for more information." );
 
 #
