@@ -62,7 +62,7 @@ close($query);
 close($subj);
 close($out);
 
-print "\nWe found $recip_hit reciprocal hits\n\n";
+print "\nFound $recip_hit reciprocal hits in $query_blast and $subj_blast.\n\n";
 
 
 exit;
