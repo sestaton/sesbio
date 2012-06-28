@@ -309,7 +309,7 @@ sub usage {
     my $script = basename($0);
     print STDERR <<END
 
-USAGE: $script -i seqs.fas -d db -sf fasta|fastq -o blast_result -n num [-t] [-a] [-b] [-v] [-p] [-bf] [-e]
+USAGE: $script -i seqs.fas -d db -sf fasta|fastq -o blast_result -n num [-t] [-a] [-b] [-v] [-p] [-bf] [-e] [-h] [-m]
 
 Required:
     -i|infile        :    Fasta file to search (contig or chromosome).
@@ -326,6 +326,8 @@ Options:
     -p|blast_prog    :    BLAST program to execute (Default: blastp).
     -bf|blast_format :    BLAST output format (Default: 8. Type --man for more details).
     -e|evalue        :    The e-value threshold (Default: 1e-5).
+    -h|help          :    Print a usage statement.
+    -m|man           :    Print the full documentation. 
 
 END
 }
