@@ -318,7 +318,7 @@ sub readfq {
 sub usage {
     my $script = basename($0);
     print STDERR<<EOF
-USAGE: $script [-f] [-r] [-fp] [-rp] [-fs] [-rs]
+USAGE: $script [-f] [-r] [-fp] [-rp] [-fs] [-rs] [-h] [-m]
 
 Required:
     -f|forward        :       File of foward reads (usually with "/1" or " 1" in the header).
