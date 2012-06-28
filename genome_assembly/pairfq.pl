@@ -12,7 +12,8 @@ pairfq.pl -f s_1_1_trim.fq -r s_1_2_trim.fq -fp s_1_1_trim_paired.fq -rp s_1_2_t
      
 Re-pair paired-end sequences that may have been separated by quality trimming.
 This script also writes the unpaired forward and reverse sequences to separate 
-files so that they may be used for assembly or mapping.
+files so that they may be used for assembly or mapping. The input may be Fasta
+or Fastq format in either Illumina 1.3+ or Illumina 1.8 format.
 
 =head1 DEPENDENCIES
 
