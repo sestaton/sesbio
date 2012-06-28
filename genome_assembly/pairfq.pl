@@ -257,6 +257,7 @@ print "\nTotal upaired reads in $fsread and $rsread: $sct";
 print "\nTotal forward unpaired reads in $fsread:    $fsct";
 print "\nTotal reverse unpaired reads in $rsread:    $rsct\n";
 
+exit;
 #
 # Subs
 #
@@ -319,13 +320,17 @@ sub usage {
     print STDERR<<EOF
 USAGE: $script [-f] [-r] [-fp] [-rp] [-fs] [-rs]
 
-Arguments:
--f|forward        :       File of foward reads (usually with "/1" or " 1" in the header)
--r|reverse        :       File of reverse reads (usually with "/2" or " 2" in the header)
--fp|forw_paired   :       Name for the file of paired forward reads
--rp|rev_paired    :       Name for the file of paired reverse reads
--fs|forw_unpaired :       Name for the file of singleton forward reads
--rs|rev_unpaired  :       Name for the file of singleton reverse reads
+Required:
+    -f|forward        :       File of foward reads (usually with "/1" or " 1" in the header).
+    -r|reverse        :       File of reverse reads (usually with "/2" or " 2" in the header).
+    -fp|forw_paired   :       Name for the file of paired forward reads.
+    -rp|rev_paired    :       Name for the file of paired reverse reads.
+    -fs|forw_unpaired :       Name for the file of singleton forward reads.
+    -rs|rev_unpaired  :       Name for the file of singleton reverse reads.
+
+Options:
+    -h|help           :       Print a usage statement.
+    -m|man            :       Print the full documentation.
 
 EOF
 }
