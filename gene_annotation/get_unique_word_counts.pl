@@ -26,19 +26,19 @@ open(my $out, '>', $outfile) or die "\nERROR: Could not open file: $outfile\n";
 #
 # comments must be removed or they will be counted
 #
-my @repnames = map +(split "\n")[0], <$in>;
+my @words = map +(split "\n")[0], <$in>;
 
 my %seen = ();
-my @unique_repnames = grep { ! $seen{$_} ++ } @repnames;   # preserves the order of elements
+my @unique_words = grep { ! $seen{$_} ++ } @words;   # preserves the order of elements
 close($in);
 
-my $unique = @unique_repnames;
-my $query = @repnames;
+my $unique = @unique_words;
+my $query = @words;
 
-print "\n","There are: ", $query, " total repbase blast hits\n";
-print "\n","There are: ", $unique, " unique repbase blast hits\n\n";
+print "\n","There are: ", $query, " total words.\n";
+print "\n","There are: ", $unique, " unique words.\n\n";
 
-count_unique ( @repnames );
+count_unique ( @words );
 
 sub count_unique {
 
