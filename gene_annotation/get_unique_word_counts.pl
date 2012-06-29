@@ -12,38 +12,25 @@ the words are evaluated by unique lines.";
 my $infile;
 my $outfile;
 
-## initialize counts
-#my $total_hits = 0;
-#my $unique_hits = 0;
-
-GetOptions(# Required arguments
-           "i|infile=s"         => \$infile,
-           "o|outfile=s"        => \$outfile,
+GetOptions(
+           'i|infile=s'     => \$infile,
+           'o|outfile=s'    => \$outfile,
            );
 
 # open the infile or die with a usage statement
-if ($infile && $outfile) {
-    open(BLASTREPORT, $infile)|| print "Error: can't read $infile\n";
+die $usage if !$infile or !$outfile;
 
-    open (OUTFILE, ">$outfile");
-}
-else {
-    if (!$infile){
-        die "\n","ERROR: No infile was given at the command line\n\n",$usage,"\n\n"; 
-    }
-    if (!$outfile){
-        die "\n","ERROR: No outfile was given at the command line\n\n",$usage,"\n\n";
-    }
-}
+open(my $in, '<', $infile) or die "\nERROR: Could not open file: $infile\n";
+open(my $out, '>', $outfile) or die "\nERROR: Could not open file: $outfile\n";
 
 #
 # comments must be removed or they will be counted
 #
-my @repnames = map +(split "\n")[0], <BLASTREPORT>;
+my @repnames = map +(split "\n")[0], <$in>;
 
 my %seen = ();
 my @unique_repnames = grep { ! $seen{$_} ++ } @repnames;   # preserves the order of elements
-close(BLASTREPORT);
+close($in);
 
 my $unique = @unique_repnames;
 my $query = @repnames;
@@ -59,12 +46,10 @@ sub count_unique {
     my %count;
     map { $count{$_}++ } @array;
 
-      #print
-
-    map {print OUTFILE $_."\t".${count{$_}}."\n"} sort keys(%count);
+    map {print $out $_."\t".${count{$_}}."\n"} sort keys(%count);
 
 }
 
-close(OUTFILE);
+close($out);
 
 exit;
