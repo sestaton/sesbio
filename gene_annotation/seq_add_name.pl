@@ -77,7 +77,7 @@ sub usage {
     my $script = basename($0);
     print STDERR <<END
 
-USAGE: $script -i seqs.fas -o seqs_renamed.fasta -n name [-sf] [--start] [--end] [--description]
+USAGE: $script -i seqs.fas -o seqs_renamed.fasta -n name [-sf] [--start] [--end] [--description] [--help]
 
 Required:
     -i|infile        :    Fasta file to reformat (contig or chromosome).
@@ -90,6 +90,7 @@ Options:
     --end            :    Place the argument to option [--name] at the end of the primary ID.
     --description    :    If given, the sequence description (anything after the first space in the ID) will be retained
                           (Default: remove anything after the first space).
+    --help           :    Print a usage statement. 
 
 END
 }
