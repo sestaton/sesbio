@@ -11,19 +11,21 @@ use File::Basename;
 my $infile;
 my $outfile;
 my $name;
+my $format;
 my $end;
 my $start;
 my $desc;
 my $help;
 
 GetOptions (
-	    'i|infile=s'   => \$infile,
-	    'o|outfile=s'  => \$outfile,
-	    'n|name=s'     => \$name,
-	    'end'          => \$end,
-	    'start'        => \$start,
-	    'description'  => \$desc,
-	    'h|help'       => \$help,
+	    'i|infile=s'      => \$infile,
+	    'o|outfile=s'     => \$outfile,
+	    'n|name=s'        => \$name,
+            'sf|seq_format=s' => \$format,
+            'end'             => \$end,
+	    'start'           => \$start,
+	    'description'     => \$desc,
+	    'h|help'          => \$help,
 	    );
 
 #
@@ -39,14 +41,16 @@ if (!$infile || !$outfile ||
     exit(1);
 }
 
+$format = defined($format) ? $format : 'fasta';
+
 #
 # create SeqIO objects
 #
-my $seq_in  = Bio::SeqIO->new( -format => 'fasta', 
-			       -file => $infile); 
+my $seq_in  = Bio::SeqIO->new(-format => $format, 
+			      -file => $infile); 
 
-my $seq_out = Bio::SeqIO->new(-file => ">$outfile", 
-			      -format => 'fasta'); 
+my $seq_out = Bio::SeqIO->new(-format => $format,
+                              -file => ">$outfile"); 
 
 while( my $seq = $seq_in->next_seq() ) {
     if ($start) {
@@ -72,7 +76,7 @@ sub usage {
     my $script = basename($0);
     print STDERR <<END
 
-USAGE: $script -i seqs.fas -o seqs_renamed.fasta -n name [--start] [--end] [--description]
+USAGE: $script -i seqs.fas -o seqs_renamed.fasta -n name [-sf] [--start] [--end] [--description]
 
 Required:
     -i|infile        :    Fasta file to reformat (contig or chromosome).
@@ -80,6 +84,7 @@ Required:
     -n|name          :    The name to append to the beginning or end of the primary ID.
 
 Options:
+    -sf|seq_format   :    The format of the sequence (Default: fasta).
     --start          :    Place the argument to option [--name] at the beginning of the primary ID.
     --end            :    Place the argument to option [--name] at the end of the primary ID.
     --description    :    If given, the sequence description (anything after the first space in the ID) will be retained
