@@ -59,7 +59,7 @@ The size of the splits to create. This number determines how many
 sequences will be written to each split. 
 
 NB: If the input sequence file has millions of sequences and a 
-very small number is given fo the split value then there could 
+very small number is given for the split value then there could 
 potentially be hundreds of thousands of files created. 
 
 =item -d, --database
@@ -86,11 +86,11 @@ The number of processors to use for each BLAST thread. Default is 1.
 
 =item -b, --num_aligns
 
-The number of alignments to keep for each query. Default is 100000.
+The number of alignments to keep for each query. Default is 250.
 
 =item -v, --num_desc
 
-The number of descriptions to keep for each hit. Default is 100000.
+The number of descriptions to keep for each hit. Default is 500.
 
 =item -p, --blast_prog
 
@@ -232,10 +232,10 @@ sub run_blast {
     
     my ($subseq_file,$database,$cpu,$blast_program,$blast_format,$num_alignments,$num_descriptions,$evalue) = @_;
 
-    $blast_program = defined($blast_program) ? $blast_program : 'blastp';          # we can set defaults with much less typing 
-    $blast_format  = defined($blast_format) ? $blast_format : '8';                 # if we 'use 5.010' but we'll try to be
-    $num_alignments = defined($num_alignments) ? $num_alignments : '100000';       # compatible
-    $num_descriptions = defined($num_descriptions) ? $num_descriptions : '100000';
+    $blast_program = defined($blast_program) ? $blast_program : 'blastp';          # We can set defaults with much less typing 
+    $blast_format  = defined($blast_format) ? $blast_format : '8';                 # if we 'use 5.010' but we'll try to be compatible.
+    $num_alignments = defined($num_alignments) ? $num_alignments : '250';          # These are the BLAST defaults, increase as needed       
+    $num_descriptions = defined($num_descriptions) ? $num_descriptions : '500';    # e.g., for OrthoMCL.
     $evalue = defined($evalue) ? $evalue : '1e-5';
 
     my ($dbfile,$dbdir,$dbext) = fileparse($database, qr/\.[^.]*/);
@@ -321,8 +321,8 @@ Required:
 Options:
     -t|threads       :    Number of threads to create (Default: 1).
     -a|cpu           :    Number of processors to use for each thread (Default: 1).
-    -b|num_aligns    :    Number of alignments to keep (Default: 100000).
-    -v|num_desc      :    Number of descriptions to keep (Default: 100000).
+    -b|num_aligns    :    Number of alignments to keep (Default: 250).
+    -v|num_desc      :    Number of descriptions to keep (Default: 500).
     -p|blast_prog    :    BLAST program to execute (Default: blastp).
     -bf|blast_format :    BLAST output format (Default: 8. Type --man for more details).
     -e|evalue        :    The e-value threshold (Default: 1e-5).
