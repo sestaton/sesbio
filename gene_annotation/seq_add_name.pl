@@ -17,16 +17,17 @@ my $start;
 my $desc;
 my $help;
 
-GetOptions (
-	    'i|infile=s'      => \$infile,
-	    'o|outfile=s'     => \$outfile,
-	    'n|name=s'        => \$name,
-            'sf|seq_format=s' => \$format,
-            'end'             => \$end,
-	    'start'           => \$start,
-	    'description'     => \$desc,
-	    'h|help'          => \$help,
-	    );
+GetOptions(# Required
+           'i|infile=s'      => \$infile,
+	   'o|outfile=s'     => \$outfile,
+	   'n|name=s'        => \$name,
+	   # Options
+           'sf|seq_format=s' => \$format,
+           'end'             => \$end,
+	   'start'           => \$start,
+	   'description'     => \$desc,
+	   'h|help'          => \$help,
+          );
 
 #
 # check @ARGV
