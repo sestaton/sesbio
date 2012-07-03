@@ -123,7 +123,6 @@ use Pod::Usage;
 use Time::HiRes qw(gettimeofday);
 use File::Basename;
 use File::Temp;
-use lib qw(/iob_home/jmblab/statonse/apps/perlmod/Parallel-ForkManager-0.7.9/lib);
 use Parallel::ForkManager;
 use Bio::SeqIO;
 
