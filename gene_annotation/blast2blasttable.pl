@@ -25,13 +25,13 @@ my $verbose;
 # OPTIONS  
 #
 GetOptions(
-	   "i|infile=s"    => \$infile,
-	   "o|outfile=s"   => \$outfile,
-	   "f|format=s"    => \$format,
-	   "t|top"         => \$tophit,
-	   "l|length=i"    => \$length_thresh,
-	   "p|percentid=f" => \$pid_thresh,
-	   "v|verbose"     => \$verbose,
+	   'i|infile=s'    => \$infile,
+	   'o|outfile=s'   => \$outfile,
+	   'f|format=s'    => \$format,
+	   't|top'         => \$tophit,
+	   'l|length=i'    => \$length_thresh,
+	   'p|percentid=f' => \$pid_thresh,
+	   'v|verbose'     => \$verbose,
 	   );
 	 
 #
@@ -55,7 +55,7 @@ my $allq = 0;
 $length_thresh = defined($length_thresh) ? $length_thresh : '0';          # we are going to set defaults this way
 $pid_thresh = defined($pid_thresh) ? $pid_thresh : '0';                   # to work with Perl versions released prior to 5.10
 
-open(my $blastout, '>', $outfile) or die "\nERROR: Could not open file: $outfile\n";
+open(my $blastout, '>', $outfile) or die "\nERROR: Could not open file: $!\n";
 
 # create SearchIO object to read in blast report and to write outfile
 my $search_in = Bio::SearchIO->new(-format => $format, -file => $infile, -tempfile => 1);

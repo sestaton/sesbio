@@ -143,7 +143,7 @@ while(my $seq = $seq_in->next_seq) {
 				 SUFFIX => ".faa",
 				 UNLINK => 0);
 
-    open(my $fh, '>', $fname) or die "\nERROR: Could not open file: $fname\n";
+    open(my $fh, '>', $fname) or die "\nERROR: Could not open file: $!\n";
 
     print $fh ">".$seq->id."\n".$seq->seq."\n";
   
