@@ -24,8 +24,8 @@ my $usage   = "USAGE: blasttable2tophit.pl blasttablein tophitsout\n\n";
 my $infile  = shift or die "\nERROR: No infile was found!\n\n",$usage;
 my $outfile = shift or die "\nERROR: No outfile was found!\n\n",$usage;
 
-open( my $in , '<', $infile ) or die "\nERROR: Could not open file: $infile\n";
-open( my $out, '>' , $outfile ) or die "\nERROR: Could not open file: $outfile\n";
+open( my $in , '<', $infile ) or die "\nERROR: Could not open file: $!\n";
+open( my $out, '>' , $outfile ) or die "\nERROR: Could not open file: $!\n";
 
 my $allq = 0;
 my $uniqq = 0;
