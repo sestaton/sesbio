@@ -91,8 +91,8 @@ if (!$infile || !$outfile) {
 my $seq_in  = Bio::SeqIO->new( -format => 'fasta', 
                                -file => $infile); 
 
-open( my $SEQSOUT , '>', $outfile ) 
-    or die "\nERROR: Could not open file: $outfile\n";
+open( my $seqsout , '>', $outfile ) 
+    or die "\nERROR: Could not open file: $!\n";
 
 # counters
 my $t0 = gettimeofday();
@@ -151,11 +151,11 @@ while (my ($seqname, $seq) = each(%seqhash)) {
     my $nonnucleic = (length($dna) - $nucleic_bc);
     $dna =~ s/(.{60})/$1\n/gs;        
 
-    print $SEQSOUT ">"."$seqname\n"."$dna\n";
+    print $seqsout ">"."$seqname\n"."$dna\n";
     $cleanseqhash{$seqname} = $dna;
 }
 
-close($SEQSOUT);
+close($seqsout);
 my $cleanfasnum = scalar(keys %cleanseqhash);
 
 my $t1 = gettimeofday();
