@@ -25,8 +25,8 @@ if (!$infile || !$outfile) {
     die "\nERROR: No infile/outfile was found. Exiting.\n\n",$usage;
 }
 
-open(my $in , '<', $infile) or die "\nERROR: Could not open file: $infile\n";
-open(my $out , '>', $outfile) or die "\nERROR: Could not open file: $outfile\n";
+open(my $in , '<', $infile) or die "\nERROR: Could not open file: $!\n";
+open(my $out , '>', $outfile) or die "\nERROR: Could not open file: $!\n";
 
 my $totalhits = 0;
 my $onehun2ninety = 0;
@@ -59,20 +59,20 @@ my ($onehun2ninety_idlist_hndl, $eightynine2eighty_idlist_hndl, $seventynine2sev
 
 # add test for --annot_by_bin option; otherwise, do not create all these files
 if ($annotations) {
-    open($onehun2ninety_annot_hndl, '>', $onehun2ninety_annot) or die "\nERROR: Could not open file: $onehun2ninety_annot\n";
-    open($eightynine2eighty_annot_hndl, '>', $eightynine2eighty_annot) or die "\nERROR: Could not open file: $eightynine2eighty_annot\n"; 
-    open($seventynine2seventy_annot_hndl, '>', $seventynine2seventy_annot) or die "\nERROR: Could not open file: $seventynine2seventy_annot\n";
-    open($sixtynine2sixty_annot_hndl, '>', $sixtynine2sixty_annot) or die "\nERROR: Could not open file: $sixtynine2sixty_annot\n";
-    open($fiftynine2fifty_annot_hndl, '>', $fiftynine2fifty_annot)  or die "\nERROR: Could not open file: $fiftynine2fifty_annot\n";
-    open($lessthanfifty_annot_hndl, '>', $lessthanfifty_annot) or die "\nERROR: Could not open file: $lessthanfifty_annot\n";
+    open($onehun2ninety_annot_hndl, '>', $onehun2ninety_annot) or die "\nERROR: Could not open file: $!\n";
+    open($eightynine2eighty_annot_hndl, '>', $eightynine2eighty_annot) or die "\nERROR: Could not open file: $!\n"; 
+    open($seventynine2seventy_annot_hndl, '>', $seventynine2seventy_annot) or die "\nERROR: Could not open file: $!\n";
+    open($sixtynine2sixty_annot_hndl, '>', $sixtynine2sixty_annot) or die "\nERROR: Could not open file: $!\n";
+    open($fiftynine2fifty_annot_hndl, '>', $fiftynine2fifty_annot)  or die "\nERROR: Could not open file: $!\n";
+    open($lessthanfifty_annot_hndl, '>', $lessthanfifty_annot) or die "\nERROR: Could not open file: $!\n";
 }
 if ($ids) {
-    open($onehun2ninety_idlist_hndl, '>', $onehun2ninety_idlist) or die "\nERROR: Could not open file: $onehun2ninety_idlist\n";
-    open($eightynine2eighty_idlist_hndl, '>', $eightynine2eighty_idlist) or die "\nERROR: Could not open file: $eightynine2eighty_idlist\n";
-    open($seventynine2seventy_idlist_hndl, '>', $seventynine2seventy_idlist) or die "\nERROR: Could not open file: $seventynine2seventy_idlist\n";
-    open($sixtynine2sixty_idlist_hndl, '>', $sixtynine2sixty_idlist) or die "\nERROR: Could not open file: $sixtynine2sixty_idlist\n";
-    open($fiftynine2fifty_idlist_hndl, '>', $fiftynine2fifty_idlist)  or die "\nERROR: Could not open file: $fiftynine2fifty_idlist\n";
-    open($lessthanfifty_idlist_hndl, '>', $lessthanfifty_idlist) or die "\nERROR: Could not open file: $lessthanfifty_idlist\n";
+    open($onehun2ninety_idlist_hndl, '>', $onehun2ninety_idlist) or die "\nERROR: Could not open file: $!\n";
+    open($eightynine2eighty_idlist_hndl, '>', $eightynine2eighty_idlist) or die "\nERROR: Could not open file: $!\n";
+    open($seventynine2seventy_idlist_hndl, '>', $seventynine2seventy_idlist) or die "\nERROR: Could not open file: $!\n";
+    open($sixtynine2sixty_idlist_hndl, '>', $sixtynine2sixty_idlist) or die "\nERROR: Could not open file: $!\n";
+    open($fiftynine2fifty_idlist_hndl, '>', $fiftynine2fifty_idlist)  or die "\nERROR: Could not open file: $!\n";
+    open($lessthanfifty_idlist_hndl, '>', $lessthanfifty_idlist) or die "\nERROR: Could not open file: $!\n";
 }
 
 while (<$in>) { 
