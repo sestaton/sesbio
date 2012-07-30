@@ -48,7 +48,7 @@ vmerSearchSeqnum=$seqFile"_"$merLen"mer_"$qryFile"_vmatch_seqnum.txt"
 vmerSeq=$seqFile"_"$merLen"mer_"$qryFile"_vmatch_seqs.fasta"
 vmerSubSeq=$seqFile"_"$merLen"mer_"$qryFile"_vmatch_subject_seqs.fasta"
 vmerSubSeqCt=$seqFile"_"$merLen"mer_"$qryFile"_vmatch_subject_seqs_ct.txt"
-vmerSubSeqCtsort=$seqFile"_"$merLen"mer_"$qryFile"_vmatch_subject_seqs_ct_sort.txt"
+#vmerSubSeqCtsort=$seqFile"_"$merLen"mer_"$qryFile"_vmatch_subject_seqs_ct_sort.txt"
 
 # construct the persistent index
 #
@@ -64,23 +64,21 @@ mkvtree -db $subjSeq -dna -indexname $db -allout -v -pl $merLen
 vmatch -s -v -showdesc 0 -q $qrySeq -l $merLen $db > $vmerSearchFull
 vmatch -q $qrySeq -l $merLen $db > $vmerSearch
 
-# create an ID list and seqnum list (in Vmatch index) of query sequences matching the index
-#
-# N.B. The following command will generate a human-readable list of sequences matching the index, if desired (i.e., the sequence headers).
-#grep -v "^#" $vmerSearchFull | sed -e 's/^[ \t]*//g;/^ *$/d' | egrep -v "Sbjct|Query" | perl -lane 'print join("\t",@F)' | cut -f2 > $vmerSearchIDs 
+# create an ID list of query sequences matching the index
+grep -v "^#" $vmerSearchFull | sed -e 's/^[ \t]*//g;/^ *$/d' | egrep -v "Sbjct|Query" | perl -lane 'print join("\t",@F)' | cut -f2 > $vmerSearchIDs
 grep -v "^#" $vmerSearch | sed -e 's/^[ \t]*//g' | perl -lane 'print $F[1]' > $vmerSearchSeqnum
 
 # select the matching subject sequences from the index
 vseqselect -seqnum $vmerSearchSeqnum $db > $vmerSeq # this requires the sequence numbers not the IDs
 
-# grab the matching subject strings
-grep "Sbjct" $vmerSearchFull | perl -lane 'print $F[1]' > $vmerSubSeq
+# grab the matching subject strings and summarize unique string counts
+grep "Sbjct" $vmerSearchFull | perl -lane 'print $F[1]' | perl ~/ePerl/get_unique_word_counts.pl | sort -nrk 2 > $vmerSubSeqCt
 
 # summarize unique string counts
-perl ~/ePerl/get_unique_word_counts.pl -i $vmerSubSeq -o $vmerSubSeqCt 
-sort -nrk 2 $vmerSubSeqCt > $vmerSubSeqCtsort
+#perl ~/ePerl/get_unique_word_counts.pl -i $vmerSubSeq -o $vmerSubSeqCt 
+#sort -nrk 2 $vmerSubSeqCt > $vmerSubSeqCtsort
 
-# hacks to clean up :-/
-mv $vmerSubSeqCtsort $vmerSubSeqCt 
-rm $vmerSubSeqCtsort
+# clean up
+#mv $vmerSubSeqCtsort $vmerSubSeqCt 
+#rm $vmerSubSeqCtsort
 rm ${db}.*
