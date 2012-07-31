@@ -2,6 +2,7 @@
 
 # TODO: make the threshold an option
 
+use 5.010;
 use strict;
 use warnings;
 use File::Basename;
@@ -15,20 +16,24 @@ use AnyDBM_File;
 use vars qw( $DB_BTREE &R_DUP );
 use AnyDBM_File::Importer qw(:bdb);
 
-
+#
+# lexical vars
+#
 my $infile;
 my $five_prime_outfile;
 my $three_prime_outfile;
+my $threshold;
 
 GetOptions(
            'i|infile=s'                   => \$infile,
-           'f|five_prime_outfile=s'       => \$five_prime_outfile,
-	   't|three_prime_outfile=s'      => \$three_prime_outfile,
+           'a|five_prime_outfile=s'       => \$five_prime_outfile,
+	   'b|three_prime_outfile=s'      => \$three_prime_outfile,
+           't|threshold=i'                => \$threshold,
            );
 
 #
 # Check @ARGV
-#
+# TODO: Add POD and other useful options (help, man)
 #usage() and exit(0) if $help;
 
 #pod2usage( -verbose => 2 ) if $man;
@@ -49,9 +54,10 @@ $DB_BTREE->{flags} = R_DUP;
 tie( %rseqhash, 'AnyDBM_File', ':memory:', 0666, $DB_BTREE);
 tie( %fseqhash, 'AnyDBM_File', ':memory:', 0666, $DB_BTREE);
 
+
 my @aux = undef;
 my ($name, $seq, $qual);
-#my ($fct, $rct, $fpct, $rpct, $pct, $fsct, $rsct, $sct) = (0, 0, 0, 0, 0, 0, 0, 0);
+$threshold //= 100;
 
 while (($name, $seq, $qual) = readfq(\*$in, \@aux)) {
     my $radapter = substr($seq, -25, 25);
@@ -61,13 +67,13 @@ while (($name, $seq, $qual) = readfq(\*$in, \@aux)) {
     $fseqhash{$fadapter}++;        
 }
 
-for my $fkey (reverse sort { $fseqhash{$a} <=> $fseqhash{$b} }  keys %fseqhash) {
-    if ($fseqhash{$fkey} > 100) {
+for my $fkey (reverse sort { $fseqhash{$a} <=> $fseqhash{$b} } keys %fseqhash) {
+    if ($fseqhash{$fkey} > $threshold) {
 	print $fout join("\t",$fkey, $fseqhash{$fkey}),"\n";
     }
 }
 for my $rkey (reverse sort { $rseqhash{$a} <=> $rseqhash{$b} } keys %rseqhash) {
-    if ($rseqhash{$rkey} > 100) {
+    if ($rseqhash{$rkey} > $threshold) {
 	print $rout join("\t", $rkey, $rseqhash{$rkey}),"\n";
     }
 }
@@ -75,9 +81,9 @@ close($fout);
 close($rout);
 
 untie %fseqhash;
-undef %fseqhash;
+#undef %fseqhash;
 untie %rseqhash;
-undef %rseqhash;
+#undef %rseqhash;
 
 exit;
 #
@@ -140,16 +146,17 @@ sub readfq {
 sub usage {
     my $script = basename($0);
     print STDERR<<EOF
-USAGE: $script [-i] [-f] [-t]  [-h] [-m]
+USAGE: $script [-i] [-a] [-b] [-t]  [-h] [-m]
 
 Required:
     -i|infile               :       File of reads (Fasta for Fastq format).
-    -f|five_prime_outfile   :       Name of file to write the five prime adapter counts.
-    -t|three_prime_outfile  :       Name of file to write the three prime adapter counts.
+    -a|five_prime_outfile   :       Name of file to write the five prime adapter counts.
+    -b|three_prime_outfile  :       Name of file to write the three prime adapter counts.
     
 Options:
-    -h|help           :       Print a usage statement.
-    -m|man            :       Print the full documentation.
+    -t|threshold            :       Set the lower threshold of counts for matches to report (Default: 100).
+    -h|help                 :       Print a usage statement.
+    -m|man                  :       Print the full documentation.
 
 EOF
 }
