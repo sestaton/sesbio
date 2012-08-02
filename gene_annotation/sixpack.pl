@@ -1,12 +1,12 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl 
 
 =head1 NAME 
                                                                        
-batch_sixpack.pl - Translate many fasta files and keep the longest ORF from each
+sixpack.pl - Translate a fasta file and keep the longest ORF from each sequence
 
 =head1 SYNOPSIS    
 
-batch_sixpack.pl -i seqs.fas -o seqs_trans.faa
+sixpack.pl -i seqs.fas -o seqs_trans.faa
 
 =head1 DESCRIPTION
                                                                    
@@ -70,7 +70,7 @@ Print the full documentation.
 # Includes
 #
 use strict;
-
+use warnings;
 use Cwd;
 use Getopt::Long;
 use File::Basename;
