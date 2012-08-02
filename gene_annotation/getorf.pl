@@ -1,4 +1,4 @@
-#!/usr/bin/perl 
+#!/usr/bin/env perl 
 
 =head1 NAME 
                                                                        
@@ -243,7 +243,7 @@ sub find_prog {
 
     # Instead of just testing if getorf exists and is executable 
     # we want to make sure we have permissions, so we try to 
-    # invoke getorf and examine at the output. 
+    # invoke getorf and examine the output. 
     my $getorf_path = qx($path --help 2>&1 /dev/null);
     given ($getorf_path) {
 	when (/Version\: EMBOSS/) { say 'Found it! /usr/local/emboss/latest/bin/getorf'; }
