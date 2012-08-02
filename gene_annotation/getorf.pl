@@ -46,7 +46,7 @@ A file to place the translated sequences.
 
 =over 2
 
-=item -orflen, --orflength
+=item -l, --orflen
 
 The minimum length for which to report an ORF (default is 80).
 Lowering this value will not likely result in any significant hits 
