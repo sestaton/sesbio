@@ -158,7 +158,7 @@ while (my ($id, $seq) = each %$seqhash) {
 
 	while (my ($k, $v) = each %$longest_seq) {
 	    if (defined($sense)) {
-		$k =~ s/\[R.*//;
+		$k =~ s/\[R.*//;    # if the sequence has been revcom'd we don't want the ID to say "reverse"
 		print $out join("\n",(">".$k, $v)), "\n";
 	    }
 	    else {
