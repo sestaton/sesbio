@@ -126,7 +126,7 @@ if (!$infile || !$outfile) {
     exit(1);
 }
 
-if (defined($find)) {
+if (defined $find) {
     $find = '1';
 } 
 else {
@@ -154,12 +154,12 @@ while (my ($id, $seq) = each %$seqhash) {
 
     if (-s $orffile) {
 	$orfseqstot++;
-	my $longest_seq = largest_seq($orffile);
+	my $longest_seq = largest_seq($orffile,$sense);
 
 	while (my ($k, $v) = each %$longest_seq) {
-	    if (defined($sense)) {
-		$k =~ s/\[R.*//;    # if the sequence has been revcom'd we don't want the ID to say "reverse"
-		print $out join("\n",(">".$k, $v)), "\n";
+	    if (defined $sense) {
+		my ($sense_name, $sense_seq) = revcom($k,$v);
+		print $out join("\n",(">".$sense_name, $sense_seq)), "\n";
 	    }
 	    else {
 		print $out join("\n",(">".$k, $v)), "\n";
@@ -207,7 +207,6 @@ sub readfq {
         $name = '';                   # ?
     }
     #my $name = /^.(\S+)/? $1 : '';   # Heng Li's original regex
-    #
     my $seq = '';
     my $c;
     $aux->[0] = undef;
@@ -303,7 +302,7 @@ sub getorf {
 }
 
 sub largest_seq {
-    my $file = shift;
+    my ($file, $sense) = shift;
  
     open(my $fh, "<", $file) or die "\nERROR: Could not open file: $file\n";
     
@@ -312,11 +311,7 @@ sub largest_seq {
 
     my %seqhash;
     while (($name, $seq, $qual) = readfq(\*$fh, \@aux)) {
-	if (defined($sense)) { 
-	    my $revcom = reverse $seq;
-	    $seq =~ tr/ACGTacgt/TGCAtgca/;
-	}
-	$seqhash{$name} = $seq;
+	    $seqhash{$name} = $seq;
     }
     close($fh);
 
@@ -334,6 +329,17 @@ sub largest_seq {
     }
     
     return(\%hash_max);
+}
+
+sub revcom {
+    my ($name, $seq) = @_;
+
+    # If the sequence has been revcom'd 
+    # we don't want the ID to say REVERSE. 
+    $name =~ s/\(R.*//;   
+    my $revcom = reverse $seq;
+    $revcom =~ tr/ACGTacgt/TGCAtgca/;
+    return($name, $revcom);
 }
 
 sub usage {
