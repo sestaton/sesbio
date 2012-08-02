@@ -12,12 +12,12 @@ getorf.pl -i seqs.fas -o seqs_trans.faa
                                                                    
 Translate a nucleotide multi-fasta file in all 6 frames and select 
 the longest ORF for each sequence. The ORFs are reported as nucleotide
-sequences, not translated ORFs. The minimum ORF length to report can 
-be given as an option.
+sequences by default, but translated may also be reported. The minimum 
+ORF length to report can be given as an option.
 
 =head1 DEPENDENCIES
 
-This script uses EMBOSS, so itmust be installed. 
+This script uses EMBOSS, so it must be installed. 
 EMBOSS v6.2+ must be installed (the latest is v6.4 as of this writing).
 
 =head1 AUTHOR 
@@ -52,6 +52,10 @@ The minimum length for which to report an ORF (default is 80).
 Lowering this value will not likely result in any significant hits 
 from iprscan or other search programs (though there may be a reason to do so).
 
+=item -t, --translate
+
+Report translated ORFs instead of nucleotide sequences for each ORF.
+
 =item -h, --help
 
 Print a usage statement. 
@@ -81,6 +85,7 @@ use Pod::Usage;
 my $infile; 
 my $outfile;
 my $orflen;
+my $find;
 my $help;
 my $man;
 
@@ -97,6 +102,7 @@ GetOptions(#Required
 	   'o|outfile=s'    => \$outfile,
 	   #Options
 	   'l|orflen=i'     => \$orflen,
+	   't|translate'    => \$find,
 	   'h|help'         => \$help,
 	   'm|man'          => \$man,
 	  );
@@ -113,6 +119,13 @@ if (!$infile || !$outfile) {
     usage();
     exit(1);
 }
+
+if (defined($find)) {
+    $find = '1';
+} 
+else {
+    $find = '3';
+} 
 
 my $getorf = find_prog("getorf");
 open(my $out, ">>", $outfile) or die "\nERROR: Could not open file: $outfile";
@@ -131,7 +144,7 @@ my ($iname, $ipath, $isuffix) = fileparse($infile, qr/\.[^.]*/);
 
 while (my ($id, $seq) = each %$seqhash) {
     $fcount++;
-    my $orffile = getorf($iname,$isuffix,$fcount,$id,$seq);
+    my $orffile = getorf($iname,$isuffix,$fcount,$id,$seq,$find);
 
     if (-s $orffile) {
 	$orfseqstot++;
@@ -247,7 +260,7 @@ sub seqct {
 }
 
 sub getorf {
-    my ($iname, $isuffix, $fcount, $id, $seq) = @_;
+    my ($iname, $isuffix, $fcount, $id, $seq, $find) = @_;
     my $tmpiname = $iname."_".$fcount."_XXXX";
     my $cwd = getcwd();
     my $fname = File::Temp->new( TEMPLATE => $tmpiname,
@@ -267,7 +280,7 @@ sub getorf {
                    "-sequence $fname ".
                    "-outseq $orffile ".
                    "-minsize $orflen ".
-                   "-find 3 ".
+                   "-find $find ".
                    "-auto ";
 
     system($getorfcmd);
@@ -310,15 +323,17 @@ sub largest_seq {
 sub usage {
     my $script = basename($0);
     print STDERR <<END
-USAGE: $script -i infile -o outfile 
+USAGE: $script -i infile -o outfile [-l] [-t] [-h] [-m]
 
 Required:
- -i|infile     :       A multifasta file. Each individual sequence will be translated.
- -o|outfile    :       A file to put the translated sequences.
+ -i|infile     :       A multifasta file. The longest ORF for each sequence will be reported.
+ -o|outfile    :       A file to put the ORFs for each sequence.
 
 Options:
  -l|orflen     :       An interger that will serve as the lower threshold
                        length for ORFs to consider prior to translating.
+ -t|translate  :       If given, the longest ORF for each sequence will be translated
+                       and the protein sequence will be reported.
  -h|help       :       Print a usage statement.
  -m|man        :       Print the full documantion.
 
