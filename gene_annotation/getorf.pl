@@ -56,6 +56,10 @@ from iprscan or other search programs (though there may be a reason to do so).
 
 Report translated ORFs instead of nucleotide sequences for each ORF.
 
+=itme -s, --sameframe
+
+Report all ORFs in the same (sense) frame.
+
 =item -h, --help
 
 Print a usage statement. 
@@ -85,6 +89,7 @@ use Pod::Usage;
 my $infile; 
 my $outfile;
 my $orflen;
+my $sense;
 my $find;
 my $help;
 my $man;
@@ -103,6 +108,7 @@ GetOptions(#Required
 	   #Options
 	   'l|orflen=i'     => \$orflen,
 	   't|translate'    => \$find,
+	   's|sameframe'    => \$sense,
 	   'h|help'         => \$help,
 	   'm|man'          => \$man,
 	  );
@@ -151,7 +157,13 @@ while (my ($id, $seq) = each %$seqhash) {
 	my $longest_seq = largest_seq($orffile);
 
 	while (my ($k, $v) = each %$longest_seq) {
-	    print $out join("\n",(">".$k, $v)), "\n";
+	    if (defined($sense)) {
+		$k =~ s/\[R.*//;
+		print $out join("\n",(">".$k, $v)), "\n";
+	    }
+	    else {
+		print $out join("\n",(">".$k, $v)), "\n";
+	    }
 	}
     }
     unlink($orffile);
@@ -300,6 +312,10 @@ sub largest_seq {
 
     my %seqhash;
     while (($name, $seq, $qual) = readfq(\*$fh, \@aux)) {
+	if (defined($sense)) { 
+	    my $revcom = reverse $seq;
+	    $seq =~ tr/ACGTacgt/TGCAtgca/;
+	}
 	$seqhash{$name} = $seq;
     }
     close($fh);
@@ -323,7 +339,7 @@ sub largest_seq {
 sub usage {
     my $script = basename($0);
     print STDERR <<END
-USAGE: $script -i infile -o outfile [-l] [-t] [-h] [-m]
+USAGE: $script -i infile -o outfile [-l] [-t] [-h] [-m] [-s]
 
 Required:
  -i|infile     :       A multifasta file. The longest ORF for each sequence will be reported.
@@ -334,6 +350,7 @@ Options:
                        length for ORFs to consider prior to translating.
  -t|translate  :       If given, the longest ORF for each sequence will be translated
                        and the protein sequence will be reported.
+ -s|sameframe  :       Report all ORFs in the same (sense) frame.
  -h|help       :       Print a usage statement.
  -m|man        :       Print the full documantion.
 
