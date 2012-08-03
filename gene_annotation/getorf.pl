@@ -2,7 +2,7 @@
 
 =head1 NAME 
                                                                        
-getorf.pl - Search a muliti-fasta file and keep the longest ORF 
+getorf.pl - Search a muliti-fasta file and keep the longest ORFs 
 
 =head1 SYNOPSIS    
 
@@ -48,7 +48,7 @@ A file to place the translated sequences.
 
 =item -l, --orflen
 
-The minimum length for which to report an ORF (default is 80).
+The minimum length for which to report an ORF (Default: 80).
 Lowering this value will not likely result in any significant hits 
 from iprscan or other search programs (though there may be a reason to do so).
 
@@ -59,6 +59,10 @@ Report translated ORFs instead of nucleotide sequences for each ORF.
 =itme -s, --sameframe
 
 Report all ORFs in the same (sense) frame.
+
+=item -nm, --nomet
+
+Do not report only those ORFs starting with Methionine (Default: Yes).
 
 =item -h, --help
 
@@ -91,6 +95,7 @@ my $outfile;
 my $orflen;
 my $sense;
 my $find;
+my $nomet;
 my $help;
 my $man;
 
@@ -109,6 +114,7 @@ GetOptions(#Required
 	   'l|orflen=i'     => \$orflen,
 	   't|translate'    => \$find,
 	   's|sameframe'    => \$sense,
+	   'nm|nomet'       => \$nomet,
 	   'h|help'         => \$help,
 	   'm|man'          => \$man,
 	  );
@@ -150,7 +156,7 @@ my ($iname, $ipath, $isuffix) = fileparse($infile, qr/\.[^.]*/);
 
 while (my ($id, $seq) = each %$seqhash) {
     $fcount++;
-    my $orffile = getorf($iname,$isuffix,$fcount,$id,$seq,$find);
+    my $orffile = getorf($iname,$isuffix,$fcount,$id,$seq,$find,$nomet);
 
     if (-s $orffile) {
 	$orfseqstot++;
@@ -264,6 +270,14 @@ sub seqct {
     my %seqhash;
     while (($name, $seq, $qual) = readfq(\*$fh, \@aux)) {
 	$seqct++;
+	# EMBOSS uses characters in identifiers as delimiters, which can produce some
+        # unexpected renaming of sequences, so warn that it's not this script doing
+        # the renaming.
+	given ($name) {
+	    when (/\:|\;|\|\s/) { say "WARNING: Identifiers such as \"$name\" will produce unexpected renaming with EMBOSS."; }
+	    when ('') { say 'WARNING: Sequences appear to have no identifiers. Continuing.'; }
+	    default { continue; }
+	}
 	$seqhash{$name} = $seq;
     }
     close($fh);
@@ -271,7 +285,7 @@ sub seqct {
 }
 
 sub getorf {
-    my ($iname, $isuffix, $fcount, $id, $seq, $find) = @_;
+    my ($iname, $isuffix, $fcount, $id, $seq, $find, $nomet) = @_;
     my $tmpiname = $iname."_".$fcount."_XXXX";
     my $cwd = getcwd();
     my $fname = File::Temp->new( TEMPLATE => $tmpiname,
@@ -287,12 +301,13 @@ sub getorf {
 
     my $orffile = $fname."_orfs";
 
-    my $getorfcmd = "$getorf ".
-                   "-sequence $fname ".
-                   "-outseq $orffile ".
-                   "-minsize $orflen ".
-                   "-find $find ".
-                   "-auto ";
+    my $getorfcmd;
+    if (defined $nomet) {
+	$getorfcmd = "$getorf -sequence $fname -outseq $orffile -minsize $orflen -find $find -nomethionine -auto";
+    }
+    else {
+	$getorfcmd = "$getorf -sequence $fname -outseq $orffile -minsize $orflen -find $find -methionine -auto";
+    }
 
     system($getorfcmd);
     unlink($fname);
@@ -345,7 +360,7 @@ sub revcom {
 sub usage {
     my $script = basename($0);
     print STDERR <<END
-USAGE: $script -i infile -o outfile [-l] [-t] [-h] [-m] [-s]
+USAGE: $script -i infile -o outfile [-l] [-t] [-s] [-nm] [-h] [-m]
 
 Required:
  -i|infile     :       A multifasta file. The longest ORF for each sequence will be reported.
@@ -357,6 +372,8 @@ Options:
  -t|translate  :       If given, the longest ORF for each sequence will be translated
                        and the protein sequence will be reported.
  -s|sameframe  :       Report all ORFs in the same (sense) frame.
+ -nm|nomet     :       Report all ORFs, not just those starting with Methionine (Default: Only report
+                       ORFs starting with Methionine).
  -h|help       :       Print a usage statement.
  -m|man        :       Print the full documantion.
 
