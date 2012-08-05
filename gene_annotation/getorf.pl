@@ -140,6 +140,13 @@ else {
 } 
 
 my $getorf = find_prog("getorf");
+
+if (-e $outfile) { 
+# Because we are appending the ORFs from each sequence to the same output,
+# there is the possibility to add to existing data, if the file exists. So,
+# test to make sure it does not exist.
+    die "\nERROR: $outfile already exists. Exiting.\n";
+}
 open(my $out, ">>", $outfile) or die "\nERROR: Could not open file: $outfile";
 
 my ($fasnum, $seqhash) = seqct($infile);
@@ -242,7 +249,7 @@ sub find_prog {
     my $prog = shift;
     my $path = qx(which $prog 2>&1 /dev/null);
     
-    if ($path ~~ /^which\: no getorf/) {
+    if ($path =~ /^which\: no getorf/) {
 	say 'Couldn\'t find getorf in PATH. Will keep looking.';
 	$path = "/usr/local/emboss/latest/bin/getorf";           # path at zcluster
     }
@@ -268,15 +275,16 @@ sub seqct {
     my @aux = undef;
     my $seqct = 0;
     my %seqhash;
+    my $nothing;
     while (($name, $seq, $qual) = readfq(\*$fh, \@aux)) {
 	$seqct++;
 	# EMBOSS uses characters in identifiers as delimiters, which can produce some
         # unexpected renaming of sequences, so warn that it's not this script doing
         # the renaming.
 	given ($name) {
-	    when (/\:|\;|\|\s/) { say "WARNING: Identifiers such as \"$name\" will produce unexpected renaming with EMBOSS."; }
+	    when (/\:|\;|\||\(|\)|\.|\s/) { say "WARNING: Identifiers such as \"$name\" will produce unexpected renaming with EMBOSS."; }
 	    when ('') { say 'WARNING: Sequences appear to have no identifiers. Continuing.'; }
-	    default { continue; }
+	    default { $nothing = 1; } # Want to set a default so each when is evaluated. 
 	}
 	$seqhash{$name} = $seq;
     }
