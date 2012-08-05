@@ -275,7 +275,6 @@ sub seqct {
     my @aux = undef;
     my $seqct = 0;
     my %seqhash;
-    my $nothing;
     while (($name, $seq, $qual) = readfq(\*$fh, \@aux)) {
 	$seqct++;
 	# EMBOSS uses characters in identifiers as delimiters, which can produce some
@@ -284,7 +283,7 @@ sub seqct {
 	given ($name) {
 	    when (/\:|\;|\||\(|\)|\.|\s/) { say "WARNING: Identifiers such as \"$name\" will produce unexpected renaming with EMBOSS."; }
 	    when ('') { say 'WARNING: Sequences appear to have no identifiers. Continuing.'; }
-	    default { $nothing = 1; } # Want to set a default so each when is evaluated. 
+	    default { break; } # Break out of the enclosing given() block. No list to return or values to set here, just identifiers to evaluate.
 	}
 	$seqhash{$name} = $seq;
     }
