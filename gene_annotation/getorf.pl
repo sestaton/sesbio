@@ -18,7 +18,7 @@ ORF length to report can be given as an option.
 =head1 DEPENDENCIES
 
 This script uses EMBOSS, so it must be installed. 
-EMBOSS v6.2+ must be installed (the latest is v6.4 as of this writing).
+EMBOSS v6.2+ must be installed (the latest is v6.5.7 as of this writing).
 
 =head1 AUTHOR 
 
@@ -261,7 +261,7 @@ sub find_prog {
     given ($getorf_path) {
 	when (/Version\: EMBOSS/) { say 'Found it! /usr/local/emboss/latest/bin/getorf'; }
 	when (/^-bash: \/usr\/local\/emboss\/bin\/getorf\: No such file or directory$/) { die "Could not find getorf. Exiting.\n"; }
-	when ('') { die "Could not find getorf. Exiting\n"; }
+	when ('') { die "Could not find getorf. Exiting.\n"; }
 	default { die "Could not find getorf. Trying installing EMBOSS or adding it's location to your PATH. Exiting.\n"; }
     }	
     return($path);
@@ -281,7 +281,7 @@ sub seqct {
         # unexpected renaming of sequences, so warn that it's not this script doing
         # the renaming.
 	given ($name) {
-	    when (/\:|\;|\||\(|\)|\.|\s/) { say "WARNING: Identifiers such as \"$name\" will produce unexpected renaming with EMBOSS."; }
+	    when (/\:|\;|\||\(|\)|\.|\s/) { die "WARNING: Identifiers such as \"$name\" will produce unexpected renaming with EMBOSS."; }
 	    when ('') { say 'WARNING: Sequences appear to have no identifiers. Continuing.'; }
 	}
 	$seqhash{$name} = $seq;
