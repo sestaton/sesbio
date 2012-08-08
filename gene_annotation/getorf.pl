@@ -283,7 +283,6 @@ sub seqct {
 	given ($name) {
 	    when (/\:|\;|\||\(|\)|\.|\s/) { say "WARNING: Identifiers such as \"$name\" will produce unexpected renaming with EMBOSS."; }
 	    when ('') { say 'WARNING: Sequences appear to have no identifiers. Continuing.'; }
-	    default { break; } # Break out of the enclosing given() block. No list to return or values to set here, just identifiers to evaluate.
 	}
 	$seqhash{$name} = $seq;
     }
