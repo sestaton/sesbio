@@ -81,6 +81,7 @@ use 5.010;
 use strict;
 use warnings;
 use Cwd;
+use Capture::Tiny qw(:all);
 use Getopt::Long;
 use File::Basename;
 use File::Temp;
@@ -161,9 +162,10 @@ if ($$fasnum >= 1) {
 
 my ($iname, $ipath, $isuffix) = fileparse($infile, qr/\.[^.]*/);
 
+my ($orf_ct, $no_orf_ct, $orffile);
 while (my ($id, $seq) = each %$seqhash) {
     $fcount++;
-    my $orffile = getorf($iname,$isuffix,$fcount,$id,$seq,$find,$nomet);
+    my ($orffile, $orf_ct, $no_orf_ct) = getorf($iname,$isuffix,$fcount,$id,$seq,$find,$nomet);
 
     if (-s $orffile) {
 	$orfseqstot++;
@@ -183,8 +185,12 @@ while (my ($id, $seq) = each %$seqhash) {
 }
 close($out);
 
-print "\n========== $fcount sequences in $infile.\n";
+my $with_orfs_perc = sprintf("%.2f",$orfseqstot/$fasnum);
+print "\n========== $fcount and $fasnum sequences in $infile.\n";
 print "\n========== $orfseqstot sequences processed with ORFs above $orflen.\n";
+#print "\n========== $orf_ct with orfs.\n";
+#print "\n========== $no_orf_ct without orfs.\n";
+print "\n========== $with_orfs_perc percent of sequences contain ORFs above $orflen.\n";
 
 exit;
 
@@ -247,23 +253,24 @@ sub readfq {
 
 sub find_prog {
     my $prog = shift;
-    my $path = qx(which $prog 2>&1 /dev/null);
-    
-    if ($path =~ /^which\: no getorf/) {
+    my ($path, $err) = capture { system("which $prog"); };
+    chomp($path);
+
+    unless ($path) { # need to make this more robust
+    #if ($path =~ /which\: no getorf/) {
 	say 'Couldn\'t find getorf in PATH. Will keep looking.';
 	$path = "/usr/local/emboss/latest/bin/getorf";           # path at zcluster
     }
 
-    # Instead of just testing if getorf exists and is executable 
-    # we want to make sure we have permissions, so we try to 
-    # invoke getorf and examine the output. 
-    my $getorf_path = qx($path --help 2>&1 /dev/null);
-    given ($getorf_path) {
-	when (/Version\: EMBOSS/) { say 'Found it! /usr/local/emboss/latest/bin/getorf'; }
+    # Instead of just testing if getorf exists, we want to 
+    # make sure it is executable and we have permissions.
+    my ($getorf_path, $getorf_err) = capture { system("$path --help"); };
+    given ($getorf_err) {
+	when (/Version\: EMBOSS/) { say "Using getorf located at: $path"; }
 	when (/^-bash: \/usr\/local\/emboss\/bin\/getorf\: No such file or directory$/) { die "Could not find getorf. Exiting.\n"; }
 	when ('') { die "Could not find getorf. Exiting.\n"; }
 	default { die "Could not find getorf. Trying installing EMBOSS or adding it's location to your PATH. Exiting.\n"; }
-    }	
+    }
     return($path);
 }
 
@@ -307,19 +314,38 @@ sub getorf {
 
     my $orffile = $fname."_orfs";
 
-    my $getorfcmd;
+    my $getorfcmd = "$getorf ".
+	            "-sequence ".
+		    "$fname ".
+		    "-outseq ".
+		    "$orffile ".
+		    "-minsize ".
+		    "$orflen ".
+		    "-find ".
+		    "$find ".
+		    "-auto ";
+
     if (defined $nomet) {
-	$getorfcmd = "$getorf -sequence $fname -outseq $orffile -minsize $orflen -find $find -nomethionine -auto";
-    }
-    else {
-	$getorfcmd = "$getorf -sequence $fname -outseq $orffile -minsize $orflen -find $find -methionine -auto";
+	$getorfcmd .= "-nomethionine";
     }
 
-    system($getorfcmd);
+    my ($stdout, $stderr, @res) = capture { system($getorfcmd); };
+    
+    #my $no_orf_ct = 0;
+    #my $orf_ct = 0;
+    #print "This is stdout: ",$stdout,"\n";
+    #print "This is stderr: ",$stderr,"\n";
+    #print "This is res: ",@res,"\n";
+    
+    # if () {} <---------- some tests here
+    #given($stderr) {
+	#when(/Warning\:/) { say 'Warning'; $no_orf_ct++; }
+	#when('') { $orf_ct++; }
+    #}
+    
     unlink($fname);
 
     return($orffile);
-
 }
 
 sub largest_seq {
