@@ -1,9 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 #TODO: Take multiple hmm names at the command line
 #
 use strict;
-use lib qw(/iob_home/jmblab/statonse/apps/perlmod/bioperl-live-latest/);
+use warnings;
 use Bio::SearchIO;                                                  
 use Getopt::Long;                                                   
 use File::Basename;
