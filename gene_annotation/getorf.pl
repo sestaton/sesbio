@@ -10,15 +10,15 @@ getorf.pl -i seqs.fas -o seqs_trans.faa
 
 =head1 DESCRIPTION
                                                                    
-Translate a nucleotide multi-fasta file in all 6 frames and select 
-the longest ORF for each sequence. The ORFs are reported as nucleotide
-sequences by default, but translated may also be reported. The minimum 
-ORF length to report can be given as an option.
+ Translate a nucleotide multi-fasta file in all 6 frames and select 
+ the longest ORF for each sequence. The ORFs are reported as nucleotide
+ sequences by default, but translated may also be reported. The minimum 
+ ORF length to report can be given as an option.
 
 =head1 DEPENDENCIES
 
-This script uses EMBOSS, so it must be installed. 
-EMBOSS v6.2+ must be installed (the latest is v6.5.7 as of this writing).
+ This script uses EMBOSS, so it must be installed. 
+ (The latest is v6.5.7 as of this writing).
 
 =head1 AUTHOR 
 
@@ -48,15 +48,29 @@ A file to place the translated sequences.
 
 =item -l, --orflen
 
-The minimum length for which to report an ORF (Default: 80).
-Lowering this value will not likely result in any significant hits 
-from iprscan or other search programs (though there may be a reason to do so).
+ The minimum length for which to report an ORF (Default: 80).
+ Lowering this value will not likely result in any significant hits 
+ from iprscan or other search programs (though there may be a reason to do so).
 
-=item -t, --translate
+=item -f, --find
 
-Report translated ORFs instead of nucleotide sequences for each ORF.
+ Determines what to report for each ORF. Argument may be one of [0-6]. (Default: 0).
+ Descriptions copied straight from EMBOSS getorf help menu so there is no confusion.
+ The default option ('0') takes the same behavior as EMBOSS sixpack and produces
+ the same output. N.B. getorf seems to treat [^ATCG] characters differently than
+ getorf, so a translation from getorf may be a residue longer in my tests.
 
-=itme -s, --sameframe
+=item I<   Argument    Description>
+
+ 0           Translation of regions between STOP codons.
+ 1           Translation of regions between START and STOP codons.
+ 2           Nucleic sequences between STOP codons.
+ 3           Nucleic sequences between START and STOP codons.
+ 4           Nucleotides flanking START codons.
+ 5           Nucleotides flanking initial STOP codons.
+ 6           Nucleotides flanking ending STOP codons.
+
+=item -s, --sameframe
 
 Report all ORFs in the same (sense) frame.
 
@@ -71,6 +85,8 @@ Print a usage statement.
 =item -m, --man
 
 Print the full documentation.
+
+=back
 
 =cut    
 
@@ -103,10 +119,8 @@ my $man;
 #
 # Counters
 #
-my $seqstot = 0;
-my $orfseqstot = 0;
-my $orfct = 0;
 my $fcount = 0;
+my $orfseqstot = 0;
 
 GetOptions(#Required
 	   'i|infile=s'     => \$infile,
@@ -133,12 +147,9 @@ if (!$infile || !$outfile) {
     exit(1);
 }
 
-if (defined $find) {
-    $find = '1';
-} 
-else {
-    $find = '3';
-} 
+# Set default values.
+$find //= '0';
+$orflen //= '80';
 
 my $getorf = find_prog("getorf");
 
@@ -152,8 +163,6 @@ open(my $out, ">>", $outfile) or die "\nERROR: Could not open file: $outfile";
 
 my ($fasnum, $seqhash) = seqct($infile);
 
-$orflen //= '80';
-
 if ($$fasnum >= 1) {
     print "\n========== Searching for ORFs with minimum length of $orflen.\n";
 } else {
@@ -162,10 +171,9 @@ if ($$fasnum >= 1) {
 
 my ($iname, $ipath, $isuffix) = fileparse($infile, qr/\.[^.]*/);
 
-my ($orf_ct, $no_orf_ct, $orffile);
 while (my ($id, $seq) = each %$seqhash) {
     $fcount++;
-    my ($orffile, $orf_ct, $no_orf_ct) = getorf($iname,$isuffix,$fcount,$id,$seq,$find,$nomet);
+    my $orffile = getorf($iname,$isuffix,$fcount,$id,$seq,$find,$nomet);
 
     if (-s $orffile) {
 	$orfseqstot++;
@@ -185,11 +193,9 @@ while (my ($id, $seq) = each %$seqhash) {
 }
 close($out);
 
-my $with_orfs_perc = sprintf("%.2f",$orfseqstot/$fasnum);
-print "\n========== $fcount and $fasnum sequences in $infile.\n";
+my $with_orfs_perc = sprintf("%.2f",$orfseqstot/$$fasnum);
+print "\n========== $fcount and $$fasnum sequences in $infile.\n";
 print "\n========== $orfseqstot sequences processed with ORFs above $orflen.\n";
-#print "\n========== $orf_ct with orfs.\n";
-#print "\n========== $no_orf_ct without orfs.\n";
 print "\n========== $with_orfs_perc percent of sequences contain ORFs above $orflen.\n";
 
 exit;
@@ -255,16 +261,17 @@ sub find_prog {
     my $prog = shift;
     my ($path, $err) = capture { system("which $prog"); };
     chomp($path);
-
-    unless ($path) { # need to make this more robust
-    #if ($path =~ /which\: no getorf/) {
+    
+    if ($path !~ /getorf$/) {
 	say 'Couldn\'t find getorf in PATH. Will keep looking.';
 	$path = "/usr/local/emboss/latest/bin/getorf";           # path at zcluster
     }
 
-    # Instead of just testing if getorf exists, we want to 
-    # make sure it is executable and we have permissions.
+    # Instead of just testing if getorf exists and is executable 
+    # we want to make sure we have permissions, so we try to 
+    # invoke getorf and examine the output. 
     my ($getorf_path, $getorf_err) = capture { system("$path --help"); };
+
     given ($getorf_err) {
 	when (/Version\: EMBOSS/) { say "Using getorf located at: $path"; }
 	when (/^-bash: \/usr\/local\/emboss\/bin\/getorf\: No such file or directory$/) { die "Could not find getorf. Exiting.\n"; }
@@ -276,7 +283,6 @@ sub find_prog {
 
 sub seqct {
     my $f = shift;
-    
     open(my $fh, "<", $f) or die "\nERROR: Could not open file: $f\n";
     my ($name, $seq, $qual);
     my @aux = undef;
@@ -330,18 +336,6 @@ sub getorf {
     }
 
     my ($stdout, $stderr, @res) = capture { system($getorfcmd); };
-    
-    #my $no_orf_ct = 0;
-    #my $orf_ct = 0;
-    #print "This is stdout: ",$stdout,"\n";
-    #print "This is stderr: ",$stderr,"\n";
-    #print "This is res: ",@res,"\n";
-    
-    # if () {} <---------- some tests here
-    #given($stderr) {
-	#when(/Warning\:/) { say 'Warning'; $no_orf_ct++; }
-	#when('') { $orf_ct++; }
-    #}
     
     unlink($fname);
 
