@@ -395,8 +395,8 @@ Required:
 Options:
  -l|orflen     :       An interger that will serve as the lower threshold
                        length for ORFs to consider prior to translating.
- -t|translate  :       If given, the longest ORF for each sequence will be translated
-                       and the protein sequence will be reported.
+ -f|find       :       Determines how ORFs are to be reported. Options are one of [0-6]. (Default: 0).
+                       See the full documentation for an explanation. 
  -s|sameframe  :       Report all ORFs in the same (sense) frame.
  -nm|nomet     :       Report all ORFs, not just those starting with Methionine (Default: Only report
                        ORFs starting with Methionine).
