@@ -42,4 +42,4 @@ my $t1 = gettimeofday();
 my $elapsed = $t1 - $t0;
 my $time = sprintf("%.2f",$elapsed);
 
-print "========== Sorted $seqct sequences in $time seconds.\n";
+say "========== Sorted $seqct sequences in $time seconds.";
