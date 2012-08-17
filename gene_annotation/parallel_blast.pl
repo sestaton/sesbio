@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 =head1 NAME 
                                                                        
@@ -6,7 +6,7 @@ parallel_blast.pl - Run multiple BLAST threads concurrently
 
 =head1 SYNOPSIS    
  
-parallel_blast.pl -i seqs.fas -d nt -o seqs_nt.bln -sf fasta -t 2 -n 100000 --cpu 2
+parallel_blast.pl -i seqs.fas -o seqs_nt.bln -f fasta -t 2 -n 100000 -cpu 2
 
 =head1 DESCRIPTION
      
@@ -26,9 +26,6 @@ Tested with:
 
 =item *
 L<BioPerl> 1.069, L<Parallel::ForkManger> 0.7.9 and Perl 5.8.5 (Red Hat Enterprise Linux AS release 4 (Nahant Update 9))
-
-=item *
-L<BioPerl> 1.069, L<Parallel::ForkManager> 0.7.9 and Perl 5.14.1 (Red Hat Enterprise Linux Server release 5.7 (Tikanga))
 
 =back
 
@@ -59,7 +56,7 @@ The size of the splits to create. This number determines how many
 sequences will be written to each split. 
 
 NB: If the input sequence file has millions of sequences and a 
-very small number is given for the split value then there could 
+very small number is given fo the split value then there could 
 potentially be hundreds of thousands of files created. 
 
 =item -d, --database
@@ -117,6 +114,7 @@ Print the full documentation.
 =cut      
 
 use strict;
+use warnings;
 use Cwd;
 use Getopt::Long;
 use Pod::Usage;
@@ -145,6 +143,7 @@ my $blast_format;
 my $num_alignments;
 my $num_descriptions;
 my $evalue;
+my %blasts;    # container for reports
 
 GetOptions(# Required
            'i|infile=s'         => \$infile,
@@ -188,29 +187,31 @@ $thread = defined($thread) ? $thread : '1'; # to work with Perl versions release
 
 my ($seq_files,$seqct) = split_reads($infile,$outfile,$numseqs,$format);
 
+open(my $out, '>>', $outfile) or die "\nERROR: Could not open file: $outfile\n"; 
+
 my $pm = Parallel::ForkManager->new($thread);
-$pm->run_on_finish( sub { my ($pid, $exit_code, $ident) = @_;
+$pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
+			  foreach my $bl (sort keys %$data_ref) {
+			      open(my $report, '<', $bl) or die "\nERROR: Could not open file: $bl\n";
+			      while(my $line = <$report>) {
+				  print $out $line;
+			      }
+			      close($report);
+			      unlink($bl);
+			  }
 			  my $t1 = gettimeofday();
 			  my $elapsed = $t1 - $t0;
 			  my $time = sprintf("%.2f",$elapsed/60);
 			  print "$ident just finished with PID $pid and exit code: $exit_code in $time minutes\n";
-		        } );
-
-open(my $out, '>>', $outfile) or die "\nERROR: Could not open file: $outfile\n";
+		      } );
 
 foreach my $seqs (@$seq_files) {
     $pm->start($seqs) and next;
     my $blast_out = run_blast($seqs,$database,$cpu,$blast_program,$blast_format,$num_alignments,$num_descriptions,$evalue);
-
-    open(my $report, '<', $blast_out) or die "\nERROR: Could not open file: $blast_out\n";
-    while(my $line = <$report>) {
-	print $out $line;
-    }
-    close($report);
-    unlink($blast_out);
-
+    $blasts{$blast_out} = 1;
+    
     unlink($seqs);
-    $pm->finish;
+    $pm->finish(0, \%blasts);
 }
 
 $pm->wait_all_children;
@@ -240,18 +241,25 @@ sub run_blast {
     my ($dbfile,$dbdir,$dbext) = fileparse($database, qr/\.[^.]*/);
     my ($subfile,$subdir,$subext) = fileparse($subseq_file, qr/\.[^.]*/);
 
-    my $subseq_out = $subfile."_".$dbfile.".bln";
+    my $suffix;
+    if ($blast_format == 8) {
+	$suffix = ".bln";
+    }
+    elsif ($blast_format == 7) {
+	$suffix = ".blastxml";
+    }
+    my $subseq_out = $subfile."_".$dbfile.$suffix;
 
     my $blast_cmd = "blastall -p $blast_program ".
-	            "-e $evalue ". 
-		    "-F T ". #'m S' ".             # filter simple repeats with 'seg' by default (DUST for nuc)
-		    "-v $num_alignments ".
-		    "-b $num_descriptions ".
-		    "-i $subseq_file ".
-		    "-d $database ".
-		    "-o $subseq_out ".
-		    "-a $cpu ".
-		    "-m $blast_format";
+	"-e $evalue ". 
+	"-F T ". #'m S' ".             # filter simple repeats with 'seg' by default (DUST for nuc)
+	"-v $num_alignments ".
+	"-b $num_descriptions ".
+	"-i $subseq_file ".
+	"-d $database ".
+	"-o $subseq_out ".
+	"-a $cpu ".
+	"-m $blast_format";
 
     system($blast_cmd);
     return($subseq_out);
@@ -280,7 +288,7 @@ sub split_reads {
 				 UNLINK => 0);
     
     my $seq_out = Bio::SeqIO->new(-file => ">$fname", 
-      			          -format=>'fasta');
+				  -format=>'fasta');
 
     push(@split_files,$fname);
     while (my $seq = $seq_in->next_seq) {
@@ -292,8 +300,8 @@ sub split_reads {
 				      SUFFIX => ".fasta",
 				      UNLINK => 0);
 
-	    $seq_out = Bio::SeqIO->new(-file => ">$fname", 
-				       -format=>'fasta');
+	        $seq_out = Bio::SeqIO->new(-file => ">$fname", 
+					   -format=>'fasta');
 
 	    push(@split_files,$fname);
 	}
