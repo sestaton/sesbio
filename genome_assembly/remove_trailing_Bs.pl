@@ -15,7 +15,7 @@ use Bio::Kseq;
 #
 my $infile;
 my $outfile;
-my $len_thresh;
+my $length;
 my $help;
 my $man;
 
@@ -37,7 +37,7 @@ if (!$infile || !$outfile) {
     exit(1);
 }
 
-$len_thresh //= '50';
+$length //= '50';
 
 my $knseq = Bio::Kseq->new($infile);
 my $nt_it = $knseq->iterator;
@@ -53,7 +53,7 @@ while (my $nseq = $nt_it->next_seq) {
 	my $good_len = $qual_len - $b_len;
 	my $no_b_qual = substr($qual,0,$good_len);
 	my $no_b_seq = substr($seq,0,$good_len);
-	if ($no_b_seq >= $len_thresh) {
+	if ($no_b_seq >= $length) {
 	    print $out "@".$nseq->{name},"\n";
 	    print $out $no_b_seq,"\n";
 	    print $out "+\n";
