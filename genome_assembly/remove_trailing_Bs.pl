@@ -53,7 +53,8 @@ while (my $nseq = $nt_it->next_seq) {
 	my $good_len = $qual_len - $b_len;
 	my $no_b_qual = substr($qual,0,$good_len);
 	my $no_b_seq = substr($seq,0,$good_len);
-	if ($no_b_seq >= $length) {
+	my $no_b_seq_len = length($no_b_seq);
+	if ($no_b_seq_len >= $length) {
 	    print $out "@".$nseq->{name},"\n";
 	    print $out $no_b_seq,"\n";
 	    print $out "+\n";
