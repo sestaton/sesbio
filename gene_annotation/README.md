@@ -1,8 +1,3 @@
-anno - A collection of gene annotaion and fasta-handling scripts
-================================================================
+anno - A collection of gene annotation and fasta-handling scripts
+=================================================================
 
-Dependencies
-------------
-Perl 5.10
-
-...More to come
