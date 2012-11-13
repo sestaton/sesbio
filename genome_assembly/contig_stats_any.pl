@@ -49,9 +49,10 @@ while(<>) {
 	    $seq="";
 	}
 	else {
-	s/\s//g;
-	$len+=length($_);
-	$seq.=$_;
+	    s/\s//g;
+	    $len+=length($_);
+	    $seq.=$_;
+	}
     }
 }
 
@@ -124,7 +125,6 @@ sub stats {
     $over5k_bases+=$len if ($len>5000);
     $over3k_bases+=$len if ($len>3000);
     $over2k_bases+=$len if ($len>2000);
-    $over1k_bases+=$len if ($len>1000);
-    
+    $over1k_bases+=$len if ($len>1000);    
 }
 
