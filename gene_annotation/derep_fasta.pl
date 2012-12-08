@@ -1,9 +1,10 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl 
 
 # remove duplicate entries from a fasta file
 # 4/12/12 SES
 
 use strict;
+use warnings;
 use Bio::SeqIO;
 use Getopt::Long;
 
@@ -16,7 +17,7 @@ GetOptions(
 	   'o|outfile=s' => \$outfile,
 	   );
 
-die $usage if !$infile || !$outfile;
+die $usage if !$infile or !$outfile;
 
 my $seq_in  = Bio::SeqIO->new(-file => $infile, -format => 'fasta');
 my $seq_out = Bio::SeqIO->new(-file => ">$outfile", -format => 'fasta');
@@ -27,7 +28,7 @@ while(my $seq = $seq_in->next_seq) {
     unless(exists $seqhash{$seq->id}) {
 	$seq_out->write_seq($seq);
     }
-    $seqhash{$seq->id} = $seq->seq;
+    $seqhash{$seq->id} = 1;
 }
 
 exit;
