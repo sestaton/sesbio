@@ -29,6 +29,9 @@ Tested with:
 =item *
 Perl 5.14.1 (Red Hat Enterprise Linux Server release 5.7 (Tikanga))
 
+=item *
+Perl 5.14.2 (Red Hat Enterprise Linux Desktop release 6.2 (Santiago); Fedora 17)
+
 =back
 
 =head1 AUTHOR 
@@ -70,6 +73,10 @@ The output file to place the unpaired reverse reads.
 
 =over 2
 
+=item -im, --in_memory
+
+Construct the database in memory. May be faster, but will obviously use more memory.
+
 =item -h, --help
 
 Print a usage statement. 
@@ -94,7 +101,7 @@ use vars qw( $DB_BTREE &R_DUP );
 use AnyDBM_File::Importer qw(:bdb);
 use Pod::Usage;
 
-my ($fread, $rread, $fpread, $rpread, $fsread, $rsread, $help, $man);
+my ($fread, $rread, $fpread, $rpread, $fsread, $rsread, $memory, $help, $man);
 
 GetOptions(
            'f|forward=s'        => \$fread,
@@ -103,6 +110,7 @@ GetOptions(
            'rp|rev_paired=s'    => \$rpread,
            'fs|forw_unpaired=s' => \$fsread,
            'rs|rev_unpaired=s'  => \$rsread,
+           'im|in_memory'       => \$memory,
            'h|help'             => \$help,
            'm|man'              => \$man,
           ) || pod2usage( "Try '$0 --man' for more information." );
@@ -132,7 +140,9 @@ open(my $rs, '>', $rsread) or die "ERROR: Could not open file: $rsread\n";
 my %rseqhash;
 $DB_BTREE->{cachesize} = 100000;
 $DB_BTREE->{flags} = R_DUP;
-tie( %rseqhash, 'AnyDBM_File', ':memory:', 0666, $DB_BTREE);
+my $db_file = "pairfq.bdb";
+tie( %rseqhash, 'AnyDBM_File', $db_file, 0666, $DB_BTREE) if !$memory;
+tie( %rseqhash, 'AnyDBM_File', ':memory:', 0666, $DB_BTREE) if $memory;
 
 my @raux = undef;
 my ($fname, $fseq, $fqual, $fid, $rname, $rseq, $rqual, $rid);
@@ -318,7 +328,7 @@ sub readfq {
 sub usage {
     my $script = basename($0);
     print STDERR<<EOF
-USAGE: $script [-f] [-r] [-fp] [-rp] [-fs] [-rs] [-h] [-m]
+USAGE: $script [-f] [-r] [-fp] [-rp] [-fs] [-rs] [-im] [-h] [-im]
 
 Required:
     -f|forward        :       File of foward reads (usually with "/1" or " 1" in the header).
@@ -329,6 +339,7 @@ Required:
     -rs|rev_unpaired  :       Name for the file of singleton reverse reads.
 
 Options:
+    -im|in_memory     :       Construct a database in memory for faster execution.
     -h|help           :       Print a usage statement.
     -m|man            :       Print the full documentation.
 
