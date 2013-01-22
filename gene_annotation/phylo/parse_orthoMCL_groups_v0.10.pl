@@ -11,8 +11,10 @@ use warnings;
 #use BerkeleyDB;
 use File::Basename;
 use Getopt::Long;
+use lib qw(/iob_home/jmblab/statonse/apps/perlmod/Data-Dump-1.21/blib/lib);
 use Data::Dump;
 use Bio::SeqIO;
+use lib qw(/iob_home/jmblab/statonse/apps/perlmod/Capture-Tiny-0.19/blib/lib);
 use Capture::Tiny qw(:all);
 BEGIN {
   @AnyDBM_File::ISA = qw( DB_File SQLite_File )
