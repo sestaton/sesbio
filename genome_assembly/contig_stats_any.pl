@@ -53,6 +53,7 @@ while(<>) {
 	    #printf PLOT ("%d\t%.4f\t%d\t%.2f\n",$len,$GC_content,$reads_num,$kmer_cov) if ($plot && $assembly_tool =~ /Velvet/i);
 	    #printf PLOT ("%d\t%.4f\t%d\t%.2f\n",$len,$GC_content,$reads_num,$id_to_cov->{$Newbler_id}) if ($plot && $assembly_tool =~ /Newbler/i);
 	}
+<<<<<<< HEAD
 	#if ($assembly_tool =~ /Newbler/i) {
 	#    ($reads_num) = $_ =~ /numreads=(\d+)/;
 	#    ($Newbler_id) = $_ =~ /^>(\S+)/;
@@ -68,6 +69,13 @@ while(<>) {
 	s/\s//g;
 	$len+=length($_);
 	$seq.=$_;
+=======
+	else {
+	    s/\s//g;
+	    $len+=length($_);
+	    $seq.=$_;
+	}
+>>>>>>> 08a309241dbb24d36d082e7b2070c9e3d0fb78ad
     }
 }
 
@@ -161,6 +169,7 @@ sub stats {
     $over5k_bases+=$len if ($len>5000);
     $over3k_bases+=$len if ($len>3000);
     $over2k_bases+=$len if ($len>2000);
+<<<<<<< HEAD
     $over1k_bases+=$len if ($len>1000);
     
 #    if ($assembly_tool =~ /velvet|newbler/i) {
@@ -206,6 +215,9 @@ sub read_velvet_stats_and_log {
     }
     close IN;
     return (\%id_to_reads_num,$used_percent,$singleton,$exp_cov);
+=======
+    $over1k_bases+=$len if ($len>1000);    
+>>>>>>> 08a309241dbb24d36d082e7b2070c9e3d0fb78ad
 }
 
 sub read_Newbler_ContigGraph {
