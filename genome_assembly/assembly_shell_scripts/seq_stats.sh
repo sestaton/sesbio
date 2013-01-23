@@ -18,7 +18,7 @@ ERROR: Command line not parsed correctly. Check input.
 ERR
 }
 
-if [ $# -lt 1 ]; then
+if [ ! $# == 1 ]; then
     print_error
     usage
     exit 1
