@@ -60,7 +60,6 @@ use File::Basename;
 use Time::HiRes qw(gettimeofday);
 use Getopt::Long;
 use Pod::Usage;
-use Bio::SeqIO;
 
 # 
 # Variables with scope
@@ -88,11 +87,8 @@ if (!$infile || !$outfile) {
     exit(1);
 }
 
-my $seq_in  = Bio::SeqIO->new( -format => 'fasta', 
-                               -file => $infile); 
-
-open( my $seqsout , '>', $outfile ) 
-    or die "\nERROR: Could not open file: $!\n";
+open(my $in, '<', $infile) or die "ERROR: Could not open file: $infile\n";
+open( my $out, '>', $outfile ) or die "\nERROR: Could not open file: $outfile\n";
 
 # counters
 my $t0 = gettimeofday();
@@ -100,23 +96,12 @@ my $fasnum = 0;
 my $headchar = 0;
 my $non_atgcn = 0;
 
-my %seqhash;
-my %cleanseqhash;
+my @aux = undef;
+my ($seqname, $seq, $qual);
+my ($n, $slen, $qlen) = (0, 0, 0);
 
-while(my $seqs = $seq_in->next_seq()) {
+while (($seqname, $seq, $qual) = readfq(\*$in, \@aux)) {
     $fasnum++;
-    my $id = $seqs->id."_".$seqs->desc;
-    $seqhash{$id} = $seqs->seq;   
-}
-
-if ( $fasnum >= 1 ) {
-    print "\n========== Cleaning up $fasnum fasta files ...\n";
-} else {
-    die "\nERROR: No sequences found!\n";
-}
-
-while (my ($seqname, $seq) = each(%seqhash)) {
-
     if ($seqname =~ m/\s+|\;|\:|\(|\)|\./g) {
 	$headchar++;
 	$seqname =~ s/\s/\_/g;
@@ -151,18 +136,16 @@ while (my ($seqname, $seq) = each(%seqhash)) {
     my $nonnucleic = (length($dna) - $nucleic_bc);
     $dna =~ s/(.{60})/$1\n/gs;        
 
-    print $seqsout ">"."$seqname\n"."$dna\n";
-    $cleanseqhash{$seqname} = $dna;
+    print $out ">"."$seqname\n"."$dna\n";
 }
-
-close($seqsout);
-my $cleanfasnum = scalar(keys %cleanseqhash);
+close($in);
+close($out);
 
 my $t1 = gettimeofday();
 my $elapsed = $t1 - $t0;
 my $time = sprintf("%.2f",$elapsed);
 
-print "\n========== Done. $fasnum sequences read. $cleanfasnum sequences cleaned in $time seconds.\n"; 
+print "\n========== Done. $fasnum sequences read and cleaned in $time seconds.\n"; 
 print "========== $non_atgcn Non-ATGCN characters changed in sequence. $headchar characters changed in headers.\n\n";
 
 exit;
@@ -170,6 +153,49 @@ exit;
 #
 # subs
 #
+sub readfq {
+    my ($fh, $aux) = @_;
+    @$aux = [undef, 0] if (!defined(@$aux));
+    return if ($aux->[1]);
+    if (!defined($aux->[0])) {
+	while (<$fh>) {
+	    chomp;
+	    if (substr($_, 0, 1) eq '>' || substr($_, 0, 1) eq '@') {
+		$aux->[0] = $_;
+		last;
+	    }
+	}
+	if (!defined($aux->[0])) {
+	    $aux->[1] = 1;
+	    return;
+	}
+    }
+    my $name = /^.(\S+)/? $1 : '';
+    my $seq = '';
+    my $c;
+    $aux->[0] = undef;
+    while (<$fh>) {
+	chomp;
+	$c = substr($_, 0, 1);
+	last if ($c eq '>' || $c eq '@' || $c eq '+');
+	$seq .= $_;
+    }
+    $aux->[0] = $_;
+    $aux->[1] = 1 if (!defined($aux->[0]));
+    return ($name, $seq) if ($c ne '+');
+    my $qual = '';
+    while (<$fh>) {
+	chomp;
+	$qual .= $_;
+	if (length($qual) >= length($seq)) {
+	    $aux->[0] = undef;
+	    return ($name, $seq, $qual);
+	}
+    }
+    $aux->[1] = 1;
+    return ($name, $seq);
+}
+
 sub usage {
   my $script = basename($0);
   print STDERR <<END
