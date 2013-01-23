@@ -42,3 +42,6 @@ function timer() {
 }
 
 ~/apps/bioawk/bioawk -c fastx '{print length($seq)}' $1 | awk '{TOTAL+=$1} END{printf("COUNT:%d, TOTAL:%d, MEAN:%d\n",NR,TOTAL,TOTAL/NR)}'
+
+# could just call awk once
+#bioawk -c fastx '{sum+=length($seq)} END {printf("Count:%d, Total:%d, Mean:%d\n",NR,sum,sum/NR)}'
