@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 =head1 NAME 
                                                                        
@@ -56,6 +56,7 @@ Print the full documentation.
 # Includes
 #
 use strict;
+use warnings;
 use File::Basename;
 use Time::HiRes qw(gettimeofday);
 use Getopt::Long;
