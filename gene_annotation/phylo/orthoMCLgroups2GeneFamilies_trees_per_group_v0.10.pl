@@ -7,12 +7,12 @@ use strict;
 use warnings;
 use File::Basename;
 use Getopt::Long;
-use lib qw(/iob_home/jmblab/statonse/apps/perlmod/Data-Dump-1.21/blib/lib);
+use lib qw(/home/jmblab/statonse/apps/perlmod/Data-Dump-1.21/blib/lib);
 use Data::Dump qw(dd);
-use lib qw(/iob_home/jmblab/statonse/apps/perlmod/cjfields-Bio-Kseq-dc7a71c/lib/site_perl/5.14.1/x86_64-linux-thread-multi/auto); #/Bio/Kseq/Kseq.bs
-use lib qw(/iob_home/jmblab/statonse/apps/perlmod/cjfields-Bio-Kseq-dc7a71c/lib/site_perl/5.14.1/x86_64-linux-thread-multi);      #/Bio/Kseq.pm
+use lib qw(/home/jmblab/statonse/apps/perlmod/cjfields-Bio-Kseq-dc7a71c/lib/site_perl/5.14.1/x86_64-linux-thread-multi/auto); #/Bio/Kseq/Kseq.bs
+use lib qw(/home/jmblab/statonse/apps/perlmod/cjfields-Bio-Kseq-dc7a71c/lib/site_perl/5.14.1/x86_64-linux-thread-multi);      #/Bio/Kseq.pm
 use Bio::Kseq;
-use lib qw(/iob_home/jmblab/statonse/apps/perlmod/Capture-Tiny-0.19/blib/lib);
+use lib qw(/home/jmblab/statonse/apps/perlmod/Capture-Tiny-0.19/blib/lib);
 use Capture::Tiny qw(:all);
 BEGIN {
   @AnyDBM_File::ISA = qw( DB_File SQLite_File )
@@ -230,7 +230,7 @@ close($cluster_report);
 
 my $gene_tree_ct = 0;
 open(my $tree_report, ">", $tree_stats) or die "\nERROR: Could not open file: $tree_stats\n";
-print $tree_report join("\t",("Gene_tree","Taxon_code","Ave_branch_length","Gene_tree_members")),"\n";
+print $tree_report join("\t",("Gene_tree","Taxon_code","Gene_tree_members","Ave_branch_length")),"\n";
 for my $tree_stats_ref (@treestats) {
     for my $gene_fam_tree (keys %$tree_stats_ref) {
 	$gene_tree_ct++;
@@ -298,7 +298,7 @@ sub parse_best_hits {
 sub summarize_trees {
     my ($gene_tree, $gene_ct, $tree_members) = @_;
     eval { 
-	use lib qw(/iob_home/jmblab/statonse/apps/perlmod/Bio-Phylo-0.50/blib/lib);
+	use lib qw(/home/jmblab/statonse/apps/perlmod/Bio-Phylo-0.50/blib/lib);
 	require Bio::Phylo::IO;    
         };
     if ($@) {
@@ -312,7 +312,7 @@ sub summarize_trees {
         -file   => $gene_tree
         )->first;
 
-    print "Tree file on line 315 is: ",$gene_tree,"\n";
+    #print "Tree file on line 315 is: ",$gene_tree,"\n";  ## for debug
     for my $node_name (keys %$tree_members) {
 	my $node = $tree->get_by_name($node_name);
 	my $length = $node->calc_path_to_root;
@@ -325,7 +325,7 @@ sub summarize_trees {
 	else {
 	    $treehash{$taxa} = [ $length ];
 	}
-	print "Length to root for $node_name is: ",$length,"\n";
+	#print "Length to root for $node_name is: ",$length,"\n"; ## for debug
     }
 
     my @keys = keys %treehash;
@@ -349,13 +349,13 @@ sub infer_tree {
     my $raxml_out_tree = "RAxML_bestTree.".$raxml_tree; ## unfortunately, the filename changes with different options
     $og_seq_id =~ s/\|.*//;   # just create a simple id
     
-    my ($raxml_out, $raxml_err, @raxml_res) = capture { 
+    my ($raxml_out, $raxml_err, @raxml_res) = capture { ## import to note: this command uses 8 threads
         #system("$raxml -p 34623 -B 0.03 -x 24562 -N 100 -f a -K GTR -m GTRGAMMAI -T 8 -U -s $gene_phy -n $raxml_tree 2>&1 /dev/null");
 	system("$raxml -p 34623 -f d -m GTRGAMMA -T 8 -U -o $og_seq_id -s $gene_phy -n $raxml_tree"); 
     };
 
-    print "RAxML output: ",$raxml_out,"\n";
-    print "RAxML error: ",$raxml_err,"\n";
+    #print "RAxML output: ",$raxml_out,"\n"; ## for debug
+    #print "RAxML error: ",$raxml_err,"\n";  ## for debug, to see what RAxML is spewing to the screen
     return $raxml_out_tree;
 }
 
@@ -469,11 +469,11 @@ sub align {
     $pep_aln =~ s/\.fa.*//;
     $pep_aln .= ".aln";
 
-    print "file for alignment is: ",$gene_file," and: ",$pep_file,"\n";
+    print "file for alignment is: ",$gene_file," and: ",$pep_file,"\n"; ## for debug
     #if ($gene_ct > 100) { ## muscle crashes with a core dump on large alignment so we just run the first two iterations
 	my ($gene_aln_out, $gene_aln_err, @gene_aln_res) = capture { system("$muscle -in $gene_file -out $gene_aln -maxiters 2"); }; # -quiet
 	my ($pep_aln_out, $pep_aln_err, @pep_aln_res) = capture { system("$muscle -in $pep_file -out $pep_aln -maxiters 2"); };
-	print "muscle pep aln error on line 475 is: ",$pep_aln_err,"\n";
+	print "muscle pep aln error on line 475 is: ",$pep_aln_err,"\n"; ## for debug, can actually remove this now
 	print "muscle gene aln error on line 476 is: ",$gene_aln_err,"\n";
 	print "muscle pep out on line 477 is: ",$pep_aln_out,"\n";
 	print "muscle gene out on line 477 is: ",$gene_aln_out,"\n";
