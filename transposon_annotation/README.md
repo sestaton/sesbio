@@ -1,0 +1,4 @@
+te-anno - Various scripts for annotating TEs from genome assemblies and random sequence reads
+=============================================================================================
+
+Some methods for analyzing patterns of TE evolution are also included.
