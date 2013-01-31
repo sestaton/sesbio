@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
 
+## TODO: Store matches with Storable for later
 use strict;
 use warnings;
 use String::Simrank;
@@ -35,16 +36,15 @@ my $matches = $sr->match_oligos({ query => $query,
 				  reverse => 1,});
 				  #outfile => $out,});
 
-print $out dump($matches);
+#print $out dump($matches);
 
-#for my $k (keys %$matches) {
-#for my $k (reverse sort { $matches->{$a}[0] <=> $matches->{$b}[0] } keys %$matches) {
-#    my $num_matches = scalar @{$matches->{$k}};
-#    if ($num_matches > 1) { # number of matches
-#	print {$out} "$k:\t$num_matches\t";
-#	for my $hit (@{$matches->{$k}}) {
-#	    print {$out} "HitID:\t".$hit->[0]."\tPerc:\t".$hit->[1],"\n";
-#	}
-#    }
-#}
+for my $k (sort { scalar(@{$matches->{$a}}) <=> scalar(@{$matches->{$b}}) } keys %$matches) {
+    my $num_matches = scalar @{$matches->{$k}};
+    if ($num_matches > 1) { 
+	print {$out} "$k:\t$num_matches\n";
+	for my $hit (@{$matches->{$k}}) { ## Matches are already sorted by percent identity, so not sorting necessary.
+	    print {$out} "HitID:\t".$hit->[0]."\tPerc:\t".$hit->[1],"\n";
+	}
+    }
+}
 close($out);
