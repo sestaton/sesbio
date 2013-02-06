@@ -7,6 +7,7 @@ use autodie qw(open);
 use lib qw(/home/jmblab/statonse/apps/perlmod/Data-Dump-1.21/blib/lib);
 use Data::Dump qw(dd);
 use JSON;
+# JSON::Parse <- has json_to_perl method
 
 my $usage = "$0 repbase1801.json\n";
 my $infile = shift or die $usage;
