@@ -1,16 +1,12 @@
 #!/usr/bin/env perl
 
+use 5.014;
 use strict;
 use warnings;
 use autodie qw(open);
 use lib qw(/home/jmblab/statonse/apps/perlmod/Data-Dump-1.21/blib/lib);
 use Data::Dump qw(dd);
-
-#my $usage = "$0 infile outfile\n";
-#my $infile = shift or die $usage;
-#my $outfile = shift or die $usage;
-
-#open(my $in, '<', $infile);
+use JSON;
 
 my $matches = {};
 
@@ -28,4 +24,7 @@ $matches->{'pseudogene'} = ['rRNA', 'tRNA', 'snRNA'];
 
 $matches->{'integrated_virus'} = ['DNA_Virus', 'Caulimoviridae'];
 
-dd $matches;
+#dd $matches;
+my $json = JSON->new->utf8->space_after->encode($matches);
+#my $json = encode_json $matches; # same, but without spaces
+say $json;
