@@ -6,7 +6,7 @@ use Bio::DB::EUtilities;
  
 my $factory = Bio::DB::EUtilities->new(-eutil => 'einfo',
                                        -email => 'mymail@foo.bar',
-                                       -db    => 'pubmed');
+                                       -db    => 'taxonomy');
  
 # for quick simple output, use:
 # $factory->print_all;
