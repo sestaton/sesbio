@@ -11,8 +11,15 @@ use JSON;
 
 my $usage = "$0 repbase1801.json\n";
 my $infile = shift or die $usage;
-open(my $in, '<', $infile);
 
-my $json = JSON->new->utf8->space_after->decode($in);
+my $json_text;
+{
+local $/;
+open(my $in, '<', $infile);
+$json_text = <$in>;
 close($in);
+}
+
+#my $json = JSON->new->utf8->space_after->decode($infile);
+my $json = JSON->new->utf8->decode($json_text);
 dd $json;
