@@ -26,13 +26,13 @@ while (my $field = $factory->next_FieldInfo) {
     print "\t      desc: ",$field->get_field_description,"\n";
     print "\t     count: ",$field->get_term_count,"\n";
     print "\tAttributes: ";
-    print join(',', grep {$field->$_} qw(is_date
-               is_singletoken is_hierarchy is_hidden is_numerical)),"\n\n";
+    #print join(',', grep {$field->$_} qw(is_date
+    #           is_singletoken is_hierarchy is_hidden is_numerical)),"\n\n";
 }
  
-while (my $link = $factory->next_LinkInfo) {
-    print "\tLink name: ",$link->get_link_name,"\n";
-    print "\t     desc: ",$link->get_link_description,"\n";
-    print "\t   dbfrom: ",$link->get_dbfrom,"\n"; # same as get_database()
-    print "\t     dbto: ",$link->get_dbto,"\n\n"; # database linked to
-}
+#while (my $link = $factory->next_LinkInfo) {
+#    print "\tLink name: ",$link->get_link_name,"\n";
+#    print "\t     desc: ",$link->get_link_description,"\n";
+#    print "\t   dbfrom: ",$link->get_dbfrom,"\n"; # same as get_database()
+#    print "\t     dbto: ",$link->get_dbto,"\n\n"; # database linked to
+#}
