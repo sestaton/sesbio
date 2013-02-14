@@ -20,13 +20,16 @@ my ($match_ct, $simple_match_ct) = (0, 0);
 	next if /^#/;
 	my @record = split /\n/;
 	my ($match_coords, $subj, $qry) = map { split /\n/ } @record;
+	next unless defined $match_coords && defined $subj && defined $qry; # for some reason, vmatch prints only the alignment if it's not a good match 
+                                                                            # (that means $qry is not defined but I check all for other corner cases like this)
 	$match_coords =~ s/^\s+//;
 	my ($slength, $sname, $srpos, $mtype, $qlength, $qname, $qrpos, $dist, $evalue, $score, $pid) = split /\s+/, $match_coords;
 	my ($query, $query_string, $qend) = split /\s+/, $qry;
 	my ($mono_ratio, $di_ratio) = filter_simple(\$query_string, \$qlength);
 	if ($$mono_ratio >= $repeat_ratio || $$di_ratio >= $repeat_ratio) {
 	    $simple_match_ct++;
-	    say "$$mono_ratio Monoratio or $$di_ratio Diratio for $query_string is too simple";                
+	    #say "$$mono_ratio Monoratio or $$di_ratio Diratio for $query_string is too simple";                
+	    say join "\t", $sname, $$mono_ratio, $$di_ratio;
 	}         
     }
     my $simple_ratio = sprintf("%.2f",$simple_match_ct/$match_ct);
