@@ -38,17 +38,11 @@ while (my $l = <$vm>) {
     chomp $l;
     $l =~ s/^\s+//;
     my ($ct, $fam_match)  = split /\s/, $l;
-    #say join("\t", $ct, $fam_match);
     if ($ct > 1) {
 	for my $superfamily (keys %family_map) {
-	    #say $superfamily;
 	    while (my ($family_index, $family) = each @{$family_map{$superfamily}}) {
-		#say $family;
 		for my $fam_name (keys %$family) {
-		    #say $fam_name;
 		    if (exists $family->{$fam_match}) {
-			#say "$fam_name and $fam_match match";
-			#push @{$family_map{$superfamily}[$family_index]{$fam_name}}, $ct;
 			$family_map{$superfamily}[$family_index]{$fam_name} = $ct;
 		    }
 		}
@@ -64,14 +58,11 @@ for my $supfam (keys %family_map) {
     while (my ($fam_index, $fam) = each @{$family_map{$supfam}}) {
 	for my $fam_n (keys %$fam) {
 	    if ($fam->{$fam_n} > 0) {
-		#say $supfam,' ',$fam_n,' ',$fam->{$fam_n};
 		if (exists $supfamily_match_ct{$supfam}) {
 		    push @{$supfamily_match_ct{$supfam}}, $fam->{$fam_n};
-		#    say $supfam,' is in da hash!';
 		}
 		else {
 		    $supfamily_match_ct{$supfam} = [];
-		#    #say $supfam, ' is not in da hash';
 		}
 	    }
 	}
@@ -81,11 +72,5 @@ for my $supfam (keys %family_map) {
 	say join("\t",$supfam,$sum);
     }
 }
-
-
-#for my $key (keys %supfamily_match_ct) {
-#    my $sum = sum(@{$supfamily_match_ct{$key}});    
-
-				
 
 #dd %supfamily_match_ct;
