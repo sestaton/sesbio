@@ -35,7 +35,6 @@ my %complex_matches;
 	my ($query, $query_string, $qend) = split /\s+/, $qry;
 	my ($mono_ratio, $di_ratio) = filter_simple(\$query_string, \$qlength);
 	if ($$mono_ratio >= $repeat_ratio || $$di_ratio >= $repeat_ratio) {
-	    #$simple_match_ct++; get this from hash
 	    if (not exists $simple_matches{$sname}) {
 		$simple_matches{$sname} = 1;
 	    }
@@ -47,7 +46,6 @@ my %complex_matches;
 	else {
 	    if (not exists $complex_matches{$sname}) {
 		$complex_matches{$sname} = 1;
-		#say $sname; ## match
 	    }
 	    else {
 		$complex_matches{$sname}++;
@@ -64,8 +62,6 @@ close($filtered_out);
 for my $repeat_match (reverse sort { $simple_matches{$a} <=> $simple_matches{$b} } keys %simple_matches) {
     # sort, then break out when we fall below the threshold of repetitiveness to score a match
 
-    #my $simple_ratio = sprintf("%.2f",$simple_match_ct/$match_ct);
-    #say "$simple_ratio of simple k-mers for $match_ct matches";
     say {$simple_stats} join "\t", $simple_matches{$repeat_match}, $repeat_match;
 }
 close($simple_stats);
