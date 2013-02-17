@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use autodie qw(open);
 use Getopt::Long;
+use Storable qw(freeze thaw);
 use feature 'say';
 
 my $infile;
@@ -13,10 +14,13 @@ my $percent_coverage;
 my $usage = "USAGE: parse_mgblast -i inreport -o parsedreport -id 90.00 -cov 0.50\n";
 
 my %match_pairs;
+my %match_index;
+my @matchIDs;
 
 #counters
 my $total_hits = 0;
 my $parsed_hits = 0;
+my $index = 0;
 
 GetOptions(
            "i|infile=s"         => \$infile,
@@ -41,43 +45,40 @@ while (<$in>) {
 
   if ($strand eq '-') {
       $total_hits++;
+      my $neg_query_hit_length = ($q_start - $q_end) + 1;
+      my $neg_query_cov = $neg_query_hit_length/$q_len;
 
-      #say 'At line 42';
-      my $neg_query_hit_length = ($q_start - $q_end) + 1; 
-      my $neg_query_cov = $neg_query_hit_length/$q_len;  
-      
       if ( ($neg_query_cov >= $percent_coverage) && ($subj_cov >= $percent_coverage) && ($pid >= $percent_id) ) {
-	  #say 'At line 48';
-	  #say $out join "\t", $q_name, $s_name, $score;
-	  if (exists $match_pairs{$pair}) {
-	      push @{$match_pairs{$pair}}, $score;
-	  }
-	  else {
-	      $match_pairs{$pair} = [];
-	  }
+          if (exists $match_pairs{$pair}) {
+              push @{$match_pairs{$pair}}, $score;
+          }
+          else {
+              $match_pairs{$pair} = [];
+	      push @matchIDs, $q_name, $s_name;
+          }
       }
   }
   else {
       $total_hits++;
-      
-      #say 'At line 54';
       my $pos_query_hit_length = ($q_end - $q_start) + 1;
       my $pos_query_cov = $pos_query_hit_length/$q_len;
-      
+
       if ( ($pos_query_cov >= $percent_coverage) && ($subj_cov >= $percent_coverage) && ($pid >= $percent_id) ) {
-	  #say 'At line 61';
-          #say $out join "\t", $q_name, $s_name, $score;
-	  if (exists $match_pairs{$pair}) {
-	      push @{$match_pairs{$pair}}, $score;
+          if (exists $match_pairs{$pair}) {
+              push @{$match_pairs{$pair}}, $score;
           }
           else {
-	      $match_pairs{$pair} = [];
-
-	  }
+              $match_pairs{$pair} = [];
+	      push @matchIDs, $q_name, $s_name;
+          }
       }
   }
 }
 close($in);
+
+my %seen = ();
+my @unique_IDs = grep { ! $seen{$_} ++ } @matchIDs;
+for my $id (@unique_IDs) { $match_index{$id} = $index; $index++; }
 
 open(my $out, '>', $outfile);
 
@@ -86,11 +87,14 @@ for my $match (reverse sort { @{$match_pairs{$a}} <=> @{$match_pairs{$b}} } keys
     my $match_score = shift @{$match_pairs{$match}};
     next unless defined $match_score;
     my ($qry, $sbj) = split /\|/, $match;
-    #say "$qry $sbj $match_score";
-    say $out join "\t", $qry, $sbj, $match_score;
+    if (exists $match_index{$qry} && exists $match_index{$sbj}) {
+	say $out join "\t", $match_index{$qry}, $match_index{$sbj}, $match_score;
+    }
 }
 close($out);
 
-print "\n===== There are ",$total_hits," records in this mgblast report.\n";
-print "\n===== There are ",$parsed_hits, " parsed records in the output.\n\n";
+my $sindex = freeze \%match_index;
+
+#print "\n===== There are ",$total_hits," records in this mgblast report.\n";
+#print "\n===== There are ",$parsed_hits, " parsed records in the output.\n\n";
 
