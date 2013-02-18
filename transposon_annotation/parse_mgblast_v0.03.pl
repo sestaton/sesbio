@@ -23,10 +23,10 @@ my $parsed_hits = 0;
 my $index = 0;
 
 GetOptions(
-           "i|infile=s"         => \$infile,
-           "o|outfile=s"        => \$outfile,
-	   "id|percent_id=f"      => \$percent_id,
-	   "cov|percent_cov=f"    => \$percent_coverage,
+           'i|infile=s'         => \$infile,
+           'o|outfile=s'        => \$outfile,
+	   'id|percent_id=f'    => \$percent_id,
+	   'cov|percent_cov=f'  => \$percent_coverage,
           );
 
 # open the infile or die with a usage statement
@@ -115,8 +115,20 @@ sub louvain_method {
     my $community = "community ".
 	            "$cls_bin ".
 		    "-l -1 ".
-		    "-w weights -v"; # store the output and search it for "level", then create trees for each level
+		    "-w weights -v >graph.tree 2>graph.tree.log"; # store the output and search it for "level", then create trees for each level
     #system($community);
 
+    my $levels = `grep -c levels graph.tree.log`;
 
+    for (my $i = 1; $i <= $levels; $i++) {
+	my $hierarchy = "hierarchy ".
+	                "graph.tree ".
+			"-l $i ".
+			"> graph_node2comm_level_$i";
+
+	#makeCls.py graph_node2comm_leve_$i index cluster cluster_membership // This is where we map the ids back to the cluster indices 
+
+    }
+
+    
 }
