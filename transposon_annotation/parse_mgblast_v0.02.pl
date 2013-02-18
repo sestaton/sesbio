@@ -6,9 +6,6 @@ use autodie qw(open);
 use Getopt::Long;
 use Storable qw(freeze thaw);
 use feature 'say';
-use lib qw(/home/jmblab/statonse/apps/perlmod/Capture-Tiny-0.19/blib/lib);
-use Capture::Tiny qw(:all);
-use File::Basename;
 
 my $infile;
 my $outfile;
@@ -26,10 +23,10 @@ my $parsed_hits = 0;
 my $index = 0;
 
 GetOptions(
-           'i|infile=s'         => \$infile,
-           'o|outfile=s'        => \$outfile,
-	   'id|percent_id=f'    => \$percent_id,
-	   'cov|percent_cov=f'  => \$percent_coverage,
+           "i|infile=s"         => \$infile,
+           "o|outfile=s"        => \$outfile,
+	   "id|percent_id=f"      => \$percent_id,
+	   "cov|percent_cov=f"    => \$percent_coverage,
           );
 
 # open the infile or die with a usage statement
@@ -79,11 +76,11 @@ while (<$in>) {
 }
 close($in);
 
-open(my $out, '>', $outfile);
-
 my %seen = ();
 my @unique_IDs = grep { ! $seen{$_} ++ } @matchIDs;
 for my $id (@unique_IDs) { $match_index{$id} = $index; $index++; }
+
+open(my $out, '>', $outfile);
 
 for my $match (reverse sort { @{$match_pairs{$a}} <=> @{$match_pairs{$b}} } keys %match_pairs) {
     $parsed_hits++;
@@ -96,53 +93,8 @@ for my $match (reverse sort { @{$match_pairs{$a}} <=> @{$match_pairs{$b}} } keys
 }
 close($out);
 
-louvain_method($outfile);
-#my $sindex = freeze \%match_index;
+my $sindex = freeze \%match_index;
 
 #print "\n===== There are ",$total_hits," records in this mgblast report.\n";
 #print "\n===== There are ",$parsed_hits, " parsed records in the output.\n\n";
-
-#
-# Subs
-#
-sub louvain_method {
-    my $cls_int = shift;
-    my ($iname, $ipath, $isuffix) = fileparse($cls_int, qr/\.[^.]*/);
-    my $cls_bin = $iname.".bin";
-    my $cls_tree = $iname.".tree";
-    my $cls_tree_weights = $cls_tree.".weights";
-    my $cls_tree_log = $cls_tree.".log";
-    my $hierarchy_err = $cls_tree.".hierarchy.log";
-    my (@comm_res, @hier_res);
-    #my ($convert_out, $convert_err) = capture { system("louvain_convert -i $cls_int -o $cls_bin -w $cls_tree_weights"); };
-    system("louvain_convert -i $cls_int -o $cls_bin -w $cls_tree_weights");
-    #say "Convert out: $convert_out"; say "Convert err: $convert_err";
-    #($cls_tree, $cls_tree_log) = capture { 
-    system("louvain_community $cls_bin -l -1 -w $cls_tree_weights -v >$cls_tree 2>$cls_tree_log");
-	#system("louvain_commmunity $cls_bin -l -1 -w $cls_tree_weights -v"); };
-   
-    # store the output and search it for "level", then create trees for each level
-    #say "Community out: $community_out"; say "Community err: $community_err";
-
-    my $levels = `grep -c level $cls_tree_log`;
-    chomp($levels);
-    
-    #say "There are $levels levels in $cls_tree_log";
-    for (my $i = 0; $i <= $levels-1; $i++) {
-    #for my $i (0..$#levels) {
-	my $cls_graph_comm = $cls_tree.".graph_node2comm_level_".$i;
-	#($cls_graph_comm, $hierarchy_err) = capture { system("louvain_hierarchy $cls_tree -l $i"); };
-	system("louvain_hierarchy $cls_tree -l $i > $cls_graph_comm");
-	# take a look at the output and then convert to cluster IDs
-	#makeCls.py graph_node2comm_leve_$i index cluster cluster_membership // This is where we map the ids back to the cluster indices
-	#make_clusters($cls_graph_comm, \%match_index);
-    }
-}
-
-sub make_clusters {
-    my ($graph_comm, $match_index) = @_;
-    
-    # output CLS for each level and clusterMembership.txt for each level
-
-}
 
