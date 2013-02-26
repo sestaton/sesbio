@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
-## Load JSON file to get hits for each type
+## Load JSON file to get hits for each type DONE
+## push matches into array, should stay ordered
 
 use strict;
 use warnings;
@@ -63,6 +64,13 @@ for my $type (keys %$repeats) {
 			    }
 			}
 		    } # if /sine/i
+		    else {
+			for my $fam (@{$repeats->{$type}{$class}[$superfam_index]{$superfam_h}}) {
+			    for my $mem (@$fam) {
+				say "$type => $class => $superfam_h => $mem";
+			    }
+			}
+		    }
 		}
 	    }
 	}
@@ -122,7 +130,7 @@ sub parse_blast {
 	$hit_ct++;
     }
 
-## Need to create an array of colors to pass to R barplot   
+    ## Need to create an array of colors to pass to R barplot   
     if ($hit_ct > 0) {
 	open(my $out, '>', $blast_file_path);
 	for my $key (reverse sort { $blhits{$a} <=> $blhits{$b} } keys %blhits) {
