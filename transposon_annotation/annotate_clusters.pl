@@ -40,44 +40,6 @@ if (scalar(@clus_fas_files) < 1) {
     exit(1);
 }
 
-my $repeats = json2hash($json);
-for my $type (keys %$repeats) {
-    if ($type eq 'pseudogene' || $type eq 'integrated_virus') {
-	next;
-    }
-    else {
-	for my $class (keys %{$repeats->{$type}}) {
-	    while ( my ($superfam_index, $superfam) = each @{$repeats->{$type}{$class}} ) {
-		for my $superfam_h (keys %$superfam) {
-		  
-		    #
-		    # search through map
-		    # 
-		    if ($superfam_h =~ /sine/i) {
-			while (my ($sine_fam_index, $sine_fam_h) = each @{$superfam->{$superfam_h}}) {
-			    for my $sine_fam_mem (keys %$sine_fam_h) {
-				for my $sines (@{$repeats->{$type}{$class}[$superfam_index]{$superfam_h}[$sine_fam_index]{$sine_fam_mem}}) {
-				    for my $sine (@$sines) {
-					say "$type => $class => $superfam_h => $sine_fam_mem => $sine"; 
-				    }
-				}
-			    }
-			}
-		    } # if /sine/i
-		    else {
-			for my $fam (@{$repeats->{$type}{$class}[$superfam_index]{$superfam_h}}) {
-			    for my $mem (@$fam) {
-				say "$type => $class => $superfam_h => $mem";
-			    }
-			}
-		    }
-		}
-	    }
-	}
-    }
-}
-
-exit;
 ## set path to output dir
 my ($oname, $opath, $osuffix) = fileparse($outdir, qr/\.[^.]*/);
 my $db = File::Spec->rel2abs($repeats);
@@ -97,10 +59,65 @@ for my $file (@clus_fas_files) {
     my $blast_file_path = File::Spec->catfile($out_path, $blast_res);
     #say "blast_file_path: $blast_file_path";
     my @blast_out = `blastall -p blastn -i $file -d $db -e 1e-5 -m 8 | cut -f2 | sort | uniq -c | sort -bnr | perl -lane 'print join("\t",\@F)'`;
-    my $hit_ct = parse_blast(\@blast_out, $blast_file_path, $repeats);
+    my ($hit_ct, $top_hit) = parse_blast(\@blast_out, $blast_file_path, $repeats);
+    my $color = blast2annot($json, $top_hit);
+    push @colors, $color;
+    ## return to hit by frequency
+
     if (defined $hit_ct) {
 	say "$$hit_ct sequences have a BLAST hit in $file";
     }
+}
+
+sub blat2annot {
+    my ($json, $top_hit) = @_;
+
+    my $repeats = json2hash($json);
+
+    for my $type (keys %$repeats) {
+	if ($type eq 'pseudogene' || $type eq 'integrated_virus') {
+	    next;
+	}
+	else {
+	    for my $class (keys %{$repeats->{$type}}) {
+		while ( my ($superfam_index, $superfam) = each @{$repeats->{$type}{$class}} ) {
+		    for my $superfam_h (keys %$superfam) {
+
+			#
+			# search through map
+			#
+
+			## superfamily => color map
+			#\"Ty3\/gypsy\",  => \"darkgreen\"
+			#\"Ty1\/copia\",   => \"aquamarine4\"
+			#\"Non-LTR\",      => \"aquamarine\"
+			#\"Helitron\",     => \"darkolivegreen3\"
+			#\"Class II\",     => \"chartreuse\"
+			#"rRNA\"           => \"azure2\"    
+			if ($superfam_h =~ /sine/i) {
+			    while (my ($sine_fam_index, $sine_fam_h) = each @{$superfam->{$superfam_h}}) {
+				for my $sine_fam_mem (keys %$sine_fam_h) {
+				    for my $sines (@{$repeats->{$type}{$class}[$superfam_index]{$superfam_h}[$sine_fam_index]{$sine_fam_mem}}) {
+					for my $sine (@$sines) {
+					    say "$type => $class => $superfam_h => $sine_fam_mem => $sine";
+					}
+				    }
+				}
+			    }
+			} # if /sine/i                                                                                                                            
+			else {
+			    for my $fam (@{$repeats->{$type}{$class}[$superfam_index]{$superfam_h}}) {
+				for my $mem (@$fam) {
+				    say "$type => $class => $superfam_h => $mem";
+				}
+			    }
+			}
+		    }
+		}
+	    }
+	}
+    }
+    return \something;
 }
 
 sub json2hash {
@@ -120,6 +137,8 @@ sub parse_blast {
     my ($blast_out, $blast_file_path, $repeats) = @_;
     my %blhits;
 
+    my $top_hit;
+    my $top_hit_num = 0;
     my $hit_ct = 0;
 
     for my $hit (@$blast_out) {
@@ -130,14 +149,28 @@ sub parse_blast {
 	$hit_ct++;
     }
 
+    #for my $hits (reverse sort { $blhits{$a} <=> $blhits{$b} } keys %blhits) {
+	#my $top_hit_num = $blhits{$hits};
+	#$top_hit = $hits;
+	#if ($blhits{$hits} > $top_hit_num) {
+	#    $top_hit = $blhits{$hits};
+	#}
+    #}
+
     ## Need to create an array of colors to pass to R barplot   
     if ($hit_ct > 0) {
 	open(my $out, '>', $blast_file_path);
-	for my $key (reverse sort { $blhits{$a} <=> $blhits{$b} } keys %blhits) {
+	for my $hits (reverse sort { $blhits{$a} <=> $blhits{$b} } keys %blhits) {
+	    $top_hit_num = $blhits{$hits};
+	    $top_hit = $hits;
+	    if ($blhits{$hits} > $top_hit_num) {
+		$top_hit = $hits;
+		$top_hit_num = $blhits{$hits};
+	    }
 	    say $out join "\t", $key, $blhits{$key};
 	}
 	close($out);
-	return \$hit_ct;
+	return \$hit_ct, $top_hit;
     }
     else {
 	return undef;
