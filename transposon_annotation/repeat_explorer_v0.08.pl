@@ -1,23 +1,34 @@
 #!/usr/bin/env perl
 
-## TODO: add time stamp to GL and ncol directories DONE
+## TODO: add time stamp to GL and ncol directories DONE 
+##       --------> Okay, now fix the printing (just printing "8")
 ##       write method for annotating clusters
 ##       turn off printing in R code and do it with Perl
-
+##       final R routine is still printing "NULL" to the screen (need to capture dev.off())
+##       Don't store all the blast scores in an array, only keep the top hit
+##
+##       This version is an attempt to generate larger clusters by keeping all BLAST hits above a threshold
 use strict;
 use warnings;
 use autodie qw(open);
 use Getopt::Long;
-#use Storable qw(freeze thaw);
 use Capture::Tiny qw(:all);
 use File::Basename;
 use File::Path qw(make_path);
 use File::Spec;
 use File::Basename;
-use List::Util qw(max);
+use List::Util qw(max);       ## shouldn't need this routine if we only keep the top hit
 use POSIX qw(strftime);
 use feature 'say';
 use Cwd;
+BEGIN {
+  @AnyDBM_File::ISA = qw( DB_File SQLite_File )
+      unless @AnyDBM_File::ISA == 1; # if loaded already, AnyDBM_File::ISA has a length of one;
+}
+use AnyDBM_File;
+use vars qw( $DB_BTREE &R_DUP );
+use AnyDBM_File::Importer qw(:bdb);
+
 
 my $infile;
 my $outfile;
@@ -27,13 +38,10 @@ my $cluster_size;
 my $fas_file;
 my $cores;
 
-my %match_pairs;
-my %match_index;
-
 #counters
-my $total_hits = 0;
-my $parsed_hits = 0;
-my $index = 0;
+#my $total_hits = 0;
+#my $parsed_hits = 0;
+#my $index = 0;
 
 GetOptions(
            'i|infile=s'         => \$infile,
@@ -52,47 +60,23 @@ if (!$infile || !$outfile || !$fas_file
     usage() and exit(1);
 }
 
-my ($match_pairs, $match_index) = parse_mgblast($infile, $percent_id, $percent_cov);
-
-my $index_file = $outfile.".index";  # integer index for read IDs used in clustering
-my $cluster_file = $outfile.".cls";  # cluster file in Repeat Explorer "cls" format
-my $hitsort_int = $outfile.".int";   # integer index for clustering
-
-open(my $hs_int, '>', $hitsort_int);
-open(my $out, '>', $outfile);
-open(my $indexout, '>', $index_file);
-
-for my $id (keys %$match_index) {
-    $match_index{$id} = $index; 
-    say $indexout "$id $index";
-    $index++; 
-}
-close($indexout);
-
-for my $match (keys %$match_pairs) {
-    my $match_score = max(@{$match_pairs{$match}});
-    $parsed_hits++;
-    next unless defined $match_score;
-    my ($qry, $sbj) = split /\|/, $match;
-    if (exists $match_index{$qry} && exists $match_index{$sbj}) {
-	say $out join "\t", $qry, $sbj, $match_score;
-	say $hs_int join "\t", $match_index{$qry}, $match_index{$sbj}, $match_score;
-    }
-}
-close($hs_int);
-close($out);
+my ($hitsort, $index_file, $hitsort_int) = parse_mgblast($infile, $percent_id, $percent_cov, $outfile);
 
 ### Clustering
 my $community = louvain_method($hitsort_int, $index_file);
-my $cls_file = make_clusters($community, \%match_index, $cluster_file, $outfile, $index_file);
+my $cls_file = make_clusters($community, $hitsort, $index_file);
+#untie %$match_index;
+#undef %$match_index;
 
 ### generate plots from cluster file
 my $str = POSIX::strftime("%m_%d_%Y_%H_%M_%S", localtime);
 my ($seqhash, $seqct) = fas2hash($fas_file);
-my $cls_dir_path = clusters2fasta($cls_file, $seqhash, $cluster_size, $str);
+#my $cls_dir_path = clusters2fasta($cls_file, $seqhash, $cluster_size, $str);
+untie %$seqhash;
+undef %$seqhash;
 
-my $gl_dir = clusters2graphs($cls_file, $outfile, $cores, $str);
-GL2summary($gl_dir, $cls_file);
+#my $gl_dir = clusters2graphs($cls_file, $outfile, $cores, $str);
+#GL2summary($gl_dir, $cls_file);
 
 ### search each fasta file in $cls_dir_path against custom repeatdb and HMMER
 ### -- then, incorporate results into size dist summary plot (see old 454summary.R
@@ -104,7 +88,31 @@ write_cls_size_dist_summary($cls_file, $seqct, $cwd);
 # Subs
 #
 sub parse_mgblast {
-    my ($infile, $percent_id, $percent_cov) = @_;
+    my ($infile, $percent_id, $percent_cov, $outfile) = @_;
+
+    # counters
+    my $total_hits = 0;
+    my $parsed_hits = 0;
+    my $index = 0;
+
+    my $index_file = $outfile.".index";  # integer index for read IDs used in clustering
+    #my $cluster_file = $outfile.".cls";  # cluster file in Repeat Explorer "cls" format
+    my $hitsort_int = $outfile.".int";   # integer index for clustering           
+
+    open(my $hs_int, '>', $hitsort_int);
+    open(my $indexout, '>', $index_file);
+    open(my $out, '>', $outfile);
+
+    #my %match_pairs;
+    my %match_index;
+    $DB_BTREE->{cachesize} = 100000;
+    $DB_BTREE->{flags} = R_DUP;
+    #my $mp_dbfile = "repeat_explorer_mp.bdb";
+    #my $mi_dbfile ="repeat_explorer_mi.bdb";
+    #tie( %match_pairs, 'AnyDBM_File', ':memory:', 0666, $DB_BTREE);
+    tie( %match_index, 'AnyDBM_File', ':memory:', 0666, $DB_BTREE);
+    #tie( %match_pairs, 'AnyDBM_File', $mp_dbfile, 0666, $DB_BTREE);
+    #tie( %match_index, 'AnyDBM_File', $mi_dbfile, 0666, $DB_BTREE);
 
     open(my $in, '<', $infile);
 
@@ -113,25 +121,30 @@ sub parse_mgblast {
 	my ($q_name, $q_len, $q_start, $q_end, $s_name, $s_len, 
 	    $s_start, $s_end, $pid, $score, $e_val, $strand) = split;
     
-	my $pair = join "|", $q_name, $s_name;
-	my $revpair = join "|", $q_name, $s_name;
-	my $subj_hit_length = ($s_end - $s_start) + 1;
-	my $subj_cov = $subj_hit_length/$s_len;
+	#my $pair = join "|", $q_name, $s_name;
+	#my $revpair = join "|", $q_name, $s_name;
+	#my $subj_hit_length = ($s_end - $s_start) + 1;
+	#my $subj_cov = $subj_hit_length/$s_len;
 	
 	if ($strand eq '-') {
 	    $total_hits++;
 	    my $neg_query_hit_length = ($q_start - $q_end) + 1;
 	    my $neg_query_cov = $neg_query_hit_length/$q_len;
 	    
-	    if ( ($neg_query_cov >= $percent_cov) && ($subj_cov >= $percent_cov) && ($pid >= $percent_id) ) {
-		if (exists $match_pairs{$pair}) {
-		    push @{$match_pairs{$pair}}, $score;
-		}
-		else {
-		    $match_pairs{$pair} = [$score];
-		    $match_index{$q_name} = [] unless exists $match_index{$q_name}; # hash is much more memory efficient than array (1.6g v 2.3g)
-		    $match_index{$s_name} = [] unless exists $match_index{$s_name}; # and faster (though only ~1s faster)
-		}
+	    if ( ($neg_query_cov >= $percent_cov) && ($pid >= $percent_id) ) {
+		say $out join "\t", $q_name, $s_name, $score;
+		#say $indexout "$q_name $index";
+		#$index++;
+		#say $indexout "$s_name $index";
+		#say $hs_int join "\t", $index-1, $index, $score;
+		#$index++;
+		#unless (exists $match_index{$pair}) {
+		#    $match_index{$pair} = 1;
+		#}
+		$match_index{$q_name} = $index unless exists $match_index{$q_name}; # hash is much more memory efficient than array (1.6g v 2.3g)
+		$index++;
+		$match_index{$s_name} = $index unless exists $match_index{$s_name}; # and faster (though only ~1s faster)
+		$index++;
 	    }
 	}
 	else {
@@ -139,21 +152,39 @@ sub parse_mgblast {
 	    my $pos_query_hit_length = ($q_end - $q_start) + 1;
 	    my $pos_query_cov = $pos_query_hit_length/$q_len;
 	    
-	    if ( ($pos_query_cov >= $percent_cov) && ($subj_cov >= $percent_cov) && ($pid >= $percent_id) ) {
-		if (exists $match_pairs{$pair}) {
-		push @{$match_pairs{$pair}}, $score;
-		}
-		else {
-		    $match_pairs{$pair} = [$score];
-		    $match_index{$q_name} = [] unless exists $match_index{$q_name};
-		    $match_index{$s_name} = [] unless exists $match_index{$s_name};
-		}
+	    if ( ($pos_query_cov >= $percent_cov) && ($pid >= $percent_id) ) {
+		say $out join "\t", $q_name, $s_name, $score;
+		#say $indexout "$q_name $index";
+		#$index++;
+		#say $indexout "$s_name $index";
+		#say $hs_int join "\t", $index-1, $index, $score;
+		#$index++;
+		$match_index{$q_name} = $index unless exists $match_index{$q_name};
+		$index++;
+		$match_index{$s_name} = $index unless exists $match_index{$s_name};
+		$index++;
 	    }
 	}
     }
-    close($in);
+    close($out);
+
+    open(my $hs, '<', $outfile);
+    while (my $hitpair = <$hs>) {
+	chomp $hitpair;
+	my ($q, $s, $sc) = split /\t/, $hitpair;
+	if (exists $match_index{$q} && exists $match_index{$s}) {
+	    say $hs_int join "\t", $match_index{$q}, $match_index{$s}, $sc;
+	}
+    }
+    close($hs);
+    close($hs_int);
     
-    return(\%match_pairs, \%match_index);
+    for my $idx_mem (sort { $match_index{$a} <=> $match_index{$b} } keys %match_index) {
+	say $indexout join " ", $idx_mem, $match_index{$idx_mem};
+    }
+    close($indexout);
+
+    return($outfile, $index_file, $hitsort_int);
 }
 
 sub louvain_method {
@@ -164,8 +195,15 @@ sub louvain_method {
     my $cls_tree_weights = $cls_tree.".weights";    # bit score, the weights applied to clustering
     my $cls_tree_log = $cls_tree.".log";            # the summary of clustering results at each level of refinement
     my $hierarchy_err = $cls_tree.".hierarchy.log"; # some other log
+
     system("louvain_convert -i $hitsort_int -o $cls_bin -w $cls_tree_weights");
+    unless (defined $cls_bin && defined $cls_tree_weights) {
+	say "ERROR: louvain_convert failed. Exiting." and exit(1);
+    }
     system("louvain_community $cls_bin -l -1 -w $cls_tree_weights -v >$cls_tree 2>$cls_tree_log");
+    unless (defined $cls_tree && defined $cls_tree_log) {
+	say "ERROR: louvain_community failed. Exiting." and exit(1);
+    }
 
     my $levels = `grep -c level $cls_tree_log`;
     chomp($levels);
@@ -183,12 +221,22 @@ sub louvain_method {
 }
 
 sub make_clusters {
-    my ($graph_comm, $match_index, $cluster_file, $outfile, $index_file) = @_;
+    my ($graph_comm, $hitsort, $index_file) = @_;
+
+    my $cluster_file = $hitsort.".cls";
 
     my @graph_comm_sort = reverse sort { ($a =~ /(\d)$/) <=> ($b =~ /(\d)$/) } @$graph_comm;
     my $graph = shift @graph_comm_sort;
-    my %rindex = reverse %$match_index; # this only works if you are *certain* there are no duplicate keys, which I am ;)
     my %clus;
+    my %index;
+
+    open(my $idx, '<', $index_file);
+    while (my $idpair = <$idx>) {
+	chomp $idpair;
+	my ($readid, $readindex) = split /\s+/, $idpair;
+	$index{$readindex} = $readid;
+    }
+    close($idx);
 
     my $membership_file = $cluster_file.".membership.txt";
     open(my $mem,'>', $membership_file);
@@ -214,8 +262,8 @@ sub make_clusters {
 	my @clus_members;
 	for my $cls_member (@{$clus{$cls}}) {
 	    say $mem "$cls_member $cls_ct";
-	    if (exists $rindex{$cls_member}) {
-		push @clus_members, $rindex{$cls_member};
+	    if (exists $index{$cls_member}) {
+		push @clus_members, $index{$cls_member};
 	    }
 	}
 	say $cls_out join " ", @clus_members;
@@ -238,7 +286,6 @@ sub clusters2fasta {
     $cluster_size = defined($cluster_size) ? $cluster_size : '500';
 
     open(my $cls, '<', $cls_file);
-    local $/ = '>';
 
     #my $str = POSIX::strftime("%m_%d_%Y_%H_%M_%S", localtime);
     my ($iname, $ipath, $isuffix) = fileparse($cls_file, qr/\.[^.]*/);
@@ -247,7 +294,6 @@ sub clusters2fasta {
     my $cls_dir = $cls_dir_base."_cls_fasta_files_$str";
     $cls_dir_path = $ipath.$cls_dir;
     make_path($cls_dir_path, {verbose => 0, mode => 0711,}); # allows for recursively making paths
-    #mkdir($cls_dir_path, 0777) || die "ERROR: Could not make directory for clusters. Exiting.\n"; 
 
     while (my $line = <$cls>) {
         my ($clsid, $seqids) = split /\n/, $line;
@@ -274,11 +320,16 @@ sub clusters2fasta {
 sub fas2hash {
     my $fas_file = shift;
     open(my $fas, '<', $fas_file);
+
+    my %seqhash;
+    $DB_BTREE->{cachesize} = 100000;
+    $DB_BTREE->{flags} = R_DUP;
+    #my $seq_dbfile = "repeat_explorer_seqs.bdb";
+    tie( %seqhash, 'AnyDBM_File', ':memory:', 0666, $DB_BTREE);
    
     my $setct = 0;
     local $/ = '>';
 
-    my %seqhash;
     while (my $line = <$fas>) {
         my ($seqid, $seq) = split /\n/, $line;;
         $seqhash{$seqid} = $seq;
@@ -290,13 +341,13 @@ sub fas2hash {
 }
 
 sub clusters2graphs {
-    my ($cls_file, $hitsort, $str) = @_;
+    my ($cls_file, $hitsort, $cores, $str) = @_;
 
     my $clusters2graph_rscript = $cls_file;
     $clusters2graph_rscript .= ".clusters2graph.rscript";
     my ($hname, $hpath, $hsuffix) = fileparse($hitsort, qr/\.[^.]*/);
-    my $gl_dir = $hname."_GL_".$str;
-    my $ncol_dir = $hname."_ncol_".$str;
+    my $gl_dir = $hname."_GL_$str";
+    my $ncol_dir = $hname."_ncol_$str";
     open(my $rscript, '>', $clusters2graph_rscript);
 
     say $rscript "suppressPackageStartupMessages(library(igraph))
@@ -525,14 +576,14 @@ for (i in GLfiles){
 }
 tmp2=capture.output(dev.off())
 # make pdf file from pngs 
-warnings()
+#warnings()
 cmd=paste(\"convert page????.png $gl2summary_plot\")
 system(cmd)
 tmp=lapply(pngFiles,unlink)  # remove all png files";
 
 close($rscript);
 
-    system("R --vanilla --slave --silent < $gl2summary_rscript 2> /dev/null");
+    system("/usr/local/R/2.15.2/lib64/R/bin/R --vanilla --slave --silent < $gl2summary_rscript 2> /dev/null");
     unlink($gl2summary_rscript);
     #return $gl2summary_plot
 }
@@ -574,7 +625,7 @@ axis(1,at=seq(0,NinAll,length.out=11),label=seq(0,100,by=10))
 tmp=capture.output(dev.off())";
     close($rscript);
 
-    system("R --vanilla --slave --silent < $cls_size_dist_rscript 2> /dev/null");
+    system("/usr/local/R/2.15.2/lib64/R/bin/R --vanilla --slave --silent < $cls_size_dist_rscript 2> /dev/null");
     unlink($cls_size_dist_rscript);
 }
 
