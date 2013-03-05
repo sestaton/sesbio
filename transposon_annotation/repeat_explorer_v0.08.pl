@@ -71,7 +71,7 @@ my $cls_file = make_clusters($community, $hitsort, $index_file);
 ### generate plots from cluster file
 my $str = POSIX::strftime("%m_%d_%Y_%H_%M_%S", localtime);
 my ($seqhash, $seqct) = fas2hash($fas_file);
-my $cls_dir_path = clusters2fasta($cls_file, $seqhash, $cluster_size, $str);
+#my $cls_dir_path = clusters2fasta($cls_file, $seqhash, $cluster_size, $str);
 untie %$seqhash;
 undef %$seqhash;
 
@@ -296,8 +296,6 @@ sub clusters2fasta {
     make_path($cls_dir_path, {verbose => 0, mode => 0711,}); # allows for recursively making paths
 
     while (my $line = <$cls>) {
-	$line =~ s/>//g;
-        next if !length($line);
         my ($clsid, $seqids) = split /\n/, $line;
         next unless defined $seqids;
         my @ids = split /\s+/, $seqids;
@@ -333,10 +331,7 @@ sub fas2hash {
     local $/ = '>';
 
     while (my $line = <$fas>) {
-	$line =~ s/>//g;
-        next if !length($line);
-        my ($seqid, @seqs) = split /\n/, $line;
-	my $seq = join '', @seqs;
+        my ($seqid, $seq) = split /\n/, $line;;
         $seqhash{$seqid} = $seq;
         $seqct++ if defined $seq;
     }
