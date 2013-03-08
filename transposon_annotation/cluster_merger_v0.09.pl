@@ -94,11 +94,12 @@ for my $non_paired_cls (keys %$read_pairs) {
     my ($non_paired_clsid, $non_paired_clsseqnum) = split /\_/, $non_paired_cls, 2;
     say $rep $non_paired_clsid;
     say $clsnew join "\n", ">$non_paired_clsid $non_paired_clsseqnum", join " ", @{$read_pairs->{$non_paired_cls}};
-    my $non_paired_clsfile .= $non_paired_cls.".fas";
-    my $cls_file_path = File::Spec->catfile($cls_dir_path, $non_paired_clsfile);
-    open(my $clsout, '>', $cls_file_path);
-    
+
     if (scalar(@{$read_pairs->{$non_paired_cls}}) >= $cluster_size) {
+	my $non_paired_clsfile .= $non_paired_cls.".fas";
+	my $cls_file_path = File::Spec->catfile($cls_dir_path, $non_paired_clsfile);
+	open(my $clsout, '>', $cls_file_path);
+
 	for my $non_paired_read (@{$read_pairs->{$non_paired_cls}}) {
 	    if (exists $seqs->{$non_paired_read}) {
 		say $clsout join "\n", ">".$non_paired_read, $seqs->{$non_paired_read};
@@ -107,8 +108,8 @@ for my $non_paired_cls (keys %$read_pairs) {
 		say "WARNING: $non_paired_read not found. This is a bug. Please report it.";
 	    }
 	}
+	close($clsout);
     }
-    close($clsout);
 }
 close($rep);
 close($clsnew);
