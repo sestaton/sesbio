@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-## TODO: Need to write all clusters, those below threshold included, to new .cls file
+## TODO: Need to write all clusters, those below threshold included, to new .cls file DONE
 
 use v5.12;
 use strict;
