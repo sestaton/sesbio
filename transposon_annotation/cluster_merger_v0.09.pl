@@ -6,8 +6,9 @@ use utf8;
 use v5.12;
 use strict;
 use warnings;
+use warnings qw(FATAL utf8);
+use open qw(:std :utf8);
 use autodie qw(open);
-use feature 'say';
 use File::Spec qw(catfile rel2abs);
 use File::Basename qw(fileparse);
 use File::Path qw(make_path);
@@ -175,11 +176,14 @@ sub find_pairs {
 	    else {
 		#my $cls_merge_cand = join "|", $cls_i, $cls_j;
 		#$cls_conn_ct{$cls_merge_cand}++;
-		$cls_conn_ct{mk_key($cls_i,$cls_j)}++;
+		my $k = mk_key($cls_i, $cls_j);
+		$cls_conn_ct{$k}++;
 	    }
 	}
 	@sep_reads = ();
     }
+
+    #dd %cls_conn_ct;
 
     for my $p (reverse sort { $cls_conn_ct{$a} <=> $cls_conn_ct{$b} } keys %cls_conn_ct) {
 	#my ($i, $j) = split /\|/, $p;
@@ -220,6 +224,6 @@ sub fas2hash {
 # http://stackoverflow.com/a/15299397/1543853
 #
 # NB: in v5.16 charnames() will be loaded automatically
-sub mk_key { join("\N{INVISIBLE SEPARATOR}", @_) }
+sub mk_key { join "\N{INVISIBLE SEPARATOR}", @_ }
 
-sub mk_vec { map [split "\N{INVISIBLE SEPARATOR}"], @_ }
+sub mk_vec { split "\N{INVISIBLE SEPARATOR}", shift }
