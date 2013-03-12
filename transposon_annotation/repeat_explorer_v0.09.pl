@@ -90,7 +90,7 @@ my $cls_file = make_clusters($community, $hitsort, $index_file);
 # find union in clusters
 $cluster_size = defined($cluster_size) ? $cluster_size : '500';
 my ($seqs, $seqct) = fas2hash($fas_file);
-my ($read_pairs, $vertex, $uf) = find_pairs($infile, $rep);
+my ($read_pairs, $vertex, $uf) = find_pairs($cls_file, $rep);
 merge_clusters($vertex, $seqs, $read_pairs, $clsnew, $cls_dir_path, $rep);
 
 ### generate plots from cluster file
@@ -105,7 +105,7 @@ merge_clusters($vertex, $seqs, $read_pairs, $clsnew, $cls_dir_path, $rep);
 ### -- then, incorporate results into size dist summary plot (see old 454summary.R
 ### script use in plant journal paper)
 my $cwd = getcwd();
-write_cls_size_dist_summary($cls_with_merges, $seqct, $cwd);
+write_cls_size_dist_summary($cls_with_merges_path, $seqct, $cwd);
 
 #
 # Subs
@@ -136,9 +136,11 @@ sub parse_blast {
     while (<$in>) { 
 	chomp; 
 	my ($q_name, $q_len, $q_start, $q_end, $s_name, $s_len, 
-	    $s_start, $s_end, $pid, $score, $e_val, $strand) = split;
-    
-	if ($strand eq '2') {
+	    $s_start, $s_end, $pid, $score, $e_val, $frame) = split;
+
+	next if $q_name eq $s_name;
+
+	if ($q_start > $q_end) {
 	    $total_hits++;
 	    my $neg_query_hit_length = ($q_start - $q_end) + 1;
 	    my $neg_query_cov = $neg_query_hit_length/$q_len;
@@ -182,6 +184,9 @@ sub parse_blast {
 	say $indexout join " ", $idx_mem, $match_index{$idx_mem};
     }
     close($indexout);
+
+    untie %match_index;
+    undef %match_index;
 
     return($outfile, $index_file, $hitsort_int);
 }
