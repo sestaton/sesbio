@@ -3,10 +3,10 @@
 ## Load JSON file to get hits for each type DONE
 ## push matches into array, should stay ordered
 
+use v5.12;
 use strict;
 use warnings;
 use autodie qw(open);
-use feature 'say';
 use File::Spec qw(catfile rel2abs);
 use File::Basename;
 use File::Path qw(make_path);
@@ -14,20 +14,22 @@ use Getopt::Long;
 use JSON;
 use Data::Dump qw(dd dump);
 
-my $usage = "$0 -i cluster_fas_files_dir -d repeat_db -j repbase.json -o annot_clusters_dir\n";
+my $usage = "$0 -i cluster_fas_files_dir -d repeat_db -j repbase.json -o annot_clusters_dir -r report.tsv\n";
 my $indir; 
 my $database;
 my $outdir;
 my $json;
+my $report;
 
 GetOptions(
 	   'i|indir=s'  => \$indir,
 	   'o|outdir=s' => \$outdir,
 	   'd|db=s'     => \$database,
 	   'j|json=s'   => \$json,
+	   'r|report=s' => \$report,
 	   );
 
-die $usage if !$indir or !$outdir or !$database or !$json;
+die $usage if !$indir or !$outdir or !$database or !$json or !$report;
 
 ## get input files
 opendir(DIR, $indir) || die "\nERROR: Could not open directory: $indir. Exiting.\n";
@@ -50,7 +52,8 @@ chdir($indir);
 
 my @colors;
 
-say join "\t", "Cluster", "Read_count", "Type", "Class", "Superfam", "SINE_family","Top_hit";
+open(my $out, '>', $report);                                                                                                                             
+say $out join "\t", "Cluster", "Read_count", "Type", "Class", "Superfam", "SINE_family","Top_hit";  ## this is not accurate and needs to be updated
 
 for my $file (sort { $a =~ /CL(\d+)/ <=> $b =~ /CL(\d+)/ } @clus_fas_files) {
     my ($fname, $fpath, $fsuffix) = fileparse($file, qr/\.[^.]*/);
@@ -59,10 +62,18 @@ for my $file (sort { $a =~ /CL(\d+)/ <=> $b =~ /CL(\d+)/ } @clus_fas_files) {
     $blast_res =~ s/\.[^.]+$//;
     $blast_res .= "_blast.tsv";
     my $blast_file_path = File::Spec->catfile($out_path, $blast_res);
-    #say "blast_file_path: $blast_file_path";
-    my @blast_out = `blastall -p blastn -e 1e-5 -i $file -d $database -m 8 | cut -f2 | sort | uniq -c | sort -bnr | perl -lane 'print join("\t",\@F)'`;
+
+    my $blastcmd = "blastn -dust no -query $file -evalue 1e-5 -db $database -outfmt 6 | ".
+	           "cut -f2 | ".                          # keep only the ssids
+		   "sort | ".                             # sort the list
+		   "uniq -c | ".                          # reduce the list
+		   "sort -bnr | ".                        # count unique items
+		   "perl -lane 'print join(\"\\t,\\@F)'"; # create an easy to parse format
+    my @blast_out = qx($blastcmd);
+
     my ($hit_ct, $top_hit) = parse_blast(\@blast_out, $blast_file_path);
-    my $color = blast2annot($json, $filebase, $readct, $top_hit);
+    next unless defined $top_hit;
+    my $color = blast2annot($json, $filebase, $readct, $top_hit, $out);
     #$color = defined($color) ? $color : "nomatch";
     #push @colors, $color;
     ## return to hit by frequency
@@ -72,34 +83,37 @@ for my $file (sort { $a =~ /CL(\d+)/ <=> $b =~ /CL(\d+)/ } @clus_fas_files) {
 	say "No hits for $file";
     }
 }
+close($out);
 
 sub blast2annot {
-    my ($json, $filebase, $readct, $top_hit) = @_;
+    my ($json, $filebase, $readct, $top_hit, $out) = @_;
 
     my $repeats = json2hash($json);
-    my $repeats_path = File::Spec->rel2abs($repeats);
+    #my $repeats_path = File::Spec->rel2abs($repeats);
+    my $color; # this is for annotating the barplot
 
-    my $color;
+    #open(my $out, '>', $report);
+    #say $out join "\t", "Cluster", "Read_count", "Type", "Class", "Superfam", "SINE_family","Top_hit";
 
     for my $type (keys %$repeats) {
 	if ($type eq 'pseudogene' || $type eq 'simple_repeat' || $type eq 'integrated_virus') {
 	    if ($type eq 'pseudogene' && $$top_hit =~ /rrna|trna|snrna/i) {
-		say join "\t", $filebase, $readct, $type, $$top_hit;
+		say $out join "\t", $filebase, $readct, $type, $$top_hit;
 	    }
 	    elsif ($type eq 'simple_repeat' && $$top_hit =~ /msat/i) {
-		say join "\t", $filebase, $readct, $type, "Satellite", "MSAT", $$top_hit;
+		say $out join "\t", $filebase, $readct, $type, "Satellite", "MSAT", $$top_hit;
 	    }
 	    elsif ($type eq 'simple_repeat' && $$top_hit =~ /sat/i) {
-		say join "\t", $filebase, $readct, $type, "Satellite", "SAT", $$top_hit;
+		say $out join "\t", $filebase, $readct, $type, "Satellite", "SAT", $$top_hit;
 	    }                                                                                                                                              
 	    elsif ($type eq 'integrated_virus' && $$top_hit =~ /caul/i) {
-		say join "\t", $filebase, $readct, $type, "Caulimoviridae", $$top_hit;
+		say $out join "\t", $filebase, $readct, $type, "Caulimoviridae", $$top_hit;
 	    }
 	    elsif ($type eq 'integrated_virus' && ($$top_hit eq 'PIVE' || $$top_hit eq 'DENSOV_HM')) {
-		say join "\t", $filebase, $readct, $type, "DNA Virus", $$top_hit;
+		say $out join "\t", $filebase, $readct, $type, "DNA Virus", $$top_hit;
 	    }
 	    elsif ($type eq 'endogenous_retrovirus' && $$top_hit =~ /erv/i) {
-		say join "\t", $filebase, $readct, $type, "Endogenous Retrovirus", $$top_hit;
+		say $out join "\t", $filebase, $readct, $type, "Endogenous Retrovirus", $$top_hit;
 	    }                                                                   
 	    next;
 	}
@@ -112,7 +126,7 @@ sub blast2annot {
 				for my $sines (@{$repeats->{$type}{$class}[$superfam_index]{$superfam_h}[$sine_fam_index]{$sine_fam_mem}}) {
 				    for my $sine (@$sines) {
 					if ($sine =~ /$$top_hit/) {
-					    say join "\t", $filebase, $readct, $type, $class, $superfam_h, $sine_fam_mem, $$top_hit;
+					    say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $sine_fam_mem, $$top_hit;
 					    #$color = "aquamarine"; ## fix this to be distinct
 					}
 					#else { say "NOMATCH $sine => $$top_hit"; }
@@ -122,10 +136,10 @@ sub blast2annot {
 			}
 		    } # if /sine/i
 		    elsif ($superfam_h =~ /gypsy/i && $$top_hit =~ /^RLG/) {
-			say join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit;
+			say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit;
 		    }
 		    elsif ($superfam_h =~ /copia/i && $$top_hit =~ /^RLC/) {
-			say join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit;
+			say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit;
 		    }
 		    else {
 			for my $fam (@{$repeats->{$type}{$class}[$superfam_index]{$superfam_h}}) {
@@ -143,7 +157,7 @@ sub blast2annot {
 				    #	$color = "aquamarine2" if $nonltr =~ /$$top_hit/i;
 				    #    }
 				    #}
-				    say join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit;
+				    say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit;
 				}
 				#else { say "NOMATCH $mem => $$top_hit"; }
 			    }
@@ -153,6 +167,7 @@ sub blast2annot {
 	    }
 	}
     }
+    #close($out);
     return \$color;
 }
 
