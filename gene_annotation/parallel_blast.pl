@@ -6,7 +6,7 @@ parallel_blast.pl - Run multiple BLAST threads concurrently
 
 =head1 SYNOPSIS    
  
-parallel_blast.pl -i seqs.fas -o seqs_nt.bln -f fasta -t 2 -n 100000 -cpu 2
+parallel_blast.pl -i seqs.fas -o seqs_nt.bln -t 2 -n 100000 -cpu 2
 
 =head1 DESCRIPTION
      
@@ -17,7 +17,7 @@ input set of sequences may be in fasta or fastq format.
 
 =head1 DEPENDENCIES
 
-BioPerl and Parallel::ForkManager are non-core Perl libraries that must
+Parallel::ForkManager is a non-core Perl library that must
 be installed in order for this script to work. 
 
 Tested with:
@@ -25,7 +25,10 @@ Tested with:
 =over
 
 =item *
-L<BioPerl> 1.069, L<Parallel::ForkManger> 0.7.9 and Perl 5.8.5 (Red Hat Enterprise Linux AS release 4 (Nahant Update 9))
+L<Parallel::ForkManger> 0.7.9 and Perl 5.8.5 (Red Hat Enterprise Linux AS release 4 (Nahant Update 9))
+
+=item *
+L<Parallel::ForkManager> 0.7.9 and Perl 5.14.2 (Red Hat Enterprise Linux Server release 5.8 (Tikanga))
 
 =back
 
@@ -63,10 +66,6 @@ potentially be hundreds of thousands of files created.
 
 The BLAST database to search. 
 
-=item -sf, --seq_format
-
-The format of the input sequences. Must be one of fasta or fastq.
-
 =back
 
 =head1 OPTIONS
@@ -103,6 +102,10 @@ or '7' with is "blastxml" (BLAST XML output).
 
 The e-value threshold for hits to each query. Default is 1e-5.
 
+=item -w, --warn
+
+Print the BLAST warnings. Defaust is no;
+
 =item -h, --help
 
 Print a usage statement. 
@@ -113,6 +116,7 @@ Print the full documentation.
 
 =cut      
 
+use v5.10;
 use strict;
 use warnings;
 use Cwd;
@@ -121,8 +125,8 @@ use Pod::Usage;
 use Time::HiRes qw(gettimeofday);
 use File::Basename;
 use File::Temp;
+use IPC::Open3;
 use Parallel::ForkManager;
-use Bio::SeqIO;
 
 #
 # Vars with scope
@@ -131,9 +135,9 @@ my $infile;
 my $outfile;
 my $database;
 my $numseqs;
-my $format;
 my $thread;
 my $cpu;
+my $warn;
 my $help;
 my $man;
 
@@ -150,7 +154,6 @@ GetOptions(# Required
 	   'o|outfile=s'        => \$outfile,
 	   'd|database=s'       => \$database,
 	   'n|numseqs=i'        => \$numseqs,
-	   'sf|seq_format=s'    => \$format,
 	   # Options
 	   'a|cpu=i'            => \$cpu,
 	   'b|num_aligns=i'     => \$num_alignments,
@@ -159,6 +162,7 @@ GetOptions(# Required
 	   'e|evalue=f'         => \$evalue,
 	   'bf|blast_format=i'  => \$blast_format,
 	   't|threads=i'        => \$thread,
+	   'w|warn'             => \$warn,
            'h|help'             => \$help,
            'm|man'              => \$man,
            ) || pod2usage( "Try '$0 --man' for more information." );
@@ -170,9 +174,7 @@ usage() and exit(0) if $help;
 
 pod2usage( -verbose => 2 ) if $man;
 
-if (!$infile || !$format || 
-    !$outfile || !$database || 
-    !$numseqs) {
+if (!$infile || !$outfile || !$database || !$numseqs) {
     print "\nERROR: No input was given.\n";
     usage();
     exit(1);
@@ -182,18 +184,18 @@ if (!$infile || !$format ||
 # Set vaules
 #
 my $t0 = gettimeofday();
-$cpu = defined($cpu) ? $cpu : '1';          # we are going to set defaults this way
-$thread = defined($thread) ? $thread : '1'; # to work with Perl versions released prior to 5.10
+$cpu //= 1;  
+$thread //= 1;
 
-my ($seq_files,$seqct) = split_reads($infile,$outfile,$numseqs,$format);
+my ($seq_files,$seqct) = split_reads($infile,$outfile,$numseqs);
 
 open(my $out, '>>', $outfile) or die "\nERROR: Could not open file: $outfile\n"; 
 
 my $pm = Parallel::ForkManager->new($thread);
 $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
-			  foreach my $bl (sort keys %$data_ref) {
+			  for my $bl (sort keys %$data_ref) {
 			      open(my $report, '<', $bl) or die "\nERROR: Could not open file: $bl\n";
-			      while(my $line = <$report>) {
+			      while (my $line = <$report>) {
 				  print $out $line;
 			      }
 			      close($report);
@@ -202,12 +204,14 @@ $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump
 			  my $t1 = gettimeofday();
 			  my $elapsed = $t1 - $t0;
 			  my $time = sprintf("%.2f",$elapsed/60);
-			  print "$ident just finished with PID $pid and exit code: $exit_code in $time minutes\n";
+			  print basename($ident)," just finished with PID $pid and exit code: $exit_code in $time minutes\n";
 		      } );
 
-foreach my $seqs (@$seq_files) {
+for my $seqs (@$seq_files) {
     $pm->start($seqs) and next;
-    my $blast_out = run_blast($seqs,$database,$cpu,$blast_program,$blast_format,$num_alignments,$num_descriptions,$evalue);
+    my $blast_out = run_blast($seqs,$database,$cpu,$blast_program,
+			      $blast_format,$num_alignments,
+			      $num_descriptions,$evalue,$warn);
     $blasts{$blast_out} = 1;
     
     unlink($seqs);
@@ -230,13 +234,15 @@ exit;
 #
 sub run_blast {
     
-    my ($subseq_file,$database,$cpu,$blast_program,$blast_format,$num_alignments,$num_descriptions,$evalue) = @_;
+    my ($subseq_file,$database,$cpu,$blast_program,
+	$blast_format,$num_alignments,$num_descriptions,
+	$evalue,$warn) = @_;
 
-    $blast_program = defined($blast_program) ? $blast_program : 'blastp';          # We can set defaults with much less typing 
-    $blast_format  = defined($blast_format) ? $blast_format : '8';                 # if we 'use 5.010' but we'll try to be compatible.
-    $num_alignments = defined($num_alignments) ? $num_alignments : '250';          # These are the BLAST defaults, increase as needed       
-    $num_descriptions = defined($num_descriptions) ? $num_descriptions : '500';    # e.g., for OrthoMCL.
-    $evalue = defined($evalue) ? $evalue : '1e-5';
+    $blast_program //= 'blastp';           
+    $blast_format //= 8;
+    $num_alignments //= 250;
+    $num_descriptions //= 500;
+    $evalue //= 1e-5;
 
     my ($dbfile,$dbdir,$dbext) = fileparse($database, qr/\.[^.]*/);
     my ($subfile,$subdir,$subext) = fileparse($subseq_file, qr/\.[^.]*/);
@@ -261,19 +267,30 @@ sub run_blast {
 	"-a $cpu ".
 	"-m $blast_format";
 
-    system($blast_cmd);
-    return($subseq_out);
+    my $bout = $subfile."_blast.out";
+    my $berr = $subfile."_blast.err";
+    my $pid;
+    eval { $pid = open3(undef, $bout, $berr, $blast_cmd); };
+    die "open3: $@\n" if $@;
+    waitpid($pid, 0);
+    if ($?) {
+	die "\nERROR: child $pid exited with status of: $?\n";
+    }
+    if (defined $warn) {
+	print "\n$_" while <$berr>;
+    }
+    close($bout); close($berr);
+    return $subseq_out;
 
 }
 
 sub split_reads {
 
-    my ($input,$output,$numseqs,$format) = @_;
+    my ($infile,$outfile,$numseqs) = @_;
 
-    my ($iname, $ipath, $isuffix) = fileparse($input, qr/\.[^.]*/);
+    my ($iname, $ipath, $isuffix) = fileparse($infile, qr/\.[^.]*/);
     
-    my $seq_in  = Bio::SeqIO->new(-file  => $input,
-				  -format => $format);
+    my $out;
     my $count = 0;
     my $fcount = 1;
     my @split_files;
@@ -286,42 +303,91 @@ sub split_reads {
                                  DIR => $cwd,
 				 SUFFIX => ".fasta",
 				 UNLINK => 0);
+    open($out, '>', $fname) or die "\nERROR: Could not open file: $fname\n";
     
-    my $seq_out = Bio::SeqIO->new(-file => ">$fname", 
-				  -format=>'fasta');
-
-    push(@split_files,$fname);
-    while (my $seq = $seq_in->next_seq) {
+    push @split_files, $fname;
+    open(my $in, '<', $infile) or die "\nERROR: Could not open file: $infile\n";
+    my @aux = undef;
+    my ($name, $seq, $qual);
+    while (($name, $seq, $qual) = readfq(\*$in, \@aux)) {
 	if ($count % $numseqs == 0 && $count > 0) {
 	    $fcount++;
             $tmpiname = $iname."_".$fcount."_XXXX";
-            $fname = File::Temp->new( TEMPLATE => $tmpiname,
+            my $fname = File::Temp->new( TEMPLATE => $tmpiname,
                                       DIR => $cwd,
 				      SUFFIX => ".fasta",
 				      UNLINK => 0);
+	    open($out, '>', $fname) or die "\nERROR: Could not open file: $fname\n";
 
-	        $seq_out = Bio::SeqIO->new(-file => ">$fname", 
-					   -format=>'fasta');
-
-	    push(@split_files,$fname);
+	    push @split_files, $fname;
 	}
-	$seq_out->write_seq($seq);
+	print $out join "\n", ">".$name, $seq;
 	$count++;
     }
-
+    close($in); close($out);
     return (\@split_files,$count);
+}
+
+sub readfq {
+    my ($fh, $aux) = @_;
+    @$aux = [undef, 0] if (!defined(@$aux));
+    return if ($aux->[1]);
+    if (!defined($aux->[0])) {
+        while (<$fh>) {
+            chomp;
+            if (substr($_, 0, 1) eq '>' || substr($_, 0, 1) eq '@') {
+                $aux->[0] = $_;
+                last;
+            }
+        }
+        if (!defined($aux->[0])) {
+            $aux->[1] = 1;
+            return;
+        }
+    }
+    my $name;                       # This keeps paired-end information
+    if (/^.?((\S+)\s(\d)\S+)/) {    # Illumina 1.8+
+        $name = $1."/".$2;
+    }
+    elsif (/^.?(\S+)/) {            # Illumina 1.3+
+        $name = $1;
+    } else {
+        $name = '';                 # ?
+    }
+    my $seq = '';
+    my $c;
+    $aux->[0] = undef;
+    while (<$fh>) {
+        chomp;
+        $c = substr($_, 0, 1);
+        last if ($c eq '>' || $c eq '@' || $c eq '+');
+        $seq .= $_;
+    }
+    $aux->[0] = $_;
+    $aux->[1] = 1 if (!defined($aux->[0]));
+    return ($name, $seq) if ($c ne '+');
+    my $qual = '';
+    while (<$fh>) {
+        chomp;
+        $qual .= $_;
+        if (length($qual) >= length($seq)) {
+            $aux->[0] = undef;
+            return ($name, $seq, $qual);
+        }
+    }
+    $aux->[1] = 1;
+    return ($name, $seq);
 }
 
 sub usage {
     my $script = basename($0);
     print STDERR <<END
 
-USAGE: $script -i seqs.fas -d db -sf fasta|fastq -o blast_result -n num [-t] [-a] [-b] [-v] [-p] [-bf] [-e] [-h] [-m]
+USAGE: $script -i seqs.fas -d db -o blast_result -n num [-t] [-a] [-b] [-v] [-p] [-bf] [-e] [-h] [-m]
 
 Required:
     -i|infile        :    Fasta file to search (contig or chromosome).
     -o|outfile       :    File name to write the blast results to.
-    -sf|seq_format   :    The format of the sequence (must be "fasta" or "fastq").
     -d|database      :    Database to search.
     -n|numseqs       :    The number of sequences to write to each split.
 
