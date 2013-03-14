@@ -102,10 +102,6 @@ or '7' with is "blastxml" (BLAST XML output).
 
 The e-value threshold for hits to each query. Default is 1e-5.
 
-=item -w, --warn
-
-Print the BLAST warnings. Defaust is no.
-
 =item -h, --help
 
 Print a usage statement. 
@@ -137,7 +133,6 @@ my $database;
 my $numseqs;
 my $thread;
 my $cpu;
-my $warn;
 my $help;
 my $man;
 
@@ -162,7 +157,6 @@ GetOptions(# Required
 	   'e|evalue=f'         => \$evalue,
 	   'bf|blast_format=i'  => \$blast_format,
 	   't|threads=i'        => \$thread,
-	   'w|warn'             => \$warn,
            'h|help'             => \$help,
            'm|man'              => \$man,
            ) || pod2usage( "Try '$0 --man' for more information." );
@@ -211,7 +205,7 @@ for my $seqs (@$seq_files) {
     $pm->start($seqs) and next;
     my $blast_out = run_blast($seqs,$database,$cpu,$blast_program,
 			      $blast_format,$num_alignments,
-			      $num_descriptions,$evalue,$warn);
+			      $num_descriptions,$evalue);
     $blasts{$blast_out} = 1;
     
     unlink($seqs);
@@ -236,7 +230,7 @@ sub run_blast {
     
     my ($subseq_file,$database,$cpu,$blast_program,
 	$blast_format,$num_alignments,$num_descriptions,
-	$evalue,$warn) = @_;
+	$evalue) = @_;
 
     $blast_program //= 'blastp';           
     $blast_format //= 8;
@@ -275,9 +269,6 @@ sub run_blast {
     waitpid($pid, 0);
     if ($?) {
 	die "\nERROR: child $pid exited with status of: $?\n";
-    }
-    if (defined $warn) {
-	print "\n$_" while <$berr>;
     }
     close($bout); close($berr);
     return $subseq_out;
