@@ -189,9 +189,10 @@ my $pm = Parallel::ForkManager->new($thread);
 $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			  for my $bl (sort keys %$data_ref) {
 			      open(my $report, '<', $bl) or die "\nERROR: Could not open file: $bl\n";
-			      while (my $line = <$report>) {
-				  print $out $line;
-			      }
+			      #while (my $line = <$report>) {
+				  #print $out $line;
+			      #}
+			      print $out $_ while <$report>;
 			      close($report);
 			      unlink($bl);
 			  }
