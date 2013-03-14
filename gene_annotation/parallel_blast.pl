@@ -17,7 +17,7 @@ input set of sequences may be in fasta or fastq format.
 
 =head1 DEPENDENCIES
 
-Parallel::ForkManager is a non-core Perl library that must
+Perl 5.10 or newer. Parallel::ForkManager is a non-core Perl library that must
 be installed in order for this script to work. 
 
 Tested with:
@@ -104,7 +104,7 @@ The e-value threshold for hits to each query. Default is 1e-5.
 
 =item -w, --warn
 
-Print the BLAST warnings. Defaust is no;
+Print the BLAST warnings. Defaust is no.
 
 =item -h, --help
 
@@ -129,7 +129,7 @@ use IPC::Open3;
 use Parallel::ForkManager;
 
 #
-# Vars with scope
+# Lexical vars
 #
 my $infile;
 my $outfile;
