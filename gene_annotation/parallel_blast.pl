@@ -188,17 +188,17 @@ open(my $out, '>>', $outfile) or die "\nERROR: Could not open file: $outfile\n";
 my $pm = Parallel::ForkManager->new($thread);
 $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			  for my $bl (sort keys %$data_ref) {
-			      open(my $report, '<', $bl) or die "\nERROR: Could not open file: $bl\n";
-			      #while (my $line = <$report>) {
-				  #print $out $line;
-			      #}
-			      print $out $_ while <$report>;
+			      open(my $b, '<', $bl) or die "\nERROR: Could not open file: $bl\n";
+			      print $b $_ while <$report>;
 			      close($report);
 			      unlink($bl);
 			  }
 			  my $t1 = gettimeofday();
 			  my $elapsed = $t1 - $t0;
 			  my $time = sprintf("%.2f",$elapsed/60);
+			  if ($core_dump) {
+			      print "\nWARNING: It looks like $pid produced a core dump: $core_dump\n";
+			  }
 			  print basename($ident)," just finished with PID $pid and exit code: $exit_code in $time minutes\n";
 		      } );
 
@@ -221,14 +221,13 @@ my $t2 = gettimeofday();
 my $total_elapsed = $t2 - $t0;
 my $final_time = sprintf("%.2f",$total_elapsed/60);
 
-print "\n========> Finihsed running BLAST on $seqct sequences in $final_time minutes\n";
+print "\n========> Finished running BLAST on $seqct sequences in $final_time minutes\n";
 
 exit;
 #
 # Subs
 #
 sub run_blast {
-    
     my ($subseq_file,$database,$cpu,$blast_program,
 	$blast_format,$num_alignments,$num_descriptions,
 	$evalue) = @_;
@@ -266,18 +265,17 @@ sub run_blast {
     my $berr = $subfile."_blast.err";
     my $pid;
     eval { $pid = open3(undef, $bout, $berr, $blast_cmd); };
-    die "open3: $@\n" if $@;
+    #die "open3: $@\n" if $@; 
+    if ($@) { print "\nERROR: BLAST failed. If you think this is a bug, please report it. Exiting.\n"; exit(1); }
     waitpid($pid, 0);
     if ($?) {
-	die "\nERROR: child $pid exited with status of: $?\n";
+	die "\nERROR: Child $pid exited with status of: $?. Exiting.\n";
     }
     close($bout); close($berr);
     return $subseq_out;
-
 }
 
 sub split_reads {
-
     my ($infile,$outfile,$numseqs) = @_;
 
     my ($iname, $ipath, $isuffix) = fileparse($infile, qr/\.[^.]*/);
