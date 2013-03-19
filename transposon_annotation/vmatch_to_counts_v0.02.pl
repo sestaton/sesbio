@@ -4,7 +4,6 @@ use 5.014;
 use strict;
 use warnings;
 use autodie qw(open);
-use lib qw(/home/jmblab/statonse/apps/perlmod/Data-Dump-1.21/blib/lib);
 use Data::Dump qw(dd);
 use JSON;
 use List::Util qw(sum);
@@ -69,7 +68,7 @@ for my $supfam (keys %family_map) {
     }
     my $sum = sum(@{$supfamily_match_ct{$supfam}});
     if (defined $sum) {
-	say join("\t",$supfam,$sum);
+	say join "\t", $supfam, $sum;
     }
 }
 
