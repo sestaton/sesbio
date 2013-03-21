@@ -89,7 +89,7 @@ if (defined $toupper) {
 	    my $seq = join '', @seqs;
 	    my $useq = uc($seq);
 	    $scrSeqCt++ if defined $seq;
-	    say $out join "\n", $seqid, $useq;
+	    say $out join "\n", ">".$seqid, $useq;
 	}
     }
     close($fas);
