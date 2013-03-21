@@ -1,8 +1,13 @@
 #!/usr/bin/env perl
 
+use utf8;
 use v5.12;
 use strict;
 use warnings;
+use warnings FATAL => "utf8";
+#use charnames qw(:full :short); # not actually using this right now
+use open qw(:std :utf8);
+use autodie qw(open);
 use Getopt::Long;
 use File::Basename;
 use File::Temp;
@@ -53,7 +58,6 @@ my $o_tmp = File::Temp->new( TEMPLATE => $tmpiname,
 			     UNLINK => 0);
 
 # set paths to programs used
-my $seqret = find_prog("seqret");
 my $mkvtree = find_prog("mkvtree");
 my $vmatch = find_prog("vmatch");
 
@@ -70,19 +74,39 @@ my ($vmatch_o, $vmatch_e) = capture { system("$vmatch -s -showdesc 0 -qnomatch $
 #
 # Convert back to Uppercase
 #
+my $scrSeqCt = 0;
 if (defined $toupper) {
-    my ($seqret_o, $seqret_e) = capture { system("$seqret -sequence $o_tmp -supper1 -outseq $outfile -auto"); };
+    open(my $fas, '<:utf8', $o_tmp);
+    open(my $out, '>:utf8', $outfile);
+
+    {
+	local $/ = '>';
+	
+	while (my $line = <$fas>) {
+	    $line =~ s/>//g;
+	    next if !length($line);
+	    my ($seqid, @seqs) = split /\n/, $line; 
+	    my $seq = join '', @seqs;
+	    my $useq = uc($seq);
+	    $scrSeqCt++ if defined $seq;
+	    say $out join "\n", $seqid, $useq;
+	}
+    }
+    close($fas);
+    close($out);
+
     unlink($o_tmp);
 }
-move($o_tmp, $outfile);
-unlink($o_tmp);
+else {
+    move($o_tmp, $outfile);
+    unlink($o_tmp);
+}
 
 my $qrySeqCt = `grep -c '>' $infile`; chomp($qrySeqCt);
-my $scrSeqCt = `grep -c '>' $outfile`; chomp($scrSeqCt);
 my $totSeqScr = $qrySeqCt - $scrSeqCt;
 my $totSeqScrPerc = sprintf("%.2f",$totSeqScr/$qrySeqCt * 100);
 
-say "\n$totSeqScrPerc % ($scrSeqCt","/","$qrySeqCt) of reads were screened in $infile. $scrSeqCt reads written to $outfile.";
+say "\n$totSeqScrPerc % ($totSeqScr","/","$qrySeqCt) of reads were screened in $infile. $scrSeqCt reads written to $outfile.\n";
 
 # clean up
 system("rm ${db}*");
@@ -98,25 +122,11 @@ sub find_prog {
     if ($path =~ /$prog$/) {
 	return $path;
     }
-
-    if ($path !~ /$prog$/) {
-	say "Couldn\'t find $prog in PATH. Will keep looking.";
-	$path = "/usr/local/emboss/latest/bin/$prog";           # path at zcluster
-    }
-
-    # Instead of just testing if the program exists and is executable 
-    # we want to make sure we have permissions, so we try to 
-    # invoke programs and examine the output. 
-    my ($prog_path, $prog_err) = capture { system("$path --help"); };
-
-    given ($prog_err) {
-	when (/Version\: EMBOSS/) { say "Using $prog located at: $path"; }
-	when (/^-bash: \/usr\/local\/emboss\/bin\/$prog\: No such file or directory$/) { die "Could not find $prog. Exiting.\n"; }
-	when ('') { die "Could not find getorf. Exiting.\n"; }
-	default { die "Could not find $prog. Trying installing EMBOSS or adding it's location to your PATH. Exiting.\n"; }
-    }
-    return $path;
+    else {
+	say "\nERROR: Could not find $prog PATH. Exiting."; exit(1);
+    }    
 }
+
 sub usage {
     my $script = basename($0);
     print STDERR <<END
