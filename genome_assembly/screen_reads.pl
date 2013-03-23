@@ -50,7 +50,7 @@ $matchlen //= 50;
 my ($sfile, $sdir, $sext) = fileparse($subject, qr/\.[^.]*/);
 my $db = $sfile."_mkvtreedb";
 my $cwd = getcwd();
-my $tmpiname = $ifile."_XXXX";
+my $tmpiname = $sfile."_XXXX";
 #my $vmatch_e;
 my $o_tmp = File::Temp->new( TEMPLATE => $tmpiname,
 			     DIR => $cwd,
