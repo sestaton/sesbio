@@ -48,13 +48,14 @@ $merlen //= 20;
 $matchlen //= 50;
 
 my ($sfile, $sdir, $sext) = fileparse($subject, qr/\.[^.]*/);
+my ($ifile, $idir, $iext) = fileparse($infile, qr/\.[^.]*/);
 my $db = $sfile."_mkvtreedb";
 my $cwd = getcwd();
-my $tmpiname = $sfile."_XXXX";
+my $tmpiname = $ifile."_XXXX";
 #my $vmatch_e;
 my $o_tmp = File::Temp->new( TEMPLATE => $tmpiname,
 			     DIR => $cwd,
-			     SUFFIX => $sext,
+			     SUFFIX => $iext,
 			     UNLINK => 0);
 
 # set paths to programs used
