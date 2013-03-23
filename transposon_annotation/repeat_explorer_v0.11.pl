@@ -40,32 +40,33 @@ my $infile;
 my $outfile;
 my $percent_id;
 my $percent_cov;
-my $cluster_size;
+my $cluster_size;    # this influences what will get annotated, not plotted in the size-dist graph
+my $merge_threshold;
 my $fas_file;
 my $cores;
 my $report;
 my $graph;
-
-#counters
-#my $total_hits = 0;
-#my $parsed_hits = 0;
-#my $index = 0;
+my $database;
+my $json;
 
 GetOptions(
-           'i|infile=s'         => \$infile,
-	   'f|fas_file=s'       => \$fas_file,
-           'o|outfile=s'        => \$outfile,
-	   'p|cpus=i'           => \$cores,
-	   'r|report=s'         => \$report,
-	   'cs|cluster_size=i'  => \$cluster_size,
-	   'id|percent_id=f'    => \$percent_id,
-	   'cov|percent_cov=f'  => \$percent_cov,
-	   'g|graph'            => \$graph,
+           'i|infile=s'          => \$infile,
+	   'f|fas_file=s'        => \$fas_file,
+           'o|outfile=s'         => \$outfile,
+	   'p|cpus=i'            => \$cores,
+	   'r|report=s'          => \$report,
+	   'cs|cluster_size=i'   => \$cluster_size,
+	   'id|percent_id=f'     => \$percent_id,
+	   'cov|percent_cov=f'   => \$percent_cov,
+	   'm|merge_threshold=i' => \$merge_threshold,
+	   'g|graph'             => \$graph,
+	   'd|database=s'        => \$database,
+	   'j|repbase_json=s'    => \$json,
           );
 
 # open the infile or die with a usage statement
-if (!$infile || !$outfile || !$fas_file
-    || !$percent_id || !$percent_cov || !$report) {
+if (!$infile || !$outfile || !$fas_file || !$database
+    || !$percent_id || !$percent_cov || !$report || !$json) {
     print "\nERROR: Input not parsed correctly.\n";
     usage() and exit(1);
 }
@@ -104,21 +105,23 @@ my $cls_file = make_clusters($community, $hitsort, $index_file);
 #my $cls_file = make_clusters($community, $outfile, $index_file);    ##// this is for debugging community
 
 ### Find union in clusters
-$cluster_size //= 500; # this has no impact on the size-dist graph, just on the cls->fasta conversion 
 my ($seqs, $seqct) = fas2hash($fas_file);
-my ($read_pairs, $vertex, $uf) = find_pairs($cls_file, $rep);
+my ($read_pairs, $vertex, $uf) = find_pairs($cls_file, $rep, $merge_threshold);
 merge_clusters($vertex, $seqs, $read_pairs, $clsnew, $cls_dir_path, $rep, $cluster_size);
 untie %$seqs;
 
 ### Generate graphs (NB: time-consuming, so I skip this)
 if ($graph) {
+    $cores //= 1;
     my $gl_dir = clusters2graphs($cls_with_merges_path, $outfile, $cores, $str);
     GL2summary($gl_dir, $cls_with_merges_path);
 }
 
 ### Annotate clusters, produce summary of merged and non-merged cluster size distribution
-write_cls_size_dist_summary($cls_with_merges_path, $seqct, $cwd);
-annotate_clusters($cls_dir_path, $database, $anno_rp_path, $anno_sum_rep_path);
+write_cls_size_dist_summary($cls_with_merges_path, $seqct, $cwd, $percent_id, $percent_cov);
+annotate_clusters($cls_dir_path, $database, $json, $anno_rp_path, $anno_sum_rep_path);
+
+exit; ## This is the end
 
 #
 # Subs
@@ -132,7 +135,6 @@ sub parse_blast {
     my $index = 0;
 
     my $index_file = $outfile.".index";  # integer index for read IDs used in clustering
-    #my $cluster_file = $outfile.".cls";  # cluster file in Repeat Explorer "cls" format
     my $hitsort_int = $outfile.".int";   # integer index for clustering           
 
     open(my $hs_int, '>', $hitsort_int);
@@ -211,7 +213,7 @@ sub louvain_method {
     my $cls_tree = $iname.".tree";                  # hierarchical tree of clustering results
     my $cls_tree_weights = $cls_tree.".weights";    # bit score, the weights applied to clustering
     my $cls_tree_log = $cls_tree.".log";            # the summary of clustering results at each level of refinement
-    my $hierarchy_err = $cls_tree.".hierarchy.log"; # some other log
+    my $hierarchy_err = $cls_tree.".hierarchy.log"; # hierarchical tree building log (not actually used)
 
     system("louvain_convert -i $hitsort_int -o $cls_bin -w $cls_tree_weights");
     unless (defined $cls_bin && defined $cls_tree_weights) {
@@ -244,6 +246,7 @@ sub make_clusters {
 
     my @graph_comm_sort = reverse sort { ($a =~ /(\d)$/) <=> ($b =~ /(\d)$/) } @$graph_comm;
     my $graph = shift @graph_comm_sort;
+    die "\nERROR: Community clusterin failed. Exiting.\n" unless defined $graph;
     my %clus;
     my %index;
 
@@ -296,6 +299,8 @@ sub make_clusters {
 sub merge_clusters {
     my ($vertex, $seqs, $read_pairs, $clsnew, $cls_dir_path, $rep, $cluster_size) = @_;
 
+    $cluster_size //= 500;
+
     my %cluster;
     for my $v (keys %$vertex) {
 	my $b = $$uf->find($v);
@@ -311,7 +316,7 @@ sub merge_clusters {
 	for (@$group) { my $clsstrcp = $_; my ($id, $seqnum) = split /\_/, $clsstrcp, 2; $groupseqnum += $seqnum; push @grpcp, $id; }
 	say $rep join "\t", $group_index, join ",", @grpcp;
 	say $clsnew ">G$group_index $groupseqnum";
-	my $group_file = "Cluster_grouping_".$group_index.".fas";
+	my $group_file = "G_".$group_index.".fas";
 	my $group_file_path = File::Spec->catfile($cls_dir_path, $group_file);
 	open(my $groupout, '>', $group_file_path);
     
@@ -353,7 +358,7 @@ sub merge_clusters {
 		}
 		else {
 		    say "WARNING: $non_paired_read not found. This is possibly a bug. Please report it.";
-		}
+		}B
 	    }
 	    close($clsout);
 	}
@@ -391,8 +396,10 @@ sub fas2hash {
 }
 
 sub find_pairs {
-    my ($cls_file, $rep) = @_;
+    my ($cls_file, $rep, $merge_threshold) = @_;
     
+    $merge_threshold //= 500;
+
     my $uf = Graph::UnionFind->new;
 
     say $rep "=====> Cluster connections above threshold";
@@ -411,7 +418,7 @@ sub find_pairs {
             my ($clsid, $seqids) = split /\n/, $line;
             $clsid =~ s/\s/\_/;
             my @ids = split /\s+/, $seqids;
-            #if (scalar(@ids) >= $cluster_size) {
+            #if (scalar(@ids) >= $cluster_size) {       # limit cluster size in .cls file here, if desired
             push @{$read_pairs{$clsid}}, $_ for @ids;
             #}
         }
@@ -446,7 +453,6 @@ sub find_pairs {
                 delete $mapped_pairs{$allpairs};           # which is uninformative for merging clusters
             }
             else {
-                #my $cls_merge_cand = join "|", $cls_i, $cls_j;
 		my $k = mk_key($cls_i, $cls_j);
                 $cls_conn_ct{$k}++;
             }
@@ -455,11 +461,10 @@ sub find_pairs {
     }
 
     for my $p (reverse sort { $cls_conn_ct{$a} <=> $cls_conn_ct{$b} } keys %cls_conn_ct) {
-        #my ($i, $j) = split /\|/, $p;
 	my ($i, $j) = mk_vec($p);
         my $i_noct = $i; $i_noct =~ s/\_.*//;
         my $j_noct = $j; $j_noct =~ s/\_.*//;
-        if ($cls_conn_ct{$p} >= 500) {    # threshold for merging clusters
+        if ($cls_conn_ct{$p} >= $merge_threshold) {    # threshold for merging clusters, make an option
             say $rep join "\t", $i_noct, $j_noct, $cls_conn_ct{$p};
             ++$vertex{$_} for $i, $j;
             $uf->union($i, $j);
@@ -523,10 +528,10 @@ sub parse_blast_to_top_hit {
 }
 
 sub annotate_clusters {
-    my ($cls_with_merges_dir, $database, $anno_rp_path, $anno_sum_rep_path) = @_;
+    my ($cls_with_merges_dir, $database, $json, $anno_rp_path, $anno_sum_rep_path) = @_;
 
     ## get input files
-    opendir(DIR, $cls_with_merges_dir) || die "\nERROR: Could not open directory: $indir. Exiting.\n";
+    opendir(DIR, $cls_with_merges_dir) || die "\nERROR: Could not open directory: $cls_with_merges_dir. Exiting.\n";
     my @clus_fas_files = grep /\.fa.*$/, readdir(DIR);
     closedir(DIR);
 
@@ -551,14 +556,15 @@ sub annotate_clusters {
     #my $rp_path = File::Spec->rel2abs($rppath.$rpname.$rpsuffix);
     open(my $out, '>>', $anno_rp_path);
 
-    chdir($indir);
+    chdir($cls_with_merges_dir);
 
     say $out join "\t", "Cluster", "Read_count", "Type", "Class", "Superfam", "SINE_family","Top_hit";  ## this is not accurate and needs to be updated
 
-    for my $file (sort { $a =~ /CL(\d+)/ <=> $b =~ /CL(\d+)/ } @clus_fas_files) {
+    #for my $file (sort { $a =~ /\w+.*?(\d+)/ <=> $b =~ /\w+.*?(\d+)/ } @clus_fas_files) {
+    for my $file (@clus_fas_files) {
 	my ($fname, $fpath, $fsuffix) = fileparse($file, qr/\.[^.]*/);
 	my $blast_res = $fname;
-	my ($filebase, $readct, @blname) = split /\_/, $fname;
+	my ($filebase, $readct) = split /\_/, $fname;
 	$blast_res =~ s/\.[^.]+$//;
 	$blast_res .= "_blast.tsv";
 	my $blast_file_path = File::Spec->catfile($out_path, $blast_res);
@@ -958,10 +964,10 @@ close($rscript);
 }
 
 sub write_cls_size_dist_summary {
-    my ($cls_file, $seqct, $cwd) = @_;
+    my ($cls_file, $seqct, $cwd, $percent_id, $percent_cov) = @_;
 
     my $cls_size_dist_plot = $cls_file;
-    $cls_size_dist_plot .= ".png";
+    $cls_size_dist_plot .= $percent_id."PID_".$percent_cov."PCOV.png";
     my $cls_size_dist_rscript = $cls_file;
     $cls_size_dist_rscript .= ".rscript";
     open(my $rscript, '>', $cls_size_dist_rscript);
@@ -1002,21 +1008,24 @@ sub usage {
     my $script = basename($0);
     print STDERR <<END
 
-USAGE: $script -i inreport -o hitsort -id 90.00 -cov 0.55 -f fasta_file -p 4
+USAGE: $script -i inreport -o hitsort -id 90.00 -cov 0.55 -f fasta_file 
 
 Required:
-    -i|infile        :    An mgblast report in tab format (-D 4).
-    -f|fas_file      :    The (Fasta) file of sequences used in the all-vs-all blast.
-    -o|outfile       :    File name to write the parsed results to in Repeat Explorer\'s hitsort format.
-    -p|cpus          :    The number of processors to use for plotting.
-    -cs|cluster_size :    The minimum cluster size to convert to fasta (Default: 500).
-    -id|percent_id   :    The percent identity threshold for matches.
-    -cov|percent_cov :    The percent coverage for both the query and subject to be retained for clustering.
-    -r|report        :    A file to hold the cluster stats.
+    -i|infile           :    An mgblast report in tab format (-D 4).
+    -f|fas_file         :    The (Fasta) file of sequences used in the all-vs-all blast.
+    -o|outfile          :    File name to write the parsed results to in Repeat Explorer\'s hitsort format.
+    -p|cpus             :    The number of processors to use for plotting.
+    -cs|cluster_size    :    The minimum cluster size to convert to fasta (Default: 500).
+    -id|percent_id      :    The percent identity threshold for matches.
+    -cov|percent_cov    :    The percent coverage for both the query and subject to be retained for clustering.
+    -r|report           :    A file to hold the cluster stats.
+    -d|database         :    Name a repeat database (made with makeblastdb) to use for annotation.
 
 Options:
-    -g|graph         :    Generate a graph file for each cluster, and a summary PDF for all the graphs.
-                          (NB: This is very time-consuming and intensive).
+    -g|graph            :    Generate a graph file for each cluster, and a summary PDF for all the graphs.
+                             (NB: This is very time-consuming and intensive.)
+    -m|merge_threshold  :    Threshold for merging clusters based on split paired-end reads (Default: 500).
+                             (NB: A logical threshold to pick is dependent on the number of reads.)
 
 END
 }
