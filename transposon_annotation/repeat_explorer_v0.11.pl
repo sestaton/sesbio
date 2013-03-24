@@ -358,7 +358,7 @@ sub merge_clusters {
 		}
 		else {
 		    say "WARNING: $non_paired_read not found. This is possibly a bug. Please report it.";
-		}B
+		}
 	    }
 	    close($clsout);
 	}
