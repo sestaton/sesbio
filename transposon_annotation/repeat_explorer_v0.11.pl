@@ -246,7 +246,7 @@ sub make_clusters {
 
     my @graph_comm_sort = reverse sort { ($a =~ /(\d)$/) <=> ($b =~ /(\d)$/) } @$graph_comm;
     my $graph = shift @graph_comm_sort;
-    die "\nERROR: Community clusterin failed. Exiting.\n" unless defined $graph;
+    die "\nERROR: Community clustering failed. Exiting.\n" unless defined $graph;
     my %clus;
     my %index;
 
