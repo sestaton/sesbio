@@ -74,24 +74,6 @@ if (!$infile || !$outfile || !$fas_file || !$database
 ### Set paths to be used
 my $cwd = getcwd();
 my $str = POSIX::strftime("%m_%d_%Y_%H_%M_%S", localtime);
-#my ($iname, $ipath, $isuffix) = fileparse($infile, qr/\.[^.]*/);
-#my ($cls_dir_base = $iname) =~ s/\.[^.]+$//;
-#my $cls_with_merges = $cls_dir_base;
-#my $cls_dir = $cls_dir_base."_cls_fasta_files_$str";
-#$cls_with_merges .= "_merged_$str.cls";
-#my $cls_dir_path = $ipath.$cls_dir;
-#make_path($cls_dir_path, {verbose => 0, mode => 0711,}); # allows for recursively making paths
-#my $cls_with_merges_path = File::Spec->catfile($ipath, $cls_with_merges);
-
-### cluster, annotation, annotation summary report
-#my ($rpname, $rppath, $rpsuffix) = fileparse($report, qr/\.[^.]*/);
-#my $anno_rep = $rpname."_annotations.tsv";
-#my $anno_summary_rep = $rpname."_annotations_summary.tsv";
-#my $rp_path = File::Spec->rel2abs($rppath.$rpname.$rpsuffix);
-#my $anno_rp_path = File::Spec->rel2abs($rppath.$anno_rep);
-#my $anno_sum_rep_path = File::Spec->rel2abs($rppath.$anno_summary_rep);
-#open(my $rep, '>', $rp_path);
-#open(my $clsnew, '>', $cls_with_merges_path);
 
 ### Parse blast into form for clustering
 my ($hitsort, $index_file, $hitsort_int) = parse_blast($infile, $percent_id, $percent_cov, $outfile);
@@ -330,7 +312,7 @@ sub merge_clusters {
 	for (@$group) { my $clsstrcp = $_; my ($id, $seqnum) = split /\_/, $clsstrcp, 2; $groupseqnum += $seqnum; push @grpcp, $id; }
 	say $rep join "\t", $group_index, join ",", @grpcp;
 	say $clsnew ">G$group_index $groupseqnum";
-	my $group_file = "G_".$group_index.".fas";
+	my $group_file = "G$group_index"."_$groupseqnum".".fas";
 	my $group_file_path = File::Spec->catfile($cls_dir_path, $group_file);
 	open(my $groupout, '>', $group_file_path);
     
@@ -995,7 +977,7 @@ sub write_cls_size_dist_summary {
     my ($cls_file, $seqct, $cwd, $percent_id, $percent_cov) = @_;
 
     my $cls_size_dist_plot = $cls_file;
-    $cls_size_dist_plot .= $percent_id."PID_".$percent_cov."PCOV.png";
+    $cls_size_dist_plot .= "_$percent_id"."PID_$percent_cov"."PCOV.png";
     my $cls_size_dist_rscript = $cls_file;
     $cls_size_dist_rscript .= ".rscript";
     open(my $rscript, '>', $cls_size_dist_rscript);
