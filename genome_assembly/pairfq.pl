@@ -2,7 +2,7 @@
 
 =head1 NAME 
                                                                        
-pairfq.pl - Match paired-end sequences from separate Fasta/q files
+pairfq.pl - Match paired-end sequences from separate FastA/Q files
 
 =head1 SYNOPSIS    
  
@@ -12,8 +12,8 @@ pairfq.pl -f s_1_1_trim.fq -r s_1_2_trim.fq -fp s_1_1_trim_paired.fq -rp s_1_2_t
      
 Re-pair paired-end sequences that may have been separated by quality trimming.
 This script also writes the unpaired forward and reverse sequences to separate 
-files so that they may be used for assembly or mapping. The input may be Fasta
-or Fastq format in either Illumina 1.3+ or Illumina 1.8 format.
+files so that they may be used for assembly or mapping. The input may be FastA
+or FastQ format in either Illumina 1.3+ or Illumina 1.8 format.
 
 =head1 DEPENDENCIES
 
@@ -87,6 +87,7 @@ Print the full documentation.
 
 =cut      
 
+use v5.10;
 use strict;
 use warnings;
 use File::Basename;
@@ -125,7 +126,7 @@ pod2usage( -verbose => 2 ) if $man;
 if (!$fread  || !$rread  ||
     !$fpread || !$rpread ||
     !$fsread || !$rsread) {
-    print "\nERROR: Command line not parsed correctly. Check input.\n\n";
+    say "\nERROR: Command line not parsed correctly. Check input.\n";
     usage();
     exit(1);
 }
@@ -141,8 +142,14 @@ my %rseqhash;
 $DB_BTREE->{cachesize} = 100000;
 $DB_BTREE->{flags} = R_DUP;
 my $db_file = "pairfq.bdb";
-tie( %rseqhash, 'AnyDBM_File', $db_file, 0666, $DB_BTREE) if !$memory;
-tie( %rseqhash, 'AnyDBM_File', ':memory:', 0666, $DB_BTREE) if $memory;
+
+if ($memory) {
+    tie %rseqhash, 'AnyDBM_File', undef, 0666, $DB_BTREE;
+}
+else { 
+   tie %rseqhash, 'AnyDBM_File', $db_file, O_RDWR|O_CREAT, 0666, $DB_BTREE
+       or die "\nERROR: Could not open DBM file $db_file: $!\n";
+}
 
 my @raux = undef;
 my ($fname, $fseq, $fqual, $fid, $rname, $rseq, $rqual, $rid);
@@ -161,7 +168,7 @@ while (($rname, $rseq, $rqual) = readfq(\*$r, \@raux)) {
     } else {
 	die "\nERROR: Could not determine Illumina encoding. Exiting.\n";
     }
-    $rseqhash{$rname} = join("\t",$rseq, $rqual) if defined $rqual;
+    $rseqhash{$rname} = join "\t",$rseq, $rqual if defined $rqual;
     $rseqhash{$rname} = $rseq if !defined $rqual;
 }
 close($r);
@@ -182,28 +189,28 @@ while (($fname, $fseq, $fqual) = readfq(\*$f, \@faux)) {
 	die "\nERROR: Could not determine Illumina encoding. Exiting.\n";
     }
     if ($fname =~ /\|/) {
-	my ($name, $id) = split(/\|/,$fname);
-	$forw_id = $name." "."1".$id;
-	$rev_id  = $name." "."2".$id;
+	my ($name, $id) = split /\|/, $fname;
+	$forw_id = $name." 1".$id;
+	$rev_id  = $name." 2".$id;
     }
     if (exists $rseqhash{$fname}) {
 	$fpct++; $rpct++;
 	if (defined $fqual) {
-	    my ($rread, $rqual) = split(/\t/,$rseqhash{$fname});
+	    my ($rread, $rqual) = split /\t/, $rseqhash{$fname};
 	    if ($fname =~ /\|/) {
-		print $fp join("\n","@".$forw_id, $fseq, "+", $fqual),"\n";
-		print $rp join("\n","@".$rev_id, $rread, "+", $rqual),"\n";
+		say $fp join "\n","@".$forw_id, $fseq, "+", $fqual;
+		say $rp join "\n","@".$rev_id, $rread, "+", $rqual;
 	    } else {
-		print $fp join("\n","@".$fname."/1", $fseq, "+", $fqual),"\n";
-                print $rp join("\n","@".$fname."/2", $rread, "+", $rqual),"\n";
+		say $fp join "\n","@".$fname."/1", $fseq, "+", $fqual;
+                say $rp join "\n","@".$fname."/2", $rread, "+", $rqual;
 	    }
 	} else {
 	    if ($fname =~ /\|/) {
-		print $fp join("\n",">".$forw_id, $fseq),"\n";
-		print $rp join("\n",">".$rev_id, $rseqhash{$fname}),"\n";
+		say $fp join "\n",">".$forw_id, $fseq;
+		say $rp join "\n",">".$rev_id, $rseqhash{$fname};
 	    } else {
-                print $fp join("\n",">".$fname."/1", $fseq),"\n";
-                print $rp join("\n",">".$fname."/2", $rseqhash{$fname}),"\n";
+                say $fp join "\n",">".$fname."/1", $fseq;
+                say $rp join "\n",">".$fname."/2", $rseqhash{$fname};
             }
 	}
         delete $rseqhash{$fname};
@@ -211,15 +218,15 @@ while (($fname, $fseq, $fqual) = readfq(\*$f, \@faux)) {
 	$fsct++;
 	if (defined $fqual) {
 	    if ($fname =~ /\|/) {
-		print $fs join("\n","@".$forw_id, $fseq, "+", $fqual),"\n";
+		say $fs join "\n","@".$forw_id, $fseq, "+", $fqual;
 	    } else {
-		print $fs join("\n","@".$fname."/1", $fseq, "+", $fqual),"\n";
+		say $fs join "\n","@".$fname."/1", $fseq, "+", $fqual;
 	    }
 	} else {
 	    if ($fname =~ /\|/) {
-		print $fs join("\n",">".$forw_id, $fseq),"\n";
+		say $fs join "\n",">".$forw_id, $fseq;
 	    } else {
-		print $fs join("\n",">".$fname."/1", $fseq),"\n";
+		say $fs join "\n",">".$fname."/1", $fseq;
 	    }
 	}
     }
@@ -233,21 +240,21 @@ my $rev_id_up;
 while (my ($rname_up, $rseq_up) = each %rseqhash) {
     $rsct++;
     if ($rname_up =~ /\|/) {
-	my ($uname, $uid) = split(/\|/,$rname_up);
+	my ($uname, $uid) = split /\|/, $rname_up;
 	$rev_id_up .= $uname." "."2".$uid;
     }
     if ($rseq_up =~ /\t/) {
-	my ($rread_up, $rqual_up) = split(/\t/,$rseq_up);
+	my ($rread_up, $rqual_up) = split /\t/, $rseq_up;
 	if ($rname_up =~ /\|/) {
-	    print $rs join("\n","@".$rev_id_up, $rread_up, "+", $rqual_up), "\n";
+	    say $rs join "\n","@".$rev_id_up, $rread_up, "+", $rqual_up;
 	} else {
-	    print $rs join("\n","@".$rname_up."/2", $rread_up, "+", $rqual_up), "\n";
+	    say $rs join "\n","@".$rname_up."/2", $rread_up, "+", $rqual_up;
 	}
     } else {
 	if ($rname_up =~ /\|/) {
-	    print $rs join("\n",">".$rev_id_up, $rseq_up), "\n";
+	    say $rs join "\n",">".$rev_id_up, $rseq_up;
 	} else {
-	    print $rs join("\n",">".$rname_up."/2", $rseq_up), "\n";
+	    say $rs join "\n",">".$rname_up."/2", $rseq_up;
 	}
     }
     $rev_id_up = undef;
@@ -258,16 +265,17 @@ $pct = $fpct + $rpct;
 $sct = $fsct + $rsct;
 untie %rseqhash;
 
-print "\nTotal forward reads in $fread:              $fct";
-print "\nTotal reverse reads in $rread:              $rct";
-print "\nTotal paired reads in $fpread and $rpread:  $pct";
-print "\nTotal forward paired reads in $fpread:      $fpct";
-print "\nTotal reverse paired reads in $rpread:      $rpct";
-print "\nTotal upaired reads in $fsread and $rsread: $sct"; 
-print "\nTotal forward unpaired reads in $fsread:    $fsct";
-print "\nTotal reverse unpaired reads in $rsread:    $rsct\n";
+say "Total forward reads in $fread:              $fct";
+say "Total reverse reads in $rread:              $rct";
+say "Total paired reads in $fpread and $rpread:  $pct";
+say "Total forward paired reads in $fpread:      $fpct";
+say "Total reverse paired reads in $rpread:      $rpct";
+say "Total upaired reads in $fsread and $rsread: $sct"; 
+say "Total forward unpaired reads in $fsread:    $fsct";
+say "Total reverse unpaired reads in $rsread:    $rsct";
 
 exit;
+
 #
 # Subs
 #
@@ -288,7 +296,6 @@ sub readfq {
             return;
         }
     }
-    ################################ SES mod 5/17/12
     my $name;
     if (/^.?(\S+\s\S+)/) {          # Illumina 1.8+
 	$name = $1;
@@ -299,7 +306,6 @@ sub readfq {
 	$name = '';                 # ?
     }
     #my $name = /^.(\S+)/? $1 : ''; # Heng Li's original regex
-    ################################
     my $seq = '';
     my $c;
     $aux->[0] = undef;
