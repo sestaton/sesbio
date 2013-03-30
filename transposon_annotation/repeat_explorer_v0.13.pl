@@ -8,6 +8,7 @@
 ##       Don't store all the blast scores in an array, only keep the top hit DONE
 ##       ------------> re: I've updated this routine to keep all hits 
 ##       //This version is an attempt to generate larger clusters by keeping all BLAST hits above a threshold\\
+##       Need to fix bug in truncating filenames with periods 
 use utf8;
 use v5.12;
 use strict;
