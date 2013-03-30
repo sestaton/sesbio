@@ -23,12 +23,12 @@ use File::Spec;
 use File::Basename;
 use POSIX qw(strftime);
 use Graph::UnionFind;
-use List::Util qw(sum);
+use List::Util qw(sum max);
 use JSON;
 use Cwd;
 BEGIN {
   @AnyDBM_File::ISA = qw( DB_File SQLite_File )
-      unless @AnyDBM_File::ISA == 1; # if loaded already, AnyDBM_File::ISA has a length of one;
+      unless @AnyDBM_File::ISA == 1;
 }
 use AnyDBM_File;                  
 use vars qw( $DB_BTREE &R_DUP );  
@@ -36,6 +36,7 @@ use AnyDBM_File::Importer qw(:bdb);
 use lib qw(/home/jmblab/statonse/apps/perlmod/DBM-Deep-2.0008/blib/lib);
 use DBM::Deep;
 use charnames qw(:full :short);
+use Encode qw(encode decode);
 
 # lexical vars
 my $infile;
