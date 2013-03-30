@@ -33,7 +33,7 @@ BEGIN {
 use AnyDBM_File;                  
 use vars qw( $DB_BTREE &R_DUP );  
 use AnyDBM_File::Importer qw(:bdb);
-use lib qw( );
+use lib qw(/home/jmblab/statonse/apps/perlmod/DBM-Deep-2.0008/blib/lib);
 use DBM::Deep;
 use charnames qw(:full :short);
 
@@ -80,7 +80,7 @@ my $cwd = getcwd();
 my $str = POSIX::strftime("%m_%d_%Y_%H_%M_%S", localtime);
 
 ### Parse blast into form for clustering
-my ($idx_file, $int_file) = parse_blast($infile, $percent_id, $percent_cov, $outdir, $memory);
+my ($idx_file, $int_file, $hs_file) = parse_blast($infile, $percent_id, $percent_cov, $outdir, $memory);
 #my $hitsort_int = $outfile.".int";     ##// for debugging community
 #my $index_file = $outfile.".index";    ##// for debugging community
 
@@ -95,10 +95,10 @@ my ($read_pairs, $vertex, $uf) = find_pairs($cls_file, $report, $merge_threshold
 my ($cls_dir_path, $cls_with_merges_path) = merge_clusters($infile, $str, $vertex, $seqs, $read_pairs, $report, $cluster_size);
 untie %$seqs if defined $memory;
 
-### Generate graphs (NB: time-consuming, so I skip this)
+### Generate graphs (NB: time-consuming, and compute-intensive)
 if ($graph) {
     $cores //= 1;
-    my $gl_dir = clusters2graphs($cls_with_merges_path, $outfile, $cores, $str);
+    my $gl_dir = clusters2graphs($cls_with_merges_path, $hs_file, $cores, $str);
     GL2summary($gl_dir, $cls_with_merges_path);
 }
 
@@ -120,12 +120,16 @@ sub parse_blast {
     }
     my $int_file = $iname;
     my $idx_file = $iname;
+    my $hs_file = $iname;
     $int_file =~ s/\.[^.]+$//;
     $idx_file =~ s/\.[^.]+$//;
+    $hs_file =~ s/\.[^.]+$//;
     $int_file .= "_louvain.int";
     $idx_file .= "_louvain.idx";
-    my $int_path = File::Spec->catfile($out_dir, $int_file);
-    my $idx_path = File::Spec->catfile($out_dir, $idx_file);
+    $hs_file .= "_louvain.hs";
+    my $int_path = File::Spec->catfile($outdir, $int_file);
+    my $idx_path = File::Spec->catfile($outdir, $idx_file);
+    my $hs_path = File::Spec->catfile($outdir, $hs_file);
 
     # counters
     my $total_hits = 0;
@@ -135,9 +139,11 @@ sub parse_blast {
     open(my $in, '<', $infile);
     open(my $int, '>', $int_path);
     open(my $idx, '>', $idx_path);
+    open(my $hs, '>', $hs_path);
 
     if (defined $memory) {
 	my %match_pairs;
+	my %match_index;
 
 	while (<$in>) {
 	    chomp;
@@ -156,7 +162,7 @@ sub parse_blast {
 		my $neg_query_hit_length = ($q_start - $q_end) + 1;
 		my $neg_query_cov = $neg_query_hit_length/$q_len;
 
-		if ( ($neg_query_cov >= $percent_coverage) && ($pid >= $percent_id) ) {
+		if ( ($neg_query_cov >= $percent_cov) && ($pid >= $percent_id) ) {
 		    if (exists $match_pairs{$enc_pair}) {
 			push @{$match_pairs{$enc_pair}}, $score;
 		    }
@@ -177,7 +183,7 @@ sub parse_blast {
                 my $pos_query_hit_length = ($q_end - $q_start) + 1;
                 my $pos_query_cov = $pos_query_hit_length/$q_len;
 
-                if ( ($pos_query_cov >= $percent_coverage) && ($pid >= $percent_id) ) {
+                if ( ($pos_query_cov >= $percent_cov) && ($pid >= $percent_id) ) {
                     if (exists $match_pairs{$enc_pair}) {
                         push @{$match_pairs{$enc_pair}}, $score;
                     }
@@ -201,16 +207,17 @@ sub parse_blast {
         }
         close($idx);
 
-        while (my ($match, $scores) = each %$match_pairs) {
+        while (my ($match, $scores) = each %match_pairs) {
             my $enc_match = encode("UTF-8", $match, 1);
             my $match_score = max(@$scores);
             my ($qry, $sbj) = mk_vec($enc_match);
             my $revmatch = mk_key($sbj, $qry);
             my $enc_revmatch = encode("UTF-8", $revmatch, 1);
-            if (exists $db->{$enc_revmatch}) {
+            if (exists $match_pairs{$enc_revmatch}) {
                 my $rev_match_score = max(@{$match_pairs{$enc_revmatch}});
                 if ($rev_match_score > $match_score) {
                     if (exists $match_index{$sbj} && exists $match_index{$qry}) {
+			say $hs join "\t", $sbj, $qry, $rev_match_score;
                         say $int join "\t", $match_index{$sbj}, $match_index{$qry}, $rev_match_score;
                         delete $match_pairs{$enc_match};
                     }
@@ -221,13 +228,15 @@ sub parse_blast {
 	    }
 	    else {
 		if (exists $match_index{$qry} && exists $match_index{$sbj}) {
+		    say $hs join "\t", $qry, $sbj, $match_score;
 		    say $int join "\t", $match_index{$qry}, $match_index{$sbj}, $match_score;
 		}
 	    }
 	}
 	close($int);
+	close($hs);
 
-	return($idx_path, $int_path);
+	return($idx_path, $int_path, $hs_path);
     }
     else {
 	my $dbm = "mgblast_matchpairs.dbm";
@@ -266,7 +275,7 @@ sub parse_blast {
 		my $neg_query_hit_length = ($q_start - $q_end) + 1;
 		my $neg_query_cov = $neg_query_hit_length/$q_len;
 
-		if ( ($neg_query_cov >= $percent_coverage) && ($pid >= $percent_id) ) {
+		if ( ($neg_query_cov >= $percent_cov) && ($pid >= $percent_id) ) {
 		    if (exists $db->{$enc_pair}) {
 			push @{$db->{$enc_pair}}, $score;
 		    }
@@ -287,7 +296,7 @@ sub parse_blast {
 		my $pos_query_hit_length = ($q_end - $q_start) + 1;
 		my $pos_query_cov = $pos_query_hit_length/$q_len;
 
-		if ( ($pos_query_cov >= $percent_coverage) && ($pid >= $percent_id) ) {
+		if ( ($pos_query_cov >= $percent_cov) && ($pid >= $percent_id) ) {
 		    if (exists $db->{$enc_pair}) {
 			push @{$db->{$enc_pair}}, $score;
 		    }
@@ -311,7 +320,7 @@ sub parse_blast {
 	}
 	close($idx);
 
-	while (my ($match, $scores) = each %$match_pairs) {
+	while (my ($match, $scores) = each %$db) {
 	    my $enc_match = encode("UTF-8", $match, 1);
 	    my $match_score = max(@$scores);
 	    my ($qry, $sbj) = mk_vec($enc_match);
@@ -321,25 +330,28 @@ sub parse_blast {
 		my $rev_match_score = max(@{$db->{$enc_revmatch}});
 		if ($rev_match_score > $match_score) {
 		    if (exists $match_index{$sbj} && exists $match_index{$qry}) {
+			say $hs join "\t", $sbj, $qry, $rev_match_score;
 			say $int join "\t", $match_index{$sbj}, $match_index{$qry}, $rev_match_score;
 			delete $db->{$enc_match};
 		    }
 		}
 		else {
-		    delete $match_pairs{$enc_revmatch};
+		    delete $db->{$enc_revmatch};
 		}
 	    }
 	    else {
 		if (exists $match_index{$qry} && exists $match_index{$sbj}) {
+		    say $hs join "\t", $qry, $sbj, $match_score;
 		    say $int join "\t", $match_index{$qry}, $match_index{$sbj}, $match_score;
 		}
 	    }
 	}
 	close($int);
+	close($hs);
 
 	untie %match_index;
 
-	return($idx_path, $int_path);
+	return($idx_path, $int_path, $hs_path);
 
     }
 }
@@ -533,7 +545,7 @@ sub fas2hash {
 	$DB_BTREE->{cachesize} = 100000;
 	$DB_BTREE->{flags} = R_DUP;
 	my $seq_dbm = "repeat_explorer_seqs.dbm";
-	tie %seqhash, 'AnyDBM_File', $seq_dbfile, O_RDWR|O_CREAT, 0666, $DB_BTREE
+	tie %seqhash, 'AnyDBM_File', $seq_dbm, O_RDWR|O_CREAT, 0666, $DB_BTREE
 	     or die "\nERROR: Could not open DBM file $seq_dbm: $!\n";
     }
     my $seqct = 0;
