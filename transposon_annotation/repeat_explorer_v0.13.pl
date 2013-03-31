@@ -8,7 +8,6 @@
 ##       Don't store all the blast scores in an array, only keep the top hit DONE
 ##       ------------> re: I've updated this routine to keep all hits 
 ##       //This version is an attempt to generate larger clusters by keeping all BLAST hits above a threshold\\
-##       Need to fix bug in truncating filenames with periods 
 use utf8;
 use v5.12;
 use strict;
@@ -153,9 +152,11 @@ sub parse_blast {
 		$s_start, $s_end, $pid, $score, $e_val, $strand) = split;
 
 	    my $pair = mk_key($q_name, $s_name);
-	    my $revpair = mk_key($q_name, $s_name);
-	    my $enc_pair = encode("UTF-8", $pair, 1);
-	    my $enc_revpair = encode("UTF-8", $revpair, 1);
+	    my $revpair = mk_key($s_name, $q_name);
+	   # say "Pair: ", $pair;
+	   # say "Revpair: ", $revpair;
+	    #my $enc_pair = encode("UTF-8", $pair, 1);
+	    #my $enc_revpair = encode("UTF-8", $revpair, 1);
 	    my $subj_hit_length = ($s_end - $s_start) + 1;
 	    my $subj_cov = $subj_hit_length/$s_len;
 
@@ -165,14 +166,14 @@ sub parse_blast {
 		my $neg_query_cov = $neg_query_hit_length/$q_len;
 
 		if ( ($neg_query_cov >= $percent_cov) && ($pid >= $percent_id) ) {
-		    if (exists $match_pairs{$enc_pair}) {
-			push @{$match_pairs{$enc_pair}}, $score;
+		    if (exists $match_pairs{$pair}) {
+			push @{$match_pairs{$pair}}, $score;
 		    }
-		    elsif (exists $match_pairs{$enc_revpair}) {
-			push @{$match_pairs{$enc_revpair}}, $score;
+		    elsif (exists $match_pairs{$revpair}) {
+			push @{$match_pairs{$revpair}}, $score;
 		    }
 		    else {
-			$match_pairs{$enc_pair} = [$score];
+			$match_pairs{$pair} = [$score];
 			$match_index{$q_name} = $index unless exists $match_index{$q_name};
 			$index++;
 			$match_index{$s_name} = $index unless exists $match_index{$s_name};
@@ -186,14 +187,14 @@ sub parse_blast {
                 my $pos_query_cov = $pos_query_hit_length/$q_len;
 
                 if ( ($pos_query_cov >= $percent_cov) && ($pid >= $percent_id) ) {
-                    if (exists $match_pairs{$enc_pair}) {
-                        push @{$match_pairs{$enc_pair}}, $score;
+                    if (exists $match_pairs{$pair}) {
+                        push @{$match_pairs{$pair}}, $score;
                     }
-                    elsif (exists $match_pairs{$enc_revpair}) {
-                        push @{$match_pairs{$enc_revpair}}, $score;
+                    elsif (exists $match_pairs{$revpair}) {
+                        push @{$match_pairs{$revpair}}, $score;
                     }
                     else {
-                        $match_pairs{$enc_pair} = [$score];
+                        $match_pairs{$pair} = [$score];
                         $match_index{$q_name} = $index unless exists $match_index{$q_name};
                         $index++;
                         $match_index{$s_name} = $index unless exists $match_index{$s_name};
@@ -210,22 +211,24 @@ sub parse_blast {
         close($idx);
 
         while (my ($match, $scores) = each %match_pairs) {
-            my $enc_match = encode("UTF-8", $match, 1);
+            #my $enc_match = encode("UTF-8", $match, 1);
             my $match_score = max(@$scores);
-            my ($qry, $sbj) = mk_vec($enc_match);
+            my ($qry, $sbj) = mk_vec($match);
             my $revmatch = mk_key($sbj, $qry);
-            my $enc_revmatch = encode("UTF-8", $revmatch, 1);
-            if (exists $match_pairs{$enc_revmatch}) {
-                my $rev_match_score = max(@{$match_pairs{$enc_revmatch}});
+            #say "Pair: ", $pair;
+            #say "Revpair: ", $revmatch;
+	    #my $enc_revmatch = encode("UTF-8", $revmatch, 1);
+            if (exists $match_pairs{$revmatch}) {
+                my $rev_match_score = max(@{$match_pairs{$revmatch}});
                 if ($rev_match_score > $match_score) {
                     if (exists $match_index{$sbj} && exists $match_index{$qry}) {
 			say $hs join "\t", $sbj, $qry, $rev_match_score;
                         say $int join "\t", $match_index{$sbj}, $match_index{$qry}, $rev_match_score;
-                        delete $match_pairs{$enc_match};
+                        delete $match_pairs{$match};
                     }
                 }
                 else {
-                    delete $match_pairs{$enc_revmatch};
+                    delete $match_pairs{$revmatch};
                 }
 	    }
 	    else {
@@ -266,7 +269,7 @@ sub parse_blast {
 		$s_start, $s_end, $pid, $score, $e_val, $strand) = split;
 
 	    my $pair = mk_key($q_name, $s_name);
-	    my $revpair = mk_key($q_name, $s_name);
+	    my $revpair = mk_key($s_name, $q_name);
 	    my $enc_pair = encode("UTF-8", $pair, 1);
 	    my $enc_revpair = encode("UTF-8", $revpair, 1);
 	    my $subj_hit_length = ($s_end - $s_start) + 1;
