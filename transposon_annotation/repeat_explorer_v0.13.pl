@@ -87,13 +87,13 @@ my ($idx_file, $int_file, $hs_file) = parse_blast($infile, $percent_id, $percent
 
 ### Clustering
 my $community = louvain_method($int_file, $outdir);
-my $cls_file = make_clusters($community, $int_file, $idx_file);
+my $cls_file = make_clusters($community, $int_file, $idx_file, $outdir);
 #my $cls_file = make_clusters($community, $outfile, $index_file);    ##// this is for debugging community
 
 ### Find union in clusters
 my ($seqs, $seqct) = fas2hash($fas_file, $memory);
 my ($read_pairs, $vertex, $uf) = find_pairs($cls_file, $report, $merge_threshold);
-my ($cls_dir_path, $cls_with_merges_path) = merge_clusters($infile, $str, $vertex, $seqs, $read_pairs, $report, $cluster_size);
+my ($cls_dir_path, $cls_with_merges_path) = merge_clusters($infile, $str, $vertex, $seqs, $read_pairs, $report, $cluster_size, $outdir);
 untie %$seqs if defined $memory;
 
 ### Generate graphs (NB: time-consuming, and compute-intensive)
@@ -105,7 +105,7 @@ if ($graph) {
 
 ### Annotate clusters, produce summary of merged and non-merged cluster size distribution
 write_cls_size_dist_summary($cls_with_merges_path, $seqct, $cwd, $percent_id, $percent_cov);
-annotate_clusters($cls_dir_path, $database, $json, $report);
+annotate_clusters($cls_dir_path, $database, $json, $report, $outdir);
 
 exit; ## This is the end
 
@@ -363,7 +363,7 @@ sub parse_blast {
 
 sub louvain_method {
     my ($int_file, $outdir) = @_;
-    chdir($outdir) || die "\nERROR: Could not change $outdir: $!\n";
+    #chdir($outdir) || die "\nERROR: Could not change $outdir: $!\n";
     my ($iname, $ipath, $isuffix) = fileparse($int_file, qr/\.[^.]*/);
     my $cls_bin = $iname.".bin";                    # Community "bin" format
     my $cls_tree = $iname.".tree";                  # hierarchical tree of clustering results
@@ -371,39 +371,55 @@ sub louvain_method {
     my $cls_tree_log = $cls_tree.".log";            # the summary of clustering results at each level of refinement
     my $hierarchy_err = $cls_tree.".hierarchy.log"; # hierarchical tree building log (not actually used)
 
-    system("louvain_convert -i $int_file -o $cls_bin -w $cls_tree_weights");
+    my $cls_bin_path = File::Spec->catfile($outdir, $cls_bin);
+    my $cls_tree_path = File::Spec->catfile($outdir, $cls_tree);
+    my $cls_tree_weights_path = File::Spec->catfile($outdir, $cls_tree_weights);
+    my $cls_tree_log_path = File::Spec->catfile($outdir, $cls_tree_log);
+    my $hierarchy_err_path = File::Spec->catfile($outdir, $hierarchy_err);
+
+    system("louvain_convert -i $int_file -o $cls_bin_path -w $cls_tree_weights_path");
     unless (defined $cls_bin && defined $cls_tree_weights) {
 	say "ERROR: louvain_convert failed. Exiting." and exit(1);
     }
-    system("louvain_community $cls_bin -l -1 -w $cls_tree_weights -v >$cls_tree 2>$cls_tree_log");
+    system("louvain_community $cls_bin_path -l -1 -w $cls_tree_weights_path -v >$cls_tree_path 2>$cls_tree_log_path");
     unless (defined $cls_tree && defined $cls_tree_log) {
 	say "ERROR: louvain_community failed. Exiting." and exit(1);
     }
 
-    my $levels = `grep -c level $cls_tree_log`;
+    my $levels = `grep -c level $cls_tree_log_path`;
     chomp($levels);
 
     my @comm;
     for (my $i = 0; $i <= $levels-1; $i++) {
         my $cls_graph_comm = $cls_tree.".graph_node2comm_level_".$i;
-	my $cls_graph_clusters = $cls_tree.".graph.clusters";
-	my $cls_graph_membership = $cls_tree.".graph.membership";
+	#my $cls_graph_clusters = $cls_tree_path.".graph.clusters";
+	#my $cls_graph_membership = $cls_tree_path.".graph.membership";
+	my $cls_graph_comm_path = File::Spec->catfile($outdir, $cls_graph_comm);
 
-        system("louvain_hierarchy $cls_tree -l $i > $cls_graph_comm");
+        system("louvain_hierarchy $cls_tree_path -l $i > $cls_graph_comm_path");
   	push @comm, $cls_graph_comm;
     }
     return \@comm;
 }
 
 sub make_clusters {
-    my ($graph_comm, $int_file, $idx_file) = @_;
+    my ($graph_comm, $int_file, $idx_file, $outdir) = @_;
 
-    my ($ipath, $iname, $isuffix) = fileparse($int_file, qr/\.[^.]*/);
+    my ($iname, $ipath, $isuffix) = fileparse($int_file, qr/\.[^.]*/);
     my $cluster_file = $iname.".cls";
+    my $membership_file = $cluster_file.".membership.txt";
+    my $cluster_file_path = File::Spec->catfile($outdir, $cluster_file);
+    my $membership_file_path = File::Spec->catfile($outdir, $membership_file);
+  #say "Cluster_file: ", $cluster_file;
+    #say "mem_file: ", $membership_file;
+    #say "clus_file_path: ",$cluster_file_path;
+    #say "mem_file_path: ", $membership_file_path;
+
 
     my @graph_comm_sort = reverse sort { ($a =~ /(\d)$/) <=> ($b =~ /(\d)$/) } @$graph_comm;
     my $graph = shift @graph_comm_sort;
     die "\nERROR: Community clustering failed. Exiting.\n" unless defined $graph;
+    my $graph_path = File::Spec->catfile($outdir, $graph);
     my %clus;
     my %index;
 
@@ -415,10 +431,10 @@ sub make_clusters {
     }
     close($idx);
 
-    my $membership_file = $cluster_file.".membership.txt";
-    open(my $mem,'>', $membership_file);
-    open(my $in, '<', $graph);
-    open(my $cls_out, '>', $cluster_file);
+    #my $membership_file = $cluster_file_path.".membership.txt";
+    open(my $mem,'>', $membership_file_path);
+    open(my $in, '<', $graph_path);
+    open(my $cls_out, '>', $cluster_file_path);
 
     while (my $line = <$in>) {
         chomp $line;
@@ -454,7 +470,7 @@ sub make_clusters {
 }
 
 sub merge_clusters {
-    my ($infile, $str, $vertex, $seqs, $read_pairs, $report, $cluster_size) = @_;
+    my ($infile, $str, $vertex, $seqs, $read_pairs, $report, $cluster_size, $outdir) = @_;
 
     my ($iname, $ipath, $isuffix) = fileparse($infile, qr/\.[^.]*/);
     my $cls_dir_base = $iname;
@@ -463,8 +479,8 @@ sub merge_clusters {
     my $cls_dir = $cls_dir_base."_cls_fasta_files_$str";
     $cls_with_merges .= "_merged_$str.cls";
     my $cls_dir_path = $ipath.$cls_dir;
-    make_path($cls_dir_path, {verbose => 0, mode => 0711,}); # allows for recursively making paths                                                                
-    my $cls_with_merges_path = File::Spec->catfile($ipath, $cls_with_merges);
+    make_path($outdir."/".$cls_dir_path, {verbose => 0, mode => 0711,}); # allows for recursively making paths                                                                
+    my $cls_with_merges_path = File::Spec->catfile($outdir, $cls_with_merges);
     open(my $clsnew, '>', $cls_with_merges_path);
 
     my ($rpname, $rppath, $rpsuffix) = fileparse($report, qr/\.[^.]*/);
@@ -521,7 +537,7 @@ sub merge_clusters {
 
 	if (scalar(@{$read_pairs->{$non_paired_cls}}) >= $cluster_size) {
 	    my $non_paired_clsfile .= $non_paired_cls.".fas";
-	    my $cls_file_path = File::Spec->catfile($cls_dir_path, $non_paired_clsfile);
+	    my $cls_file_path = File::Spec->catfile($outdir."/".$cls_dir_path, $non_paired_clsfile);
 	    open(my $clsout, '>', $cls_file_path);
 
 	    for my $non_paired_read (@{$read_pairs->{$non_paired_cls}}) {
@@ -578,6 +594,8 @@ sub find_pairs {
     my $rp_path = File::Spec->rel2abs($rppath.$rpname.$rpsuffix);
     #my $anno_rp_path = File::Spec->rel2abs($rppath.$anno_rep);
     #my $anno_sum_rep_path = File::Spec->rel2abs($rppath.$anno_summary_rep);
+    my ($clname, $clpath, $clsuffix) = fileparse($cls_file, qr/\.[^.]*/);
+    my $cls_file_path = File::Spec->rel2abs($clpath.$outdir."/".$clname.$clsuffix);
     open(my $rep, '>', $rp_path);
 
     $merge_threshold //= 500;
@@ -593,7 +611,7 @@ sub find_pairs {
     {
         local $/ = '>';
         
-        open(my $in, '<', $cls_file);   
+        open(my $in, '<', $cls_file_path);   
         while (my $line = <$in>) {
             $line =~ s/>//g;
             next if !length($line);
@@ -711,7 +729,7 @@ sub parse_blast_to_top_hit {
 }
 
 sub annotate_clusters {
-    my ($cls_with_merges_dir, $database, $json, $report) = @_;
+    my ($cls_with_merges_dir, $database, $json, $report, $outdir) = @_;
 
     my ($rpname, $rppath, $rpsuffix) = fileparse($report, qr/\.[^.]*/);
     my $anno_rep = $rpname."_annotations.tsv";
@@ -722,7 +740,7 @@ sub annotate_clusters {
     #open(my $rep, '>', $rp_path);
 
     ## get input files
-    opendir(DIR, $cls_with_merges_dir) || die "\nERROR: Could not open directory: $cls_with_merges_dir. Exiting.\n";
+    opendir(DIR, $outdir."/".$cls_with_merges_dir) || die "\nERROR: Could not open directory: $cls_with_merges_dir. Exiting.\n";
     my @clus_fas_files = grep /\.fa.*$/, readdir(DIR);
     closedir(DIR);
 
@@ -733,11 +751,11 @@ sub annotate_clusters {
     }
 
     ## set path to output dir
-    my $outdir = $cls_with_merges_dir;
-    $outdir .= "_annotations";
-    my ($oname, $opath, $osuffix) = fileparse($outdir, qr/\.[^.]*/);
+    my $annodir = $outdir."/".$cls_with_merges_dir;
+    $annodir .= "_annotations";
+    my ($oname, $opath, $osuffix) = fileparse($annodir, qr/\.[^.]*/);
     my $out_path = File::Spec->rel2abs($opath.$oname);
-    make_path($outdir, {verbose => 0, mode => 0711,}); # allows for recursively making paths
+    make_path($annodir, {verbose => 0, mode => 0711,}); # allows for recursively making paths
 
     my ($dname, $dpath, $dsuffix) = fileparse($database, qr/\.[^.]*/);
     my $db_path = File::Spec->rel2abs($dpath.$dname);
@@ -752,14 +770,15 @@ sub annotate_clusters {
     say $out join "\t", "Cluster", "Read_count", "Type", "Class", "Superfam", "(SINE_family; if present)","Top_hit";  
     #for my $file (sort { $a =~ /\w+.*?(\d+)/ <=> $b =~ /\w+.*?(\d+)/ } @clus_fas_files) {
     for my $file (@clus_fas_files) {
-	my ($fname, $fpath, $fsuffix) = fileparse($file, qr/\.[^.]*/);
+	my $query = $outdir."/".$cls_with_merges_dir."/".$file;
+	my ($fname, $fpath, $fsuffix) = fileparse($query, qr/\.[^.]*/);
 	my $blast_res = $fname;
 	my ($filebase, $readct) = split /\_/, $fname;
 	$blast_res =~ s/\.[^.]+$//;
 	$blast_res .= "_blast.tsv";
 	my $blast_file_path = File::Spec->catfile($out_path, $blast_res);
 
-	my $blastcmd = "blastn -dust no -query $file -evalue 1e-5 -db $db_path -outfmt 6 | ".
+	my $blastcmd = "blastn -dust no -query $query -evalue 1e-5 -db $db_path -outfmt 6 | ".
 	               "cut -f2 | ".                           # keep only the ssids
                        "sort | ".                              # sort the list
                        "uniq -c | ".                           # reduce the list
