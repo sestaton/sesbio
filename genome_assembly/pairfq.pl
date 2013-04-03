@@ -147,6 +147,7 @@ else {
 my @raux = undef;
 my ($fname, $fseq, $fqual, $fid, $rname, $rseq, $rqual, $rid);
 my ($fct, $rct, $fpct, $rpct, $pct, $fsct, $rsct, $sct) = (0, 0, 0, 0, 0, 0, 0, 0);
+open my $r, '<', $rread or die "\nERROR: Could not open file: $rread\n";
 
 while (($rname, $rseq, $rqual) = readfq(\*$r, \@raux)) {
     $rct++;
@@ -166,7 +167,6 @@ while (($rname, $rseq, $rqual) = readfq(\*$r, \@raux)) {
 }
 close $r;
 open my $f, '<', $fread or die "\nERROR: Could not open file: $fread\n";
-open my $r, '<', $rread or die "\nERROR: Could not open file: $rread\n";
 open my $fp, '>', $fpread or die "\nERROR: Could not open file: $fpread\n";
 open my $rp, '>', $rpread or die "\nERROR: Could not open file: $rpread\n";
 open my $fs, '>', $fsread or die "\nERROR: Could not open file: $fsread\n";
