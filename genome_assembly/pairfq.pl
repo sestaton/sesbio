@@ -131,12 +131,12 @@ if (!$fread  || !$rread  ||
     exit(1);
 }
 
-open(my $f, '<', $fread) or die "ERROR: Could not open file: $fread\n";
-open(my $r, '<', $rread) or die "ERROR: Could not open file: $rread\n";
-open(my $fp, '>', $fpread) or die "ERROR: Could not open file: $fpread\n";
-open(my $rp, '>', $rpread) or die "ERROR: Could not open file: $rpread\n";
-open(my $fs, '>', $fsread) or die "ERROR: Could not open file: $fsread\n";
-open(my $rs, '>', $rsread) or die "ERROR: Could not open file: $rsread\n";
+open my $f, '<', $fread or die "ERROR: Could not open file: $fread\n";
+open my $r, '<', $rread or die "ERROR: Could not open file: $rread\n";
+open my $fp, '>', $fpread or die "ERROR: Could not open file: $fpread\n";
+open my $rp, '>', $rpread or die "ERROR: Could not open file: $rpread\n";
+open my $fs, '>', $fsread or die "ERROR: Could not open file: $fsread\n";
+open my $rs, '>', $rsread or die "ERROR: Could not open file: $rsread\n";
 
 my %rseqhash;
 $DB_BTREE->{cachesize} = 100000;
@@ -161,7 +161,7 @@ while (($rname, $rseq, $rqual) = readfq(\*$r, \@raux)) {
 	$rname =~ s/$1//;
     } 
     elsif ($rname =~ /\s(\d\:\w\:\d\:\w+)$/) { # as below, may need to add some abstraction to this regex 
-	$rid = $1; chomp($rid);
+	$rid = $1; chomp $rid;
 	$rid =~ s/^.//;
 	$rname =~ s/\s.*//;
 	$rname .= "|".$rid;
@@ -171,7 +171,7 @@ while (($rname, $rseq, $rqual) = readfq(\*$r, \@raux)) {
     $rseqhash{$rname} = join "\t",$rseq, $rqual if defined $rqual;
     $rseqhash{$rname} = $rseq if !defined $rqual;
 }
-close($r);
+close $r;
 
 my ($forw_id, $rev_id);
 my @faux = undef;
@@ -181,7 +181,7 @@ while (($fname, $fseq, $fqual) = readfq(\*$f, \@faux)) {
 	$fname =~ s/\/\d//;
     }
     elsif ($fname =~ /\s(\d\:\w\:\d\:\w+)$/) {   # may need to add some abstraction to this regex
-        $fid = $1; chomp($fid);
+        $fid = $1; chomp $fid;
         $fid =~ s/^.//;
 	$fname =~ s/\s.*//;
 	$fname .= "|".$fid;
@@ -231,10 +231,10 @@ while (($fname, $fseq, $fqual) = readfq(\*$f, \@faux)) {
 	}
     }
 }
-close($f);
-close($fp);
-close($rp);
-close($fs);
+close $f;
+close $fp;
+close $rp;
+close $fs;
 
 my $rev_id_up;
 while (my ($rname_up, $rseq_up) = each %rseqhash) {
@@ -259,7 +259,7 @@ while (my ($rname_up, $rseq_up) = each %rseqhash) {
     }
     $rev_id_up = undef;
 }
-close($rs);
+close $rs;
 
 $pct = $fpct + $rpct;
 $sct = $fsct + $rsct;
