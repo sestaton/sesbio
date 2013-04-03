@@ -136,10 +136,7 @@ $DB_BTREE->{cachesize} = 100000;
 $DB_BTREE->{flags} = R_DUP;
 my $db_file = "pairfq.bdb";
 
-if ($memory) {
-    tie %rseqhash, 'AnyDBM_File', undef, 0666, $DB_BTREE;
-}
-else { 
+unless (defined $memory) { 
    tie %rseqhash, 'AnyDBM_File', $db_file, O_RDWR|O_CREAT, 0666, $DB_BTREE
        or die "\nERROR: Could not open DBM file $db_file: $!\n";
 }
@@ -262,7 +259,7 @@ close $rs;
 
 $pct = $fpct + $rpct;
 $sct = $fsct + $rsct;
-untie %rseqhash;
+untie %rseqhash if defined $memory;
 
 say "Total forward reads in $fread:              $fct";
 say "Total reverse reads in $rread:              $rct";
