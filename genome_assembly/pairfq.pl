@@ -131,13 +131,6 @@ if (!$fread  || !$rread  ||
     exit(1);
 }
 
-open my $f, '<', $fread or die "ERROR: Could not open file: $fread\n";
-open my $r, '<', $rread or die "ERROR: Could not open file: $rread\n";
-open my $fp, '>', $fpread or die "ERROR: Could not open file: $fpread\n";
-open my $rp, '>', $rpread or die "ERROR: Could not open file: $rpread\n";
-open my $fs, '>', $fsread or die "ERROR: Could not open file: $fsread\n";
-open my $rs, '>', $rsread or die "ERROR: Could not open file: $rsread\n";
-
 my %rseqhash;
 $DB_BTREE->{cachesize} = 100000;
 $DB_BTREE->{flags} = R_DUP;
@@ -172,6 +165,11 @@ while (($rname, $rseq, $rqual) = readfq(\*$r, \@raux)) {
     $rseqhash{$rname} = $rseq if !defined $rqual;
 }
 close $r;
+open my $f, '<', $fread or die "\nERROR: Could not open file: $fread\n";
+open my $r, '<', $rread or die "\nERROR: Could not open file: $rread\n";
+open my $fp, '>', $fpread or die "\nERROR: Could not open file: $fpread\n";
+open my $rp, '>', $rpread or die "\nERROR: Could not open file: $rpread\n";
+open my $fs, '>', $fsread or die "\nERROR: Could not open file: $fsread\n";
 
 my ($forw_id, $rev_id);
 my @faux = undef;
@@ -235,6 +233,7 @@ close $f;
 close $fp;
 close $rp;
 close $fs;
+open my $rs, '>', $rsread or die "\nERROR: Could not open file: $rsread\n";
 
 my $rev_id_up;
 while (my ($rname_up, $rseq_up) = each %rseqhash) {
