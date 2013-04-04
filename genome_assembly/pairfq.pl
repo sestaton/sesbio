@@ -22,7 +22,25 @@ is used to create a database with either DB_File or SQLite and AnyDBM_File::Impo
 allows symbols from other packages to be imported. In this script, symbols from DB_File
 are imported so that the database may be stored in memory.
 
-Tested with:
+=head1 LICENSE
+ 
+    pairfq.pl - Match paired-end sequences from separate FastA/Q files
+    Copyright (C) 2013, S. Evan Staton
+ 
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+ 
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+ 
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ 
+=head1 TESTED WITH:
 
 =over
 
