@@ -25,7 +25,7 @@ are imported so that the database may be stored in memory.
 =head1 LICENSE
  
     pairfq.pl - Match paired-end sequences from separate FastA/Q files
-    Copyright (C) 2013, S. Evan Staton
+    Copyright (C) 2013, S. Evan Staton. All rights reserved.
  
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
