@@ -88,7 +88,7 @@ my ($idx_file, $int_file, $hs_file) = parse_blast($infile, $percent_id, $percent
 ### Clustering
 my $community = louvain_method($int_file, $outdir);
 my $cls_file = make_clusters($community, $int_file, $idx_file, $outdir);
-#my $cls_file = make_clusters($community, $outfile, $index_file);    ##// this is for debugging community
+#my $cls_file = make_clusters($community, $int_file, $idx_file, $outdir);    ##// this is for debugging community
 
 ### Find union in clusters
 my ($seqs, $seqct) = fas2hash($fas_file, $memory);
@@ -410,7 +410,7 @@ sub make_clusters {
     my $membership_file = $cluster_file.".membership.txt";
     my $cluster_file_path = File::Spec->catfile($outdir, $cluster_file);
     my $membership_file_path = File::Spec->catfile($outdir, $membership_file);
-  #say "Cluster_file: ", $cluster_file;
+   #say "Cluster_file: ", $cluster_file;
     #say "mem_file: ", $membership_file;
     #say "clus_file_path: ",$cluster_file_path;
     #say "mem_file_path: ", $membership_file_path;
@@ -505,7 +505,7 @@ sub merge_clusters {
 	say $rep join "\t", $group_index, join ",", @grpcp;
 	say $clsnew ">G$group_index $groupseqnum";
 	my $group_file = "G$group_index"."_$groupseqnum".".fas";
-	my $group_file_path = File::Spec->catfile($cls_dir_path, $group_file);
+	my $group_file_path = File::Spec->catfile($outdir."/".$cls_dir_path, $group_file);
 	open(my $groupout, '>', $group_file_path);
     
 	for my $clus (@$group) {
@@ -698,7 +698,6 @@ sub json2hash {
 sub parse_blast_to_top_hit {
     my ($blast_out, $blast_file_path) = @_;
     my %blhits;
-
     my $top_hit;
     my $top_hit_num = 0;
     my $hit_ct = 0;
@@ -715,15 +714,16 @@ sub parse_blast_to_top_hit {
 
     ## could create an array of colors to pass to R barplot   
     if ($hit_ct > 0) {
-        open(my $out, '>', $blast_file_path);
+        open my $out, '>', $blast_file_path;
         $top_hit = (reverse sort { $blhits{$a} <=> $blhits{$b} } keys %blhits)[0];
         for my $hits (reverse sort { $blhits{$a} <=> $blhits{$b} } keys %blhits) {
             say $out join "\t", $hits, $blhits{$hits};
         }
-        close($out);
+        close $out;
         return \$hit_ct, \$top_hit;
     }
     else {
+	unlink $blast_file_path;
         return undef, undef;
     }
 }
@@ -740,9 +740,9 @@ sub annotate_clusters {
     #open(my $rep, '>', $rp_path);
 
     ## get input files
-    opendir(DIR, $outdir."/".$cls_with_merges_dir) || die "\nERROR: Could not open directory: $cls_with_merges_dir. Exiting.\n";
-    my @clus_fas_files = grep /\.fa.*$/, readdir(DIR);
-    closedir(DIR);
+    opendir(my $dir, $outdir."/".$cls_with_merges_dir) || die "\nERROR: Could not open directory: $cls_with_merges_dir. Exiting.\n";
+    my @clus_fas_files = grep /\.fa.*$/, readdir($dir);
+    closedir($dir);
 
 
     if (scalar(@clus_fas_files) < 1) {
@@ -759,21 +759,21 @@ sub annotate_clusters {
 
     my ($dname, $dpath, $dsuffix) = fileparse($database, qr/\.[^.]*/);
     my $db_path = File::Spec->rel2abs($dpath.$dname);
-
+    my $total_readct = 0;
     #my $cwd = getcwd();
     #my ($rpname, $rppath, $rpsuffix) = fileparse($report, qr/\.[^.]*/);
     #my $rp_path = File::Spec->rel2abs($rppath.$rpname.$rpsuffix);
-    open(my $out, '>>', $anno_rp_path);
+    open my $out, '>>', $anno_rp_path;
 
     chdir($cls_with_merges_dir);
 
     say $out join "\t", "Cluster", "Read_count", "Type", "Class", "Superfam", "(SINE_family; if present)","Top_hit";  
-    #for my $file (sort { $a =~ /\w+.*?(\d+)/ <=> $b =~ /\w+.*?(\d+)/ } @clus_fas_files) {
     for my $file (@clus_fas_files) {
 	my $query = $outdir."/".$cls_with_merges_dir."/".$file;
 	my ($fname, $fpath, $fsuffix) = fileparse($query, qr/\.[^.]*/);
 	my $blast_res = $fname;
-	my ($filebase, $readct) = split /\_/, $fname;
+	my ($filebase, $readct) = split /\_/, $fname, 2;
+	$total_readct += $readct;
 	$blast_res =~ s/\.[^.]+$//;
 	$blast_res .= "_blast.tsv";
 	my $blast_file_path = File::Spec->catfile($out_path, $blast_res);
@@ -787,72 +787,80 @@ sub annotate_clusters {
 	my @blast_out = qx($blastcmd);
 
 	my ($hit_ct, $top_hit) = parse_blast_to_top_hit(\@blast_out, $blast_file_path);
-	next unless defined $top_hit;
+	next unless defined $top_hit && defined $hit_ct;
 	blast2annot($json, $filebase, $readct, $top_hit, $out);
-	if (not defined $hit_ct) {
-        #say $$hit_ct," sequences have a BLAST hit ",$$top_hit," is the top hit ($$color) in ",$file;
-	    say "No hits for $file";
-	}
     }
-    close($out);
+    close $out;
 
-    clusters_annotation_to_summary($anno_rp_path, $anno_sum_rep_path);
+    clusters_annotation_to_summary($anno_rp_path, $anno_sum_rep_path, $total_readct);
 }
 
 sub clusters_annotation_to_summary  {
-    my ($anno_rp_path, $anno_sum_rep_path) = @_;
+    my ($anno_rp_path, $anno_sum_rep_path, $total_readct) = @_;
     
-    open(my $outsum, '>', $anno_sum_rep_path);
+    open my $outsum, '>', $anno_sum_rep_path;
     
     my %annot;
     my %sfam_hitct;
     my %fam_readct;
     my $total_ct = 0;
     
-    open(my $in, '<', $anno_rp_path);
-    
+    open my $in, '<', $anno_rp_path;
     while (<$in>) {
-	chomp;
-	next if /^Cluster/;
-	my @fields = split;
-	$total_ct += $fields[1];
-	if (scalar @fields == 4) {
-	    $sfam_hitct{$fields[2]}++;
-	    $fam_readct{$fields[3]} += $fields[1];
-	    if (exists $annot{$fields[2]}{$fields[3]}) {
-		push @{$annot{$fields[2]}{$fields[3]}}, $fields[1];
-	    }
-	    else {
-		$annot{$fields[2]}{$fields[3]} = [$fields[1]];
-	    }
-	}
-	else {
-	    my $fam = $fields[5];
-	    $fam =~ s/\-\d.*//;
-	    $sfam_hitct{$fields[4]}++;
-	    $fam_readct{$fam} += $fields[1];
-	    if (exists $annot{$fields[4]}{$fam}) {
-		push @{$annot{$fields[4]}{$fam}}, $fields[1];
-	    }
-	    else {
-		$annot{$fields[4]}{$fam} = [$fields[1]];
-	    }
-	}
+        chomp;
+        next if /^Cluster/;
+        my @fields = split;
+        $total_ct += $fields[1];
+        if (scalar @fields == 5) {    ## pseudogene
+            $evalue = $fields[4];
+            $sfam_hitct{$fields[2]}++;
+            $fam_readct{$fields[3]} += $fields[1];
+            if (exists $annot{$fields[2]}{$fields[3]}) {
+                push @{$annot{$fields[2]}{$fields[3]}}, $fields[1];
+            }
+        }
+        elsif (scalar @fields == 7) { ## all TEs but SINEs
+            $evalue = $fields[6];
+            my $fam = $fields[5];
+            $fam =~ s/\-\d.*//;
+            $sfam_hitct{$fields [4]}++;
+            $fam_readct{$fam} += $fields[1];
+            if (exists $annot{$fields[4]}{$fam}) {
+                push @{$annot{$fields[4]}{$fam}}, $fields[1];
+            }
+            else {
+                $annot{$fields[4]}{$fam} = [$fields[1]];
+            }
+        }
+        else {                        ## SINEs
+            $evalue = $fields[7];
+            my $fam = $fields[6];
+            $fam =~ s/\-\d.*//;
+            $sfam_hitct{$fields[5]}++;
+            $fam_readct{$fam} += $fields[1];
+            if (exists $annot{$fields[5]}{$fam}) {
+                push @{$annot{$fields[5]}{$fam}}, $fields[1];
+            }
+            else {
+                $annot{$fields[5]}{$fam} = [$fields[1]];
+            }
+        }
     }
-    close($in);
+    close $in;
     
-    say $outsum join "\t", "Superfamily", "Family", "ReadCt/TotalReadCt", "PerCov";
+    say $outsum join "\t", "Superfamily", "Family", "ReadCt/TotalReadCt", "ReadCt/AllClustersReadCt","PerCov";
     
     for my $sf (reverse sort { $sfam_hitct{$a} <=> $sfam_hitct{$b} } keys %sfam_hitct) {
 	for my $f (reverse sort { $fam_readct{$a} <=> $fam_readct{$b} } keys %fam_readct) {
 	    if (exists $annot{$sf}{$f}) {
 		my $read_ct = sum @{$annot{$sf}{$f}};
 		my $perc_cov = sprintf("%.12f",$read_ct/$total_ct);
-		say $outsum join "\t", $sf, $f, $read_ct."/".$total_ct, $perc_cov;
+		my $all_perc_cov = sprintf("%.12f",$read_ct/$total_readct);
+		say $outsum join "\t", $sf, $f, $read_ct."/".$total_ct, $read_ct."/".$total_readct,$perc_cov;
 	    }
 	}
     }
-    close($outsum);
+    close $outsum;
 }
 
 sub blast2annot {
