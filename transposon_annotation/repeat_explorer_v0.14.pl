@@ -124,9 +124,9 @@ sub parse_blast {
     my $int_file = $iname;
     my $idx_file = $iname;
     my $hs_file = $iname;
-    $int_file =~ s/\.[^.]+$//;
-    $idx_file =~ s/\.[^.]+$//;
-    $hs_file =~ s/\.[^.]+$//;
+    #$int_file =~ s/\.[^.]+$//;  # this messes up names like: sunflower_1.2m (changes to sunflower_1)
+    #$idx_file =~ s/\.[^.]+$//;
+    #$hs_file =~ s/\.[^.]+$//;
     $int_file .= "_louvain.int";
     $idx_file .= "_louvain.idx";
     $hs_file .= "_louvain.hs";
