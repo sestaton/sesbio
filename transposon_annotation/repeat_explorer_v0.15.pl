@@ -742,8 +742,9 @@ sub annotate_clusters {
 
      ## set path to output dir
     my $annodir = $outdir."/".$cls_with_merges_dir."_annotations";
-    my ($oname, $opath, $osuffix) = fileparse($annodir, qr/\.[^.]*/);
-    my $out_path = File::Spec->rel2abs($opath.$oname);
+    #my ($oname, $opath, $osuffix) = fileparse($annodir); # for working with directory names with periods
+    #my $out_path = File::Spec->rel2abs($opath.$oname);
+    my $out_path = File::Spec->rel2abs($annodir);
     make_path($annodir, {verbose => 0, mode => 0711,}); # allows for recursively making paths                                                                 
     my ($dname, $dpath, $dsuffix) = fileparse($database, qr/\.[^.]*/);
     my $db_path = File::Spec->rel2abs($dpath.$dname);
