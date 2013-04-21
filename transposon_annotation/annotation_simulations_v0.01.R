@@ -21,16 +21,16 @@ all_sims <- read.table("all_hannuus_new_annotations_summaries.tsv",sep="\t",head
 names(all_sims) <- c("ReadNum","Superfamily","Family","ReadCt/AllReads","ReadCt/ReadsWithHit","HitPerc","GPerc")
 
 ## Select one family
-iketas <- subset(all_sims, Family == "RLG-iketas", select = c(ReadNum, Family, HitPerc))
+iketas <- subset(all_sims, Family == "RLG-iketas", select = c(ReadNum, Family, GPerc))
 iketas.covar <- ddply(iketas, "ReadNum", summarize, 
-                      sd = sd(HitPerc), 
-                      mean = mean(HitPerc), 
-                      covar = co.var(HitPerc))
+                      sd = sd(GPerc), 
+                      mean = mean(GPerc), 
+                      covar = co.var(GPerc))
 
 ## set up line/box plots
-iketas.lineplot <- ggplot(iketas.covar, aes(x=seq(1:8), y=covar)) + geom_line() + geom_point() + scale_x_discrete(labels=iketas.covar[,1], name="Read Number")  
+iketas.lineplot <- ggplot(iketas.covar, aes(x=seq(1:9), y=covar)) + geom_line() + geom_point() + scale_x_discrete(labels=iketas.covar[,1], name="Read Number")  
 
-iketas.boxplot <- ggplot(iketas, aes(x=factor(iketas$ReadNum), y=as_percent(HitPerc))) + stat_boxplot(geom = "errorbar") + geom_boxplot() 
+iketas.boxplot <- ggplot(iketas, aes(x=factor(iketas$ReadNum), y=as_percent(GPerc))) + stat_boxplot(geom = "errorbar") + geom_boxplot() 
 
 ## align plots
 gA <- ggplot_gtable(ggplot_build(iketas.lineplot 
