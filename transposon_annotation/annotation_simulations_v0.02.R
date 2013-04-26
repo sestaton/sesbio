@@ -20,11 +20,11 @@ as_percent <- function(x) { 100 * x}
 all_sims <- read.table("all_hannuus_full_annotations_summaries_4-21.tsv",sep="\t",header=F)
 names(all_sims) <- c("ReadNum","Superfamily","Family","ReadCt/ReadsWithHit","HitPerc","GPerc")
 
-for(i in levels(all_sims$Family)) {
+for(i in levels(all_sims$Superfamily)) {
   ## Select one family
   covplot <- paste(i,"_genome_coverage_full",".pdf",sep="")
   pdf(file=covplot) #, height=6.30, width=4.31)
-  i <- subset(all_sims, Family == i, select = c(ReadNum, Family, GPerc))
+  i <- subset(all_sims, Superfamily == i, select = c(ReadNum, Family, GPerc))
   if (length(i$ReadNum) > 2) {
     i.covar <- ddply(i, "ReadNum", summarize, 
                      sd = sd(GPerc), 
