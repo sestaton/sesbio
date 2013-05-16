@@ -96,10 +96,11 @@ untie %$seqs if defined $memory;
 
 ### Annotate clusters, produce summary of merged and non-merged cluster size distribution
 #annotate_clusters($cls_dir_path, $database, $json, $report, $outdir, $evalue);
-my $anno_rp_path = annotate_clusters($cls_dir_path, $database, $json, $report, $outdir, $evalue, $seqct, $cls_tot);
+my ($anno_rp_path, $anno_sum_rep_path, $total_readct,                                                                           
+    $rep_frac, $blasts, $superfams) = annotate_clusters($cls_dir_path, $database, $json, $report, $outdir, $evalue, $seqct, $cls_tot);
 #////////////// end here 3:19 - 4/3 - SES
 clusters_annotation_to_summary($anno_rp_path, $anno_sum_rep_path, $total_readct,
-			       $seqct, $rep_frac, \@blasts, \@superfams, $report);
+			       $seqct, $rep_frac, $blasts, $superfams, $report);
 
 exit; ## This is the end
 
@@ -676,8 +677,9 @@ sub parse_blast_to_top_hit {
     my ($blast_out, $blast_file_path) = @_;
     my %blhits;
 
-    my $top_hit;
-    my $top_hit_num = 0;
+    #my $top_hit;
+    #my $top_hit_perc;
+    #my $top_hit_num = 0;
     my $hit_ct = 0;
 
     for my $hit (@$blast_out) {
@@ -691,12 +693,12 @@ sub parse_blast_to_top_hit {
     my $sum = sum values %blhits;
     if ($hit_ct > 0) {
         open my $out, '>', $blast_file_path;
-        $top_hit = (reverse sort { $blhits{$a} <=> $blhits{$b} } keys %blhits)[0];
+        my $top_hit = (reverse sort { $blhits{$a} <=> $blhits{$b} } keys %blhits)[0];
+	my $top_hit_perc = sprintf("%.2f", $blhits{$top_hit} / $sum);
         keys %blhits; #reset iterator                                                                                                                         
         for my $hits (reverse sort { $blhits{$a} <=> $blhits{$b} } keys %blhits) {
-            #say $out join "\t", $hits, $blhits{$hits};
-	    my $top_hit_perc = sprintf("%.2f", $blhits{$hits} / $sum);
-	    say $out join "\t", $hits, $blhits{$hits}, $perc;
+	    my $hit_perc = sprintf("%.2f", $blhits{$hits} / $sum);
+	    say $out join "\t", $hits, $blhits{$hits}, $hit_perc;
         }
         close $out;
         return \$hit_ct, \$top_hit, \$top_hit_perc, \%blhits;
@@ -779,8 +781,11 @@ sub annotate_clusters {
         push @superfams, $top_hit_superfam unless !%$top_hit_superfam;
     }
     close $out;
+    
+    #clusters_annotation_to_summary($anno_rp_path, $anno_sum_rep_path, $total_readct,
+    #                               $seqct, $rep_frac, \@blasts, \@superfams, $report);
 
-    return $anno_rp_path;
+    return ($anno_rp_path, $anno_sum_rep_path, $total_readct, $rep_frac, \@blasts, \@superfams);
 }
 
 sub clusters_annotation_to_summary  {
