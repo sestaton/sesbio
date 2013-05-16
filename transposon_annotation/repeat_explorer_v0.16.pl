@@ -695,11 +695,11 @@ sub parse_blast_to_top_hit {
         keys %blhits; #reset iterator                                                                                                                         
         for my $hits (reverse sort { $blhits{$a} <=> $blhits{$b} } keys %blhits) {
             #say $out join "\t", $hits, $blhits{$hits};
-	    my $perc = sprintf("%.2f", $blhits{$hits} / $sum);
+	    my $top_hit_perc = sprintf("%.2f", $blhits{$hits} / $sum);
 	    say $out join "\t", $hits, $blhits{$hits}, $perc;
         }
         close $out;
-        return \$hit_ct, \$top_hit, \%blhits;
+        return \$hit_ct, \$top_hit, \$top_hit_perc, \%blhits;
     }
     else { ## if (!%blhits) {                                                                                                                                 
         unlink $blast_file_path;
@@ -751,7 +751,7 @@ sub annotate_clusters {
     open my $out, '>>', $anno_rp_path;
     chdir $cls_with_merges_dir;
 
-    say $out join "\t", "Cluster", "Read_count", "Type", "Class", "Superfam", "(SINE_family; if present)","Top_hit";
+    say $out join "\t", "Cluster", "Read_count", "Type", "Class", "Superfam", "(SINE_family; if present)","Top_hit","Top_hit_perc";
     for my $file (@clus_fas_files) {
         my $query = $outdir."/".$cls_with_merges_dir."/".$file;
         my ($fname, $fpath, $fsuffix) = fileparse($query, qr/\.[^.]*/);
@@ -771,11 +771,11 @@ sub annotate_clusters {
                        "perl -lane 'print join(\"\\t\",\@F)'";   # create an easy to parse format
 	my @blast_out = qx($blastcmd); # add better method of executed/testing command
 
-        my ($hit_ct, $top_hit, $blhits) = parse_blast_to_top_hit(\@blast_out, $blast_file_path);
+        my ($hit_ct, $top_hit, $top_hit_perc, $blhits) = parse_blast_to_top_hit(\@blast_out, $blast_file_path);
         next unless defined $top_hit && defined $hit_ct;
         #say $file, " ==> ", $blast_res, " ==> ", dd $blhits;                                                                                                 
         push @blasts, $blhits;
-        $top_hit_superfam = blast2annot($json, $filebase, $readct, $top_hit, $out);
+        $top_hit_superfam = blast2annot($json, $filebase, $readct, $top_hit, $top_hit_perc, $out);
         push @superfams, $top_hit_superfam unless !%$top_hit_superfam;
     }
     close $out;
@@ -794,7 +794,6 @@ sub clusters_annotation_to_summary  {
     my %top_hit_superfam;
     @top_hit_superfam{keys %$_} = values %$_ for @$superfams;
 
-    #dd \%top_hit_superfam;                                                                                                                                   
     for my $f (keys %top_hit_superfam) {
         if ($f =~ /^((RL.\-\w+)\-\d)/) {
             my $fam = $2;
@@ -802,7 +801,7 @@ sub clusters_annotation_to_summary  {
             delete $top_hit_superfam{$f};
         }
     }
-    #dd \%top_hit_superfam;                                                                                                                                   
+
     open my $outsum, '>', $anno_sum_rep_path;
 
     my %annot;
@@ -833,7 +832,7 @@ sub clusters_annotation_to_summary  {
         }
     }
     my $total_gcov = 0;
-    ### NEED TO SIMPLIFY THE STATS REPORTED, once I know they're correct 
+
     say $outsum join "\t", "ReadNum", "Superfamily", "Family", "ReadCt/ReadsWithHit", "HitPerc", "GPerc";
     for my $k (reverse sort { $fams{$a} <=> $fams{$b} } keys %fams) {
         if (exists $top_hit_superfam{$k}) {
@@ -849,7 +848,7 @@ sub clusters_annotation_to_summary  {
 }
 
 sub blast2annot {
-    my ($json, $filebase, $readct, $top_hit, $out) = @_;
+    my ($json, $filebase, $readct, $top_hit, $top_hit_perc, $out) = @_;
 
     my %top_hit_superfam;
     my $repeats = json2hash($json);
@@ -857,22 +856,22 @@ sub blast2annot {
     for my $type (keys %$repeats) {
         if ($type eq 'pseudogene' || $type eq 'simple_repeat' || $type eq 'integrated_virus') {
             if ($type eq 'pseudogene' && $$top_hit =~ /rrna|trna|snrna/i) {
-                say $out join "\t", $filebase, $readct, $type, $$top_hit;
+                say $out join "\t", $filebase, $readct, $type, $$top_hit, $$top_hit_perc;
             }
             elsif ($type eq 'simple_repeat' && $$top_hit =~ /msat/i) {
-                say $out join "\t", $filebase, $readct, $type, "Satellite", "MSAT", $$top_hit;
+                say $out join "\t", $filebase, $readct, $type, "Satellite", "MSAT", $$top_hit, $$top_hit_perc;
             }
             elsif ($type eq 'simple_repeat' && $$top_hit =~ /sat/i) {
-                say $out join "\t", $filebase, $readct, $type, "Satellite", "SAT", $$top_hit;
+                say $out join "\t", $filebase, $readct, $type, "Satellite", "SAT", $$top_hit, $$top_hit_perc;
             }
             elsif ($type eq 'integrated_virus' && $$top_hit =~ /caul/i) {
-                say $out join "\t", $filebase, $readct, $type, "Caulimoviridae", $$top_hit;
+                say $out join "\t", $filebase, $readct, $type, "Caulimoviridae", $$top_hit, $$top_hit_perc;
             }
             elsif ($type eq 'integrated_virus' && ($$top_hit eq 'PIVE' || $$top_hit eq 'DENSOV_HM')) {
-                say $out join "\t", $filebase, $readct, $type, "DNA Virus", $$top_hit;
+                say $out join "\t", $filebase, $readct, $type, "DNA Virus", $$top_hit, $$top_hit_perc;
             }
             elsif ($type eq 'endogenous_retrovirus' && $$top_hit =~ /erv/i) {
-                say $out join "\t", $filebase, $readct, $type, "Endogenous Retrovirus", $$top_hit;
+                say $out join "\t", $filebase, $readct, $type, "Endogenous Retrovirus", $$top_hit, $$top_hit_perc;
             }
             next;
         }
@@ -886,7 +885,7 @@ sub blast2annot {
                                     for my $sine (@$sines) {
                                         if ($sine =~ /$$top_hit/) {
                                             $top_hit_superfam{$$top_hit} = $sine_fam_mem;
-                                            say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $sine_fam_mem, $$top_hit;
+                                            say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $sine_fam_mem, $$top_hit, $$top_hit_perc;
                                         }
                                     }
                                 }
@@ -895,18 +894,18 @@ sub blast2annot {
                     }
                     elsif ($superfam_h =~ /gypsy/i && $$top_hit =~ /^RLG/) {
                         $top_hit_superfam{$$top_hit} = $superfam_h;
-                        say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit;
+                        say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit, $$top_hit_perc;
                     }
                     elsif ($superfam_h =~ /copia/i && $$top_hit =~ /^RLC/) {
                         $top_hit_superfam{$$top_hit} = $superfam_h;
-                        say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit;
+                        say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit, $$top_hit_perc;
                     }
 		    else {
                         for my $fam (@{$repeats->{$type}{$class}[$superfam_index]{$superfam_h}}) {
                             for my $mem (@$fam) {
                                 if ($mem =~ /$$top_hit/i) {
                                     $top_hit_superfam{$$top_hit} = $superfam_h;
-                                    say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit;
+                                    say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit, $$top_hit_perc;
                                 }
                                 #else { say "NOMATCH $mem => $$top_hit"; }                                                                                    
                             }
