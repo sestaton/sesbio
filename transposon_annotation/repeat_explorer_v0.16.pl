@@ -360,12 +360,14 @@ sub louvain_method {
     my $cls_tree_log_path = File::Spec->catfile($outdir, $cls_tree_log);
     my $hierarchy_err_path = File::Spec->catfile($outdir, $hierarchy_err);
 
+    #try {
     system("louvain_convert -i $int_file -o $cls_bin_path -w $cls_tree_weights_path");
-    unless (defined $cls_bin && defined $cls_tree_weights) {
-	say "ERROR: louvain_convert failed. Exiting." and exit(1);
-    }
+    #catch {
+    #unless (defined $cls_bin && defined $cls_tree_weights) {
+	#say "ERROR: louvain_convert failed. Exiting." and exit(1);
+    #}
     system("louvain_community $cls_bin_path -l -1 -w $cls_tree_weights_path -v >$cls_tree_path 2>$cls_tree_log_path");
-    unless (defined $cls_tree && defined $cls_tree_log) {
+    unless (defined $cls_tree && defined $cls_tree_log) { # this is not a good way to catch errors
 	say "ERROR: louvain_community failed. Exiting." and exit(1);
     }
 
@@ -686,12 +688,15 @@ sub parse_blast_to_top_hit {
         $hit_ct++;
     }
     
+    my $sum = sum values %blhits;
     if ($hit_ct > 0) {
         open my $out, '>', $blast_file_path;
         $top_hit = (reverse sort { $blhits{$a} <=> $blhits{$b} } keys %blhits)[0];
         keys %blhits; #reset iterator                                                                                                                         
         for my $hits (reverse sort { $blhits{$a} <=> $blhits{$b} } keys %blhits) {
-            say $out join "\t", $hits, $blhits{$hits};
+            #say $out join "\t", $hits, $blhits{$hits};
+	    my $perc = sprintf("%.2f", $blhits{$hits} / $sum);
+	    say $out join "\t", $hits, $blhits{$hits}, $perc;
         }
         close $out;
         return \$hit_ct, \$top_hit, \%blhits;
@@ -775,8 +780,6 @@ sub annotate_clusters {
     }
     close $out;
 
-    #clusters_annotation_to_summary($anno_rp_path, $anno_sum_rep_path, $total_readct, 
-	#			   $seqct, $rep_frac, \@blasts, \@superfams, $report);
     return $anno_rp_path;
 }
 
@@ -810,7 +813,7 @@ sub clusters_annotation_to_summary  {
     for my $blast (@$blasts) {
         for my $fam (keys %$blast) {
             $total_ct += $blast->{$fam};
-            if ($fam =~ /^((RL.\-\w+)\-\d)/) {
+            if ($fam =~ /^((RL.\-|\_\w+)\-|\_\d)/) {
                 my $famname = $2;
                 if (exists $fams{$famname}) {
                     $fams{$famname} += $blast->{$fam};
@@ -830,14 +833,10 @@ sub clusters_annotation_to_summary  {
         }
     }
     my $total_gcov = 0;
-                                                          ### NEED TO SIMPLIFY THE STATS REPORTED, once I know they're correct 
+    ### NEED TO SIMPLIFY THE STATS REPORTED, once I know they're correct 
     say $outsum join "\t", "ReadNum", "Superfamily", "Family", "ReadCt/ReadsWithHit", "HitPerc", "GPerc";
     for my $k (reverse sort { $fams{$a} <=> $fams{$b} } keys %fams) {
-        #$total_gcov += $fams{$k};
         if (exists $top_hit_superfam{$k}) {
-            #my $gperc = sprintf("%.12f",$fams{$k}/$seqct);
-	    #my $gperc_corr = $gperc * $rep_frac;
-	    #$total_gcov += $gperc_corr;
 	    my $hit_perc = sprintf("%.12f",$fams{$k}/$total_ct);
 	    my $gperc_corr = $hit_perc * $rep_frac;
             $total_gcov += $gperc_corr;
