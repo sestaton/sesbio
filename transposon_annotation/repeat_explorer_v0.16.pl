@@ -769,7 +769,7 @@ sub annotate_clusters {
                        "uniq -c | ".                             # reduce the list
                        "sort -bnr | ".                           # count unique items
                        "perl -lane 'print join(\"\\t\",\@F)'";   # create an easy to parse format
-	my @blast_out = qx($blastcmd);
+	my @blast_out = qx($blastcmd); # add better method of executed/testing command
 
         my ($hit_ct, $top_hit, $blhits) = parse_blast_to_top_hit(\@blast_out, $blast_file_path);
         next unless defined $top_hit && defined $hit_ct;
