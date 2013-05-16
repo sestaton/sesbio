@@ -8,7 +8,7 @@ use Data::Dump qw(dd dump);
 use List::Util qw(sum);
 use Getopt::Long;
 
-my $usage = "$0 -i annot.tsv -c cls -o out -n seqct\n";
+my $usage = "$0 -i blast_hitcts.tsv\n";
 
 my $infile;
 my $cls;
@@ -28,9 +28,6 @@ GetOptions(
 
 die $usage if !$infile; # or !$outfile or !$cls;
 
-#my $cls_tot = get_cls_tot($cls);
-#my ($seqs, $seqct) = fas2hash($fas_file);
-#my $repfrac = $cls_tot / $seqct;
 open my $in, '<', $infile;
 
 while (<$in>) {
