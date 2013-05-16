@@ -36,7 +36,7 @@ open my $in, '<', $infile;
 while (<$in>) {
     chomp;
     my ($th, $ct) = split;
-    if ($th =~ /((^RL.\-\w+)\-\d+)/) {
+    if ($th =~ /((^RL.\-|\_\w+)\-\d+)/) {
 	$th = $2;
 	#say join "\t", $th, $1, $2;
 	$annot{$th} += $ct;
