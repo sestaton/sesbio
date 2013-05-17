@@ -364,9 +364,9 @@ sub louvain_method {
     #try {
     system("louvain_convert -i $int_file -o $cls_bin_path -w $cls_tree_weights_path");
     #catch {
-    #unless (defined $cls_bin && defined $cls_tree_weights) {
-	#say "ERROR: louvain_convert failed. Exiting." and exit(1);
-    #}
+    unless (defined $cls_bin && defined $cls_tree_weights) {
+	say "ERROR: louvain_convert failed. Exiting." and exit(1);
+    }
     system("louvain_community $cls_bin_path -l -1 -w $cls_tree_weights_path -v >$cls_tree_path 2>$cls_tree_log_path");
     unless (defined $cls_tree && defined $cls_tree_log) { # this is not a good way to catch errors
 	say "ERROR: louvain_community failed. Exiting." and exit(1);
@@ -378,8 +378,6 @@ sub louvain_method {
     my @comm;
     for (my $i = 0; $i <= $levels-1; $i++) {
         my $cls_graph_comm = $cls_tree.".graph_node2comm_level_".$i;
-	#my $cls_graph_clusters = $cls_tree_path.".graph.clusters";
-	#my $cls_graph_membership = $cls_tree_path.".graph.membership";
 	my $cls_graph_comm_path = File::Spec->catfile($outdir, $cls_graph_comm);
 
         system("louvain_hierarchy $cls_tree_path -l $i > $cls_graph_comm_path");
@@ -453,7 +451,6 @@ sub merge_clusters {
 
     my ($iname, $ipath, $isuffix) = fileparse($infile, qr/\.[^.]*/);
     my $cls_dir_base = $iname;
-    #$cls_dir_base =~ s/\.[^.]+$//;     # this is messing up the filenames
     my $cls_with_merges = $cls_dir_base;
     my $cls_dir = $cls_dir_base."_cls_fasta_files_$str";
     $cls_with_merges .= "_merged_$str.cls";
@@ -771,13 +768,14 @@ sub annotate_clusters {
                        "uniq -c | ".                             # reduce the list
                        "sort -bnr | ".                           # count unique items
                        "perl -lane 'print join(\"\\t\",\@F)'";   # create an easy to parse format
-	my @blast_out = qx($blastcmd); # add better method of executed/testing command
+	my @blast_out = qx($blastcmd); # add better method of executing/testing command
 
         my ($hit_ct, $top_hit, $top_hit_perc, $blhits) = parse_blast_to_top_hit(\@blast_out, $blast_file_path);
         next unless defined $top_hit && defined $hit_ct;
         #say $file, " ==> ", $blast_res, " ==> ", dd $blhits;                                                                                                 
         push @blasts, $blhits;
-        $top_hit_superfam = blast2annot($json, $filebase, $readct, $top_hit, $top_hit_perc, $out);
+        $top_hit_superfam = blast2annot($json, $filebase, $readct, $top_hit, $top_hit_perc, $out); ## this appears to where duplicate printing is happening
+                                                                                                   ## Need to figure out why 5/16 SES
         push @superfams, $top_hit_superfam unless !%$top_hit_superfam;
     }
     close $out;
@@ -800,7 +798,7 @@ sub clusters_annotation_to_summary  {
     @top_hit_superfam{keys %$_} = values %$_ for @$superfams;
 
     for my $f (keys %top_hit_superfam) {
-        if ($f =~ /^((RL.\-\w+)\-\d)/) {
+        if ($f =~ /^((RL.\-|\_\w+)\-|\_\d)/) {
             my $fam = $2;
             $top_hit_superfam{$fam} = $top_hit_superfam{$f};
             delete $top_hit_superfam{$f};
@@ -862,21 +860,27 @@ sub blast2annot {
         if ($type eq 'pseudogene' || $type eq 'simple_repeat' || $type eq 'integrated_virus') {
             if ($type eq 'pseudogene' && $$top_hit =~ /rrna|trna|snrna/i) {
                 say $out join "\t", $filebase, $readct, $type, $$top_hit, $$top_hit_perc;
+		last;
             }
             elsif ($type eq 'simple_repeat' && $$top_hit =~ /msat/i) {
                 say $out join "\t", $filebase, $readct, $type, "Satellite", "MSAT", $$top_hit, $$top_hit_perc;
+		last;
             }
             elsif ($type eq 'simple_repeat' && $$top_hit =~ /sat/i) {
                 say $out join "\t", $filebase, $readct, $type, "Satellite", "SAT", $$top_hit, $$top_hit_perc;
+		last;
             }
             elsif ($type eq 'integrated_virus' && $$top_hit =~ /caul/i) {
                 say $out join "\t", $filebase, $readct, $type, "Caulimoviridae", $$top_hit, $$top_hit_perc;
+		last;
             }
             elsif ($type eq 'integrated_virus' && ($$top_hit eq 'PIVE' || $$top_hit eq 'DENSOV_HM')) {
                 say $out join "\t", $filebase, $readct, $type, "DNA Virus", $$top_hit, $$top_hit_perc;
+		last;
             }
             elsif ($type eq 'endogenous_retrovirus' && $$top_hit =~ /erv/i) {
                 say $out join "\t", $filebase, $readct, $type, "Endogenous Retrovirus", $$top_hit, $$top_hit_perc;
+		last;
             }
             next;
         }
@@ -891,6 +895,7 @@ sub blast2annot {
                                         if ($sine =~ /$$top_hit/) {
                                             $top_hit_superfam{$$top_hit} = $sine_fam_mem;
                                             say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $sine_fam_mem, $$top_hit, $$top_hit_perc;
+					    last;
                                         }
                                     }
                                 }
@@ -900,10 +905,12 @@ sub blast2annot {
                     elsif ($superfam_h =~ /gypsy/i && $$top_hit =~ /^RLG/) {
                         $top_hit_superfam{$$top_hit} = $superfam_h;
                         say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit, $$top_hit_perc;
+			last;
                     }
                     elsif ($superfam_h =~ /copia/i && $$top_hit =~ /^RLC/) {
                         $top_hit_superfam{$$top_hit} = $superfam_h;
                         say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit, $$top_hit_perc;
+			last;
                     }
 		    else {
                         for my $fam (@{$repeats->{$type}{$class}[$superfam_index]{$superfam_h}}) {
@@ -911,6 +918,7 @@ sub blast2annot {
                                 if ($mem =~ /$$top_hit/i) {
                                     $top_hit_superfam{$$top_hit} = $superfam_h;
                                     say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit, $$top_hit_perc;
+				    last;
                                 }
                                 #else { say "NOMATCH $mem => $$top_hit"; }                                                                                    
                             }
