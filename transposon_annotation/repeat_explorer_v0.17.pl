@@ -34,7 +34,7 @@ use DBM::Deep;
 use charnames qw(:full :short);
 use Encode qw(encode decode);
 use Try::Tiny;
-use IPC::System::Simple qw(runx capturex EXIT_ANY);
+use IPC::System::Simple qw(run capture EXIT_ANY);
 
 # lexical vars
 my $infile;
@@ -365,21 +365,21 @@ sub louvain_method {
     my $hierarchy_err_path = File::Spec->catfile($outdir, $hierarchy_err);
 
     try {
-	runx("louvain_convert -i $int_file -o $cls_bin_path -w $cls_tree_weights_path");
+	run("louvain_convert -i $int_file -o $cls_bin_path -w $cls_tree_weights_path");
     }
     catch {
 	warn "\nERROR: louvain_convert failed. Caught error: $_" and exit;
     };
 
     try {
-	runx("louvain_community $cls_bin_path -l -1 -w $cls_tree_weights_path -v >$cls_tree_path 2>$cls_tree_log_path");
+	run("louvain_community $cls_bin_path -l -1 -w $cls_tree_weights_path -v >$cls_tree_path 2>$cls_tree_log_path");
     }
     catch {
 	warn "\nERROR: louvain_community failed. Caught error: $_" and exit;
     };
 
     try {
-	$levels = capturex(EXIT_ANY, "grep -c level $cls_tree_log_path");
+	$levels = capture(EXIT_ANY, "grep -c level $cls_tree_log_path");
 	chomp $levels;
     }
     catch {
@@ -392,7 +392,7 @@ sub louvain_method {
 	my $cls_graph_comm_path = File::Spec->catfile($outdir, $cls_graph_comm);
 	
 	try {
-	    runx("louvain_hierarchy $cls_tree_path -l $i > $cls_graph_comm_path");
+	    run("louvain_hierarchy $cls_tree_path -l $i > $cls_graph_comm_path");
 	}
 	catch {
 	    warn "\nERROR: louvain_hierarchy failed. Caught error: $_" and exit;
@@ -788,7 +788,7 @@ sub annotate_clusters {
                        "perl -lane 'print join(\"\\t\",\@F)'";   # create an easy to parse format
 	
 	try {
-	    @blast_out = capturex(EXIT_ANY, @blastcmd);
+	    @blast_out = capture(EXIT_ANY, @blastcmd);
 	}
 	catch {
 	    warn "\nERROR: blastn failed. Caught error: $_" and exit;
