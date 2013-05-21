@@ -2,7 +2,7 @@
 
 =head1 NAME 
                                                                        
- hmm2go.pl - map PFAM IDs from HMMscan search to GO terms 
+ hmm2go.pl - Map PFAM IDs from HMMscan search to GO terms 
 
 =head1 SYNOPSIS    
 
