@@ -4,7 +4,7 @@ cd `pwd`
 
 hmmscan=/usr/local/hmmer/latest/bin/hmmscan
 
-for file in ./*faa
+for file in ./*.faa
 do
   filebase=$(echo ${file%.*})
   fileext=$(echo ${file##*.})
