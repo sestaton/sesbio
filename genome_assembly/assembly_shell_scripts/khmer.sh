@@ -1,30 +1,88 @@
 #!/bin/bash
 
-khmer_scripts=/home/statonse/khmer_test/khmer/scripts
+function usage() {
+cat <<EOF
+USAGE: $0 <seq> <mer>
 
-$khmer_scripts/load-into-counting.py \                                           # create the hash of k-mer counts
--N 4 \                                                                           # create this many hashes
--x 2e9 \                                                                         # create hash at least this size (set larger if you have >16 GB RAM)
--k 20 \                                                                          # k-mer size to hash
-PI603989C03YUABXX_s1_prinseq_trimmed_clean_desc_paired_scr_20mer_khmer-hash \    # hash name 
-PI603989C03YUABXX_s1_prinseq_trimmed_clean_desc_paired_scr.fasta                 # sequence name
+seq   : fasta/q file to index and summarize/normalize for k-mer counts
+mer   : k-mer length to use in querying <seq> data
 
-$khmer_scripts/abundance-dist.py \                                               # create a histogram of k-mer coverage
--z PI603989C03YUABXX_s1_prinseq_trimmed_clean_desc_paired_scr_20mer_khmer-hash \ # hash to read k-mer counts
-PI603989C03YUABXX_s1_prinseq_trimmed_clean_desc_paired_scr.fasta \               # sequence used to construct hash
-PI603989C03YUABXX_s1_prinseq_trimmed_clean_desc_paired_scr_abund.hist            # name of the histogram of counts
+EOF
+}
 
-$khmer_scripts/filter-abund.py \                                                 # filter k-mers below a threshold
--C 1 \                                                                           # theshold set to 1 in this case
-PI603989C03YUABXX_s1_prinseq_trimmed_clean_desc_paired_scr_20mer_khmer-hash \    # hash from which to read k-mer counts
-PI603989C03YUABXX_s1_prinseq_trimmed_clean_desc_paired_scr.fasta                 # sequence used to construct the hash
+function print_error() {
+cat <<ERR
 
-$khmer_scripts/normalize-by-median.py \                                               # remove redundant k-mers from the graph
--k 17 \                                                                               # use this k-mer size
--N 4 \                                                                                # construct this many hashes
--x 2e9 \                                                                              # create hash of at least this size
--C 5 \                                                                                # coverage cutoff
--l PI603989C03YUABXX_s1_prinseq_trimmed_clean_desc_paired_scr_20mer_khmer-hash \      # hash   
--s PI603989C03YUABXX_s1_prinseq_trimmed_clean_desc_paired_scr_20mer_khmer-hash_norm \ # normalized hash
--R PI603989C03YUABXX_s1_prinseq_trimmed_clean_desc_paired_scr_diginorm.txt \          # log of results
-PI603989C03YUABXX_s1_prinseq_trimmed_clean_desc_paired_scr.fasta                      # input sequence
+ERROR: Command line not parsed correctly. Check input.
+
+ERR
+}
+
+if [ $# -lt 2 ]; then
+    print_error
+    usage
+    exit 1
+fi
+
+## input/output
+qrySeq=$1
+merLen=$2
+qryFile=$(echo ${qrySeq%.*})
+basename=${qryFile}_${merLen}mer
+khmerHash=${basename}_khmer-hash
+khmerHist=${basename}_abund.hist
+khmerLog=${basename}_khmer.log
+khmerHashNorm=${basename}_khmer-hash_norm
+khmerSeqNorm=${qrySeq}.keep
+khmerHistNorm=${basename}_abund.hist.norm
+
+#debug
+#echo $qrySeq $merLen $qryFile $basename $khmerHash $khmerHist $khmerLog $khmerHashNorm $khmerSeqNorm $khmerHistNorm
+#exit 0
+
+## khmer PATH
+python=/usr/local/python/2.7.2/bin/python
+khmer_scripts=/home/jmblab/statonse/apps/khmer/scripts
+
+## load-into-counting.py
+$python $khmer_scripts/load-into-counting.py \
+-N 4 \
+-x 2e9 \
+-k $merLen \
+$khmerHash \
+$qrySeq
+
+## abundance-dist.py
+$python $khmer_scripts/abundance-dist.py \
+-z $khmerHash \
+$qrySeq \
+$khmerHist
+
+## filter-abund.py
+#$python $khmer_scripts/filter-abund.py \                     # filter k-mers below a threshold
+#-C 1 \                                                       # theshold set to 1 in this case
+#$khmerHash \                                                 # hash from which to read k-mer counts
+#$qrySeq                                                      # sequence used to construct the hash
+
+## normalize-by-median.py
+$python $khmer_scripts/normalize-by-median.py \
+-k $merLen \
+-N 4 \
+-x 2e9 \
+-C 20 \
+-l $khmerHash \
+-s $khmerHashNorm \
+-R $khmerLog \
+$qrySeq
+
+## filter-abund.py
+$python $khmer_scripts/filter-abund.py \
+-C 1 \
+$khmerHashNorm \
+$khmerSeqNorm
+
+## abundance-dist.py
+$python $khmer_scripts/abundance-dist.py \
+$khmerHashNorm \
+$khmerSeqNorm \
+$khmerHistNorm
