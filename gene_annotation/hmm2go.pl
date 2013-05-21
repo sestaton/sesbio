@@ -90,14 +90,9 @@ pod2usage( -verbose => 2) if $man;
 
 usage() and exit(0) if $help;
 
-if (!$infile) {
-    die "\nERROR: No infile found.\n",usage();
-}
-if (!$pfam2go) {
-    die "\nERROR: No pfam2go db found.\n",usage();
-}
-if (!$outfile) {
-    die "\nERROR: No outfile found.\n",usage();
+if (!$infile || !$pfam2go || !$outfile) {
+    say "\nERROR: Input not parsed correctly.\n";
+    usage() and exit(1);
 }
 
 open my $in, '<', $infile or die "\nERROR: Could not open file: $infile\n";
@@ -157,10 +152,10 @@ while(my $mapping = <$pfams>) {
     }
 }
 close $pfams;
-close $out);
+close $out;
 
 if ($mapping) {
-    while(my ($key, $value) = each(%goterms)) {
+    while(my ($key, $value) = each %goterms) {
 	$map_ct++;
 	say $map_fh join "\t", $key, $value;
     }
