@@ -6,7 +6,7 @@
 
 =head1 SYNOPSIS    
 
- hmm2go.pl -i seqs_hmmscan.tblout -o seqs_hmmscan_goterms.tsv --map 
+ hmm2go.pl -i seqs_hmmscan.tblout -p pfam2go -o seqs_hmmscan_goterms.tsv --map 
 
 =head1 DESCRIPTION
                                                                    
@@ -25,6 +25,11 @@ statonse at gmail dot com
 =item -i, --infile
 
 The HMMscan output in table format (generated with "--tblout" option from HMMscan).
+
+=item -p, --pfam2go
+
+The PFAMID->GO mapping file provided by the Gene Ontology. 
+Direct link: http://www.geneontology.org/external2go/pfam2go
 
 =item -o, --outfile
 
@@ -61,13 +66,18 @@ Print the full documentation.
 
 =cut 
 
+## Includes
 use v5.10;
 use strict; 
 use warnings;
+use warnings FATAL => "utf8";
 use Getopt::Long;
 use Pod::Usage;
 use File::Basename;
+use utf8;
+use charnames qw(:full :short);
 
+## Vars
 my $infile;
 my $pfam2go; 
 my $outfile;
@@ -86,8 +96,8 @@ GetOptions(
            'm|man'       => \$man,
 	   );
 
+## Check input
 pod2usage( -verbose => 2) if $man;
-
 usage() and exit(0) if $help;
 
 if (!$infile || !$pfam2go || !$outfile) {
@@ -95,15 +105,15 @@ if (!$infile || !$pfam2go || !$outfile) {
     usage() and exit(1);
 }
 
+## create filehandles, if possible
 open my $in, '<', $infile or die "\nERROR: Could not open file: $infile\n";
 open my $pfams, '<', $pfam2go or die "\nERROR: Could not open file: $pfam2go\n";
-
 open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
 if ($mapping) {
     $mapfile = $outfile;
     $mapfile =~ s/\..*//g;
-    $mapfile .= "_GOterm_mapping.txt";
+    $mapfile .= "_GOterm_mapping.tsv";
     open $map_fh, '>', $mapfile or die "\nERROR: Could not open file: $mapfile\n";
 }
 
@@ -114,7 +124,7 @@ while(<$in>) {
     my ($target_name, $accession, $query_name, $accession_q, $E_value_full, 
 	$score_full, $bias_full, $E_value_best, $score_best, $bias_best, 
 	$exp, $reg, $clu, $ov, $env, $dom, $rev, $inc, $description_of_target) = split;
-    my $query_eval = join ",", $query_name, $E_value_full, $description_of_target;
+    my $query_eval = mk_key($query_name, $E_value_full, $description_of_target);
     $accession =~ s/\..*//;
     $pfamids{$query_eval} = $accession;
 }
@@ -135,7 +145,7 @@ while(my $mapping = <$pfams>) {
 	$pf_name =~ s/\s.*//;
 	$pf_desc =~ s/\s\;//;
 	for my $key (keys %pfamids) { 
-	    my ($query, $eval, $desc) = split /\,/, $key;
+	    my ($query, $e_val, $desc) = mk_vec($key);
 	    if ($pfamids{$key} eq $pf) {
 		say $out join "\t", $query, $pf, $pf_name, $pf_desc, $go_term, $desc;
 		if ($mapping) {
@@ -155,20 +165,26 @@ close $pfams;
 close $out;
 
 if ($mapping) {
-    while(my ($key, $value) = each %goterms) {
+    while (my ($key, $value) = each %goterms) {
 	$map_ct++;
 	say $map_fh join "\t", $key, $value;
     }
     say "\n$map_ct query sequences with $go_ct GO terms mapped in file $mapfile.\n";
 }
 
+## Subs
+sub mk_key { join "\N{INVISIBLE SEPARATOR}", @_ }
+
+sub mk_vec { split "\N{INVISIBLE SEPARATOR}", shift }
+
 sub usage {
   my $script = basename($0);
   print STDERR <<END
-USAGE: $script -i hmmscan.tblout -o hmmscan_goterms.tsv [--map] 
+USAGE: $script -i hmmscan.tblout -p pfam2go -o hmmscan_goterms.tsv [--map] 
 
 Required:
     -i|infile    :    The output of HMMscan (specifically, the --tblout option).
+    -p|pfam2go   :    PFAM ID to GO term mapping file.
     -o|outfile   :    File to place the mapped GO terms.
     
 Options:
