@@ -744,7 +744,8 @@ sub annotate_clusters {
     say $rep "======> Total clustered: ",$cls_tot;
     say $rep "======> Repeat fraction: ",$rep_frac;
     close $rep;
-    #my $top_hit_superfam = {};
+    my $top_hit_superfam = {};
+    my $cluster_annot = {};
 
     ## get input files
     opendir my $dir, $outdir."/".$cls_with_merges_dir || die "\nERROR: Could not open directory: $cls_with_merges_dir. Exiting.\n";
@@ -764,8 +765,9 @@ sub annotate_clusters {
     my ($dname, $dpath, $dsuffix) = fileparse($database, qr/\.[^.]*/);
     my $db_path = File::Spec->rel2abs($dpath.$dname);
     my @blasts;    # container for each report (hash) 
-    my @superfams;
     my @blast_out; # container for blastn output
+    my @superfams;
+    my @cluster_annotations;
 
     chdir $cls_with_merges_dir;
 
@@ -798,16 +800,21 @@ sub annotate_clusters {
         next unless defined $top_hit && defined $hit_ct;
                                                            
         push @blasts, $blhits;
-        my ($top_hit_superfam, $cluster_annot) = blast2annot($json, $filebase, $readct, $top_hit, $top_hit_perc); 
+        ($top_hit_superfam, $cluster_annot) = blast2annot($json, $filebase, $readct, $top_hit, $top_hit_perc); 
         push @superfams, $top_hit_superfam unless !%$top_hit_superfam;
+	push @cluster_annotations, $cluster_annot unless !%$cluster_annot;
     }
+
+    my %all_cluster_annotations;
+    @all_cluster_annotations{keys %$_} = values %$_ for @cluster_annotations;
 
     open my $out, '>', $anno_rp_path;
     say $out join "\t", "Cluster", "Read_count", "Type", "Class", "Superfam", "Family","Top_hit","Top_hit_perc";
-    #my $anno_key = mk_key($readct, $type, $class, $superfam_h, $fam, $$top_hit, $$top_hit_perc);
-    for my $readct (reverse sort { $cluster_annot->{$a} <=> $cluster_annot->{$b} } keys %$cluster_annot) {
-	my @annots = mk_vec($cluster_annot->{$readct});
-	say $out join "\t", $annots[0], $readct, $annots[1 .. $#annots];
+
+    for my $readct (reverse sort { $a <=> $b } keys %all_cluster_annotations) {
+	my @annots = mk_vec($all_cluster_annotations{$readct});
+	my $cluster = shift @annots;
+	say $out join "\t", $cluster, $readct, join "\t", @annots;
     }
     close $out;
 
@@ -888,37 +895,37 @@ sub blast2annot {
     for my $type (keys %$repeats) {
         if ($type eq 'pseudogene' || $type eq 'simple_repeat' || $type eq 'integrated_virus') {
             if ($type eq 'pseudogene' && $$top_hit =~ /rrna|trna|snrna/i) {
-                #say $out join "\t", $filebase, $readct, $type, $$top_hit, $$top_hit_perc;
+		#say join "\t", $filebase, $type, $$top_hit, $$top_hit_perc;
 		my $anno_key = mk_key($filebase, $type, $$top_hit, $$top_hit_perc);
 		$cluster_annot{$readct} = $anno_key;
 		last;
             }
             elsif ($type eq 'simple_repeat' && $$top_hit =~ /msat/i) {
-                #say $out join "\t", $filebase, $readct, $type, "Satellite", "MSAT", $$top_hit, $$top_hit_perc;
+		#say join "\t", $filebase, $type, "Satellite", "MSAT", $$top_hit, $$top_hit_perc;
 		my $anno_key = mk_key($filebase, $type, "Satellite", "MSAT", $$top_hit, $$top_hit_perc);
 		$cluster_annot{$readct} = $anno_key;
 		last;
             }
             elsif ($type eq 'simple_repeat' && $$top_hit =~ /sat/i) {
-                #say $out join "\t", $filebase, $readct, $type, "Satellite", "SAT", $$top_hit, $$top_hit_perc;
+		#say join "\t", $filebase, $type, "Satellite", "SAT", $$top_hit, $$top_hit_perc;
 		my $anno_key = mk_key($filebase, $type, "Satellite", "SAT", $$top_hit, $$top_hit_perc);
 		$cluster_annot{$readct} = $anno_key;
 		last;
             }
             elsif ($type eq 'integrated_virus' && $$top_hit =~ /caul/i) {
-                #say $out join "\t", $filebase, $readct, $type, "Caulimoviridae", $$top_hit, $$top_hit_perc;
+		#say join "\t", $filebase, $type, "Caulimoviridae", $$top_hit, $$top_hit_perc;
 		my $anno_key = mk_key($filebase, $type, "Caulimoviridae", $$top_hit, $$top_hit_perc);
 		$cluster_annot{$readct} = $anno_key;
 		last;
             }
             elsif ($type eq 'integrated_virus' && ($$top_hit eq 'PIVE' || $$top_hit eq 'DENSOV_HM')) {
-                #say $out join "\t", $filebase, $readct, $type, "DNA Virus", $$top_hit, $$top_hit_perc;
+		#say join "\t", $filebase, $type, "DNA Virus", $$top_hit, $$top_hit_perc;
 		my $anno_key = mk_key($filebase, $type, "DNA Virus", $$top_hit, $$top_hit_perc);
 		$cluster_annot{$readct} = $anno_key;
 		last;
             }
             elsif ($type eq 'endogenous_retrovirus' && $$top_hit =~ /erv/i) {
-                #say $out join "\t", $filebase, $readct, $type, "Endogenous Retrovirus", $$top_hit, $$top_hit_perc;
+		#say join "\t", $filebase, $type, "Endogenous Retrovirus", $$top_hit, $$top_hit_perc;
 		my $anno_key = mk_key($filebase, $type, "Endogenous Retrovirus", $$top_hit, $$top_hit_perc);
 		$cluster_annot{$readct} = $anno_key;
 		last;
@@ -935,8 +942,8 @@ sub blast2annot {
                                     for my $sine (@$sines) {
                                         if ($sine =~ /$$top_hit/) {
                                             ## only include the same level of depth as others
+					    #say join "\t", $filebase, $type, $class, $superfam_h, $sine_fam_mem, $$top_hit, $$top_hit_perc;
 					    $top_hit_superfam{$$top_hit} = $sine_fam_mem;
-                                            #say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $sine_fam_mem, $$top_hit, $$top_hit_perc;
 					    my $anno_key = mk_key($filebase, $type, $class, $superfam_h, $sine_fam_mem, $$top_hit, $$top_hit_perc);
 					    $cluster_annot{$readct} = $anno_key;
 					    last;
@@ -946,18 +953,43 @@ sub blast2annot {
                             }
                         }
                     }
-                    elsif ($superfam_h =~ /gypsy/i && $$top_hit =~ /^RLG/) {
-			my $gypsy_fam = $1 if $top_hit =~ /(^RLG(\_|\-)\w+)/;
+                    elsif ($superfam_h =~ /gypsy/i && $$top_hit =~ /^RLG|Gyp/i) {
+			my $gypsy_fam; 
+			if ($$top_hit =~ /(^RLG(\_|\-)\w+)/) {
+			    $gypsy_fam = $1;
+			}
+			elsif ($$top_hit =~ /(^Gypsy\-\d+\_\w+)\-I|LTR/) {
+			    $gypsy_fam = $1;
+			}
+			elsif ($$top_hit =~ /(^Gyp.*\d+\-(LTR|I)\_w{2})/i) {
+			    $gypsy_fam = $1;
+			}
+			else {
+			    $gypsy_fam = $$top_hit;
+			}
                         $top_hit_superfam{$$top_hit} = $superfam_h;
-                        #say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit, $$top_hit_perc;
+			#say join "\t", $filebase, $type, $class, $superfam_h, $gypsy_fam, $$top_hit, $$top_hit_perc;
 			my $anno_key = mk_key($filebase, $type, $class, $superfam_h, $gypsy_fam, $$top_hit, $$top_hit_perc);
 			$cluster_annot{$readct} = $anno_key;
 			last;
                     }
-                    elsif ($superfam_h =~ /copia/i && $$top_hit =~ /^RLC/) {
-                        my $copia_fam = $1 if $top_hit =~ /(^RLC(\_|\-)\w+)/;
+                    elsif ($superfam_h =~ /copia/i && $$top_hit =~ /^RLC|Cop/i) {
+                        #my $copia_fam = $1 if $top_hit =~ /(^RLC(\_|\-)\w+)/;
+			my $copia_fam;
+                        if ($$top_hit =~ /(^RLC(\_|\-)\w+)/) {
+                            $copia_fam = $1;
+                        }
+                        elsif ($$top_hit =~ /(^Copia\-\d+\_\w+)\-I|LTR/) {
+                            $copia_fam = $1;
+                        }
+			elsif ($$top_hit =~ /(^(COP\d+)\_(I|LTR)(\_\w+))/) {
+                            $copia_fam = $1;
+			}
+			else {
+                            $copia_fam = $$top_hit;
+			}
                         $top_hit_superfam{$$top_hit} = $superfam_h;
-                        #say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit, $$top_hit_perc;
+			#say join "\t", $filebase, $type, $class, $superfam_h, $copia_fam, $$top_hit, $$top_hit_perc;
 			my $anno_key = mk_key($filebase, $type, $class, $superfam_h, $copia_fam, $$top_hit, $$top_hit_perc);
 			$cluster_annot{$readct} = $anno_key;
                     }
@@ -965,9 +997,9 @@ sub blast2annot {
                         for my $fam (@{$repeats->{$type}{$class}[$superfam_index]{$superfam_h}}) {
                             for my $mem (@$fam) {
                                 if ($mem =~ /$$top_hit/i) {
-                                    $top_hit_superfam{$$top_hit} = $superfam_h;
-                                    #say $out join "\t", $filebase, $readct, $type, $class, $superfam_h, $$top_hit, $$top_hit_perc;
-				    my $anno_key = mk_key($filebase, $readct, $type, $class, $superfam_h, $fam, $$top_hit, $$top_hit_perc);
+				    $top_hit_superfam{$$top_hit} = $superfam_h;
+				    #say join "\t", $filebase, $type, $class, $superfam_h, $fam, $$top_hit, $$top_hit_perc;
+				    my $anno_key = mk_key($filebase, $type, $class, $superfam_h, " ", $$top_hit, $$top_hit_perc);
 				    $cluster_annot{$readct} = $anno_key;
 				    last;
                                 }
