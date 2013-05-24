@@ -964,6 +964,15 @@ sub blast2annot {
 			elsif ($$top_hit =~ /(^Gyp.*\d+\-(LTR|I)\_w{2})/i) {
 			    $gypsy_fam = $1;
 			}
+<<<<<<< HEAD
+=======
+			elsif ($$top_hit =~ /((^\w+)\-(I|LTR)(\_\w+))/) {
+			    $gypsy_fam = $2.$4;
+			}
+			elsif ($$top_hit =~ /(^RLG\_\w+\d+\_\d+)/) {
+			    $gypsy_fam = $1;
+			}
+>>>>>>> add more pattern matching to generate family names
 			else {
 			    $gypsy_fam = $$top_hit;
 			}
@@ -985,6 +994,12 @@ sub blast2annot {
 			elsif ($$top_hit =~ /(^(COP\d+)\_(I|LTR)(\_\w+))/) {
                             $copia_fam = $1;
 			}
+<<<<<<< HEAD
+=======
+			elsif ($$top_hit =~ /(^Copia\-\d+\_\w+)\-(I|LTR)/) {
+			    $copia_fam = $1;
+                        }
+>>>>>>> add more pattern matching to generate family names
 			else {
                             $copia_fam = $$top_hit;
 			}
