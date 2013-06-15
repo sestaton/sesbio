@@ -5,10 +5,8 @@ use strict;
 use warnings;
 use autodie qw(open);
 use Getopt::Long;
-use feature 'say';
-use Data::Dump qw(dd);
 
-my $usage = "\n$0 -i in_fas -o outfile -l length\n\n";
+my $usage = "\nUSAGE: perl $0 -i in_fas -o outfile -l length\n\n";
 my $infile;
 my $outfile;
 my $length;
