@@ -64,7 +64,7 @@ samtools sort $bam $bamsort
 
 echo -e "sam sort done...\n"
 ## calculate the depth of coverage
-samtools depth ${bamsort}.bam | awk '{sum+=$3} END { print "Average = ",sum/NR}'
+samtools depth ${bamsort}.bam | awk '{sum+=$3; sumsq+=$3*$3} END { print "Average = ",sum/NR; print "Stdev = ",sqrt(sumsq/NR - (sum/NR)**2)}'
 
 echo -e "samtools depth done...\n"
 ## clean up
