@@ -48,12 +48,11 @@ bamsort=${qryseqFile}_${subjseqFile}_sort
 formatdb -p F -i $subjSeq -n $db
 
 ## run blast
-#blastall -p blastn -e 1e-10 -a 8 -i $qrySeq -d $db -o $blastout 2> /dev/null
-perl parallel_blast.pl -i $qrySeq -d $db -o $blastout -n 1000000 -t 10 -a 2 -p blastn -e 1e-10 -bf 0
+perl parallel_blast.pl -i $qrySeq -d $db -o $blastout -n 100000 -t 10 -a 2 -p blastn -e 1e-20 -bf 0
 
 echo -e "blast done...\n"
 ## convert blast to sam
-perl blast2sam.pl $blastout > $sam
+perl ~/ePerl/external/blast2sam.pl $blastout > $sam
 
 echo -e "blast2sam conversion done...\n"
 ## convert sam to bam, using reference to generate sam headers
@@ -65,7 +64,8 @@ samtools sort $bam $bamsort
 
 echo -e "sam sort done...\n"
 ## calculate the depth of coverage
-samtools depth ${bamsort}.bam | awk '{sum+=$3; sumsq+=$3*$3} END { print "Average = ",sum/NR; print "Stdev = ",sqrt(sumsq/NR - (sum/NR)**2)}'
+#samtools depth ${bamsort}.bam | awk '{sum+=$3; sumsq+=$3*$3} END { print "Average = ",sum/NR; print "Stdev = ",sqrt(sumsq/NR - (sum/NR)**2)}'
+samtools depth ${bamsort}.bam | cut -f3 | stats -all
 
 echo -e "samtools depth done...\n"
 ## clean up
