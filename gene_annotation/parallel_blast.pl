@@ -17,7 +17,7 @@ input set of sequences may be in fasta or fastq format.
 
 =head1 DEPENDENCIES
 
-Perl 5.10 or newer. Parallel::ForkManager is a non-core Perl library that must
+Parallel::ForkManager is a non-core Perl library that must
 be installed in order for this script to work. 
 
 Tested with:
@@ -102,6 +102,10 @@ or '7' with is "blastxml" (BLAST XML output).
 
 The e-value threshold for hits to each query. Default is 1e-5.
 
+=item -w, --warn
+
+Print the BLAST warnings. Defaust is no;
+
 =item -h, --help
 
 Print a usage statement. 
@@ -121,11 +125,13 @@ use Pod::Usage;
 use Time::HiRes qw(gettimeofday);
 use File::Basename;
 use File::Temp;
-use IPC::Open3;
+#use IPC::Open3;
+use IPC::System::Simple qw(system);
+use Try::Tiny;
 use Parallel::ForkManager;
 
 #
-# Lexical vars
+# Vars with scope
 #
 my $infile;
 my $outfile;
@@ -133,6 +139,7 @@ my $database;
 my $numseqs;
 my $thread;
 my $cpu;
+my $warn;
 my $help;
 my $man;
 
@@ -157,6 +164,7 @@ GetOptions(# Required
 	   'e|evalue=f'         => \$evalue,
 	   'bf|blast_format=i'  => \$blast_format,
 	   't|threads=i'        => \$thread,
+	   'w|warn'             => \$warn,
            'h|help'             => \$help,
            'm|man'              => \$man,
            ) || pod2usage( "Try '$0 --man' for more information." );
@@ -183,22 +191,22 @@ $thread //= 1;
 
 my ($seq_files,$seqct) = split_reads($infile,$outfile,$numseqs);
 
-open(my $out, '>>', $outfile) or die "\nERROR: Could not open file: $outfile\n"; 
+open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n"; 
 
 my $pm = Parallel::ForkManager->new($thread);
 $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			  for my $bl (sort keys %$data_ref) {
-			      open(my $b, '<', $bl) or die "\nERROR: Could not open file: $bl\n";
-			      print $b $_ while <$report>;
-			      close($report);
-			      unlink($bl);
+			      open my $report, '<', $bl or die "\nERROR: Could not open file: $bl\n";
+			      #while (my $line = <$report>) {
+				  #print $out $line;
+			      #}
+			      print $out $_ while <$report>;
+			      close $report;
+			      unlink $bl;
 			  }
 			  my $t1 = gettimeofday();
 			  my $elapsed = $t1 - $t0;
 			  my $time = sprintf("%.2f",$elapsed/60);
-			  if ($core_dump) {
-			      print "\nWARNING: It looks like $pid produced a core dump: $core_dump\n";
-			  }
 			  print basename($ident)," just finished with PID $pid and exit code: $exit_code in $time minutes\n";
 		      } );
 
@@ -206,31 +214,32 @@ for my $seqs (@$seq_files) {
     $pm->start($seqs) and next;
     my $blast_out = run_blast($seqs,$database,$cpu,$blast_program,
 			      $blast_format,$num_alignments,
-			      $num_descriptions,$evalue);
+			      $num_descriptions,$evalue,$warn);
     $blasts{$blast_out} = 1;
     
-    unlink($seqs);
+    unlink $seqs;
     $pm->finish(0, \%blasts);
 }
 
 $pm->wait_all_children;
 
-close($out);
+close $out;
 
 my $t2 = gettimeofday();
 my $total_elapsed = $t2 - $t0;
 my $final_time = sprintf("%.2f",$total_elapsed/60);
 
-print "\n========> Finished running BLAST on $seqct sequences in $final_time minutes\n";
+print "\n========> Finihsed running BLAST on $seqct sequences in $final_time minutes\n";
 
 exit;
 #
 # Subs
 #
 sub run_blast {
+    
     my ($subseq_file,$database,$cpu,$blast_program,
 	$blast_format,$num_alignments,$num_descriptions,
-	$evalue) = @_;
+	$evalue,$warn) = @_;
 
     $blast_program //= 'blastp';           
     $blast_format //= 8;
@@ -261,21 +270,31 @@ sub run_blast {
 	"-a $cpu ".
 	"-m $blast_format";
 
-    my $bout = $subfile."_blast.out";
-    my $berr = $subfile."_blast.err";
-    my $pid;
-    eval { $pid = open3(undef, $bout, $berr, $blast_cmd); };
-    #die "open3: $@\n" if $@; 
-    if ($@) { print "\nERROR: BLAST failed. If you think this is a bug, please report it. Exiting.\n"; exit(1); }
-    waitpid($pid, 0);
-    if ($?) {
-	die "\nERROR: Child $pid exited with status of: $?. Exiting.\n";
+    #my $bout = $subfile."_blast.out";
+    #my $berr = $subfile."_blast.err";
+    #my $pid;
+    #eval { $pid = open3(undef, $bout, $berr, $blast_cmd); };
+    #die "open3: $@\n" if $@;
+    #waitpid($pid, 0);
+    #if ($?) {
+	#die "\nERROR: child $pid exited with status of: $?\n";
+    #}
+    #if (defined $warn) {
+	#print "\n$_" while <$berr>;
+    #}
+    #close($bout); close($berr);
+    try {
+	system($blast_cmd);
     }
-    close($bout); close($berr);
+    catch {
+	"\nERROR: BLAST exited abnormally. Here is the exception: $_\n";
+    };
     return $subseq_out;
+
 }
 
 sub split_reads {
+
     my ($infile,$outfile,$numseqs) = @_;
 
     my ($iname, $ipath, $isuffix) = fileparse($infile, qr/\.[^.]*/);
@@ -293,10 +312,10 @@ sub split_reads {
                                  DIR => $cwd,
 				 SUFFIX => ".fasta",
 				 UNLINK => 0);
-    open($out, '>', $fname) or die "\nERROR: Could not open file: $fname\n";
+    open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
     
     push @split_files, $fname;
-    open(my $in, '<', $infile) or die "\nERROR: Could not open file: $infile\n";
+    open my $in, '<', $infile or die "\nERROR: Could not open file: $infile\n";
     my @aux = undef;
     my ($name, $seq, $qual);
     while (($name, $seq, $qual) = readfq(\*$in, \@aux)) {
@@ -307,15 +326,15 @@ sub split_reads {
                                       DIR => $cwd,
 				      SUFFIX => ".fasta",
 				      UNLINK => 0);
-	    open($out, '>', $fname) or die "\nERROR: Could not open file: $fname\n";
+	    open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
 
 	    push @split_files, $fname;
 	}
 	print $out join "\n", ">".$name, $seq;
 	$count++;
     }
-    close($in); close($out);
-    return (\@split_files,$count);
+    close $in; close $out;
+    return (\@split_files, $count);
 }
 
 sub readfq {
