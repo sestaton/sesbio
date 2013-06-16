@@ -48,7 +48,8 @@ bamsort=${qryseqFile}_${subjseqFile}_sort
 formatdb -p F -i $subjSeq -n $db
 
 ## run blast
-blastall -p blastn -e 1e-10 -a 8 -i $qrySeq -d $db -o $blastout 2> /dev/null
+#blastall -p blastn -e 1e-10 -a 8 -i $qrySeq -d $db -o $blastout 2> /dev/null
+perl parallel_blast.pl -i $qrySeq -d $db -o $blastout -n 1000000 -t 10 -a 2 -p blastn -e 1e-10 -bf 0
 
 echo -e "blast done...\n"
 ## convert blast to sam
