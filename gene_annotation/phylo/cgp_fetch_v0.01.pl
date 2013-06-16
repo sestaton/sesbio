@@ -38,9 +38,9 @@ GetOptions(
 	   'g|genus=s'        => \$genus,
 	   's|species=s'      => \$species,
 	   'o|outfile=s'      => \$outfile,
-	   'seq|sequences:s'  => \$sequences,
-           'aln|alignments:s' => \$alignments,
-           'asm|assemblies:s' => \$assemblies,
+	   'seq|sequences'  => \$sequences,
+           'aln|alignments' => \$alignments,
+           'asm|assemblies' => \$assemblies,
 	   'h|help'           => \$help,
 	   'm|man'            => \$man,
 	  );
@@ -51,8 +51,7 @@ pod2usage( -verbose => 2 ) if $man;
 #
 # Check @ARGV
 #
-if (!$all || !$outfile || !$sequences 
-    || !$alignments || !$assemblies) {
+if (!$assemblies && !$sequences && !$alignments) {
    print "\nERROR: Command line not parsed correctly. Exiting.\n";
    usage();
    exit(1);
@@ -70,10 +69,10 @@ my $records = 0;
 #
 my ($gen, $sp);
 if ($genus) {
-    $gen = substr($genus, 0, 3);
+    $gen = substr($genus, 0, 4);
 }
 if ($species) {
-    $sp = substr($species, 0, 3);
+    $sp = substr($species, 0, 4);
 }
 
 #
@@ -112,29 +111,29 @@ for my $tag ($tree->look_down(_tag => 'a')) {
 		    fetch_files($urlbase, $type, $tag->as_text);
 		}
 		else {
-		    filter_search($genus, $species, $tag->as_text);
+		    filter_search($genus, $species, $gen, $sp, $tag->as_text, $type);
 		}
 	    }
-	    elsif ($sequences) {
-		my $type = "sequences";
-		if ($tag->as_text =~ /\.fasta$/) {
-		    if ($all) {
-                        fetch_files($urlbase, $type, $tag->as_text);
-                    }
-                    else {
-                        filter_search($genus, $species, $tag->as_text);
-                    }
+	}
+	elsif ($sequences) {
+	    my $type = "sequences";
+	    if ($tag->as_text =~ /\.fasta$/) {
+		if ($all) {
+		    fetch_files($urlbase, $type, $tag->as_text);
+		}
+		else {
+		    filter_search($genus, $species, $gen, $sp, $tag->as_text, $type);
 		}
 	    }
-	    elsif ($alignments) {
-		my $type = "alignments";
-		if ($tag->as_text =~ /\.Align.tar.gz$/) {
-		    if ($all) {
-			fetch_files($urlbase, $type, $tag->as_text);
-		    }
-		    else {
-			filter_search($genus, $species, $tag->as_text);
-		    }
+	}
+	elsif ($alignments) {
+	    my $type = "alignments";
+	    if ($tag->as_text =~ /\.Align.tar.gz$/) {
+		if ($all) {
+		    fetch_files($urlbase, $type, $tag->as_text);
+		}
+		else {
+		    filter_search($genus, $species, $gen, $sp, $tag->as_text, $type);
 		}
 	    }
 	}
@@ -147,19 +146,21 @@ unlink $cgp_response;
 # Subroutines
 #
 sub filter_search {
-    my ($genus, $species, $file);
+    my ($genus, $species, $gen, $sp, $file, $type) = @_;
 
-    if ($genus && !$species && $gen =~ $file) {
-	if (!$genus && $species && $sp =~ $file) {
-	    if ($genus && $species && $gen =~ $file && $sp =~ $file) {
-		fetch_files($urlbase, $type, $file);
-	    }
-	}
+    if ($genus && !$species && $file =~ /$gen/i) {
+	fetch_files($urlbase, $type, $file);
+    }
+    elsif (!$genus && $species && $file =~ /$sp/i) {
+	fetch_files($urlbase, $type, $file);
+    }
+    elsif ($genus && $species && $file =~ /$gen/i && $file =~ /$sp/i) {
+	fetch_files($urlbase, $type, $file);
     }
 }
 
 sub fetch_files {
-    my ($urlbase, $type, $file);
+    my ($urlbase, $type, $file) = @_;
 
     my $data_dir;
     if ($type =~ /assemblies/i) {
@@ -174,7 +175,7 @@ sub fetch_files {
 
     my $endpoint = $urlbase.$data_dir.$file;
     try {
-	system("wget -q -O $file $endpoint");
+	system("wget -O $file $endpoint");
     }
     catch {
 	say "\nERROR: wget exited abnormally. Here is the exception: $_\n";
@@ -185,20 +186,20 @@ sub usage {
     my $script = basename( $0, () );
     print STDERR <<END
 
-USAGE: perl $script [-seq] [-aln] [-asm] [-g] [-s] [-a] [--all]
+USAGE: perl $script [-seq] [-aln] [-asm] [-g] [-s] [--all]
 
 Required Arguments:
-  all               :      Download files of the specified type for all species in thedatabase.
-  o|outfile         :      File to place the results (NOT IMPLEMENTED.
-  g|genus           :      The name of a genus query. 
-  s|species         :      The name of a species to query.
+  o|outfile         :      File to place the results (NOT IMPLEMENTED).
   seq|sequences     :      Specifies that the raw EST sequences should be fetched.
   aln|alignments    :      Specifies that the assemblies aligned to Arabidopsis should be fetched.
   asm|assemblies    :      Specifies that the EST assemblies should be fetched.
 
 Options:
-  h|help            :       Print a help statement.
-  m|man             :       Print the full manual. 
+  all               :      Download files of the specified type for all species in the database.
+  g|genus           :      The name of a genus query.
+  s|species         :      The name of a species to query.
+  h|help            :      Print a help statement.
+  m|man             :      Print the full manual. 
 
 END
 }
