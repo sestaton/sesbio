@@ -259,7 +259,7 @@ sub run_blast {
 	$suffix = ".blastxml";
     }
     elsif ($blast_format == 0) {
-	$suffix = ."$blast_program";
+	$suffix = ".$blast_program";
     }
     my $subseq_out = $subfile."_".$dbfile.$suffix;
 
