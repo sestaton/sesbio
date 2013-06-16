@@ -68,5 +68,8 @@ echo -e "sam sort done...\n"
 samtools depth ${bamsort}.bam | cut -f3 | stats -all
 
 echo -e "samtools depth done...\n"
+## calculate query seq stats
+gt seq -stat $qrySeq | head -3
+
 ## clean up
 rm ${db}.*
