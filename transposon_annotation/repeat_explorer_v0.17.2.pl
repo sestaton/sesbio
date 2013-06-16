@@ -845,8 +845,8 @@ sub clusters_annotation_to_summary  {
     @top_hit_superfam{keys %$_} = values %$_ for @$superfams;
 
     for my $f (keys %top_hit_superfam) {
-        if ($f =~ /^((RL.\-|\_\w+)\-|\_\d)/) {
-            my $fam = $2;
+	if ($f =~ /(^RL(C|G)(\-|\_)\w+)\-|\_\d+/) {
+            my $fam = $1;
             $top_hit_superfam{$fam} = $top_hit_superfam{$f};
             delete $top_hit_superfam{$f};
         }
@@ -862,8 +862,9 @@ sub clusters_annotation_to_summary  {
     for my $blast (@$blasts) {
         for my $fam (keys %$blast) {
             $total_ct += $blast->{$fam};
-            if ($fam =~ /^((RL.\-|\_\w+)\-|\_\d)/) {
-                my $famname = $2;
+	    if ($fam =~ /(^RL(C|G)(\-|\_)\w+)\-|\_\d+/) {
+                my $famname = $1;
+		if (not defined $famname) { say "\nERROR: $fam is not defined after regex"; next; }
                 if (exists $fams{$famname}) {
                     $fams{$famname} += $blast->{$fam};
                 }
@@ -982,6 +983,9 @@ sub blast2annot {
 			elsif ($$top_hit =~ /(^RLG\_\w+\d+\_\d+)/) {
 			    $gypsy_fam = $1;
 			}
+			elsif ($$top_hit =~ /(^\S+)\_/) {
+			    $gypsy_fam = $1;
+			}
 			else {
 			    $gypsy_fam = $$top_hit;
 			}
@@ -1013,6 +1017,9 @@ sub blast2annot {
 			elsif ($$top_hit =~ /(^Copia\-\d+\_\w+)\-(I|LTR)/) {
 			    $copia_fam = $1;
                         }
+			elsif ($$top_hit =~ /(^\S+)\_/) {
+			    $copia_fam = $1;
+			}
 			else {
                             $copia_fam = $$top_hit;
 			}
