@@ -96,7 +96,7 @@ The BLAST program to execute. Default is blastp.
 
 The BLAST output format. Default is 8.
 NB: The only allowed options are '8' which is "blasttable" (tabular BLAST output),
-or '7' with is "blastxml" (BLAST XML output).
+'7' with is "blastxml" (BLAST XML output), and '0' which is the defaout pairwise output.
 
 =item -e, --evalue
 
@@ -201,6 +201,7 @@ $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump
 				  #print $out $line;
 			      #}
 			      print $out $_ while <$report>;
+			      print $out "\n\n" if $blast_format == '0';
 			      close $report;
 			      unlink $bl;
 			  }
@@ -256,6 +257,9 @@ sub run_blast {
     }
     elsif ($blast_format == 7) {
 	$suffix = ".blastxml";
+    }
+    elsif ($blast_format == 0) {
+	$suffix = ."$blast_program";
     }
     my $subseq_out = $subfile."_".$dbfile.$suffix;
 
