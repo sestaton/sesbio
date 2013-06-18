@@ -31,16 +31,15 @@ p2 <- ggplot(filtered_full_df.copia, aes(x=Species, y=GPerc,group=1)) + stat_smo
 ## align plots
 gA <- ggplot_gtable(ggplot_build(p 
                                  + ylab("Genomic Proportion") 
-                                 #+ theme(axis.title.x = element_blank(), 
-                                 #        axis.text.x = element_blank(), 
-                                 #        axis.ticks.x = element_blank(),
-                                 #        plot.margin = unit(c(1,1,-0.8,1), "lines")) )
-))
+                                 + theme(axis.text.y = element_text(color = "black", size = 12),
+                                         axis.title.y = element_blank(),
+                                         plot.margin = unit(c(1,0,1,1), "lines")) ))
+
 gB <- ggplot_gtable(ggplot_build(p2 
                                  + ylab("Genomic Proportion") + theme(axis.text.y = element_blank(),
                                                                       axis.title.y = element_blank(),
-                                                                      axis.ticks.y = element_blank())))
-#                                         plot.margin = unit(c(0.5,1,1,1), "lines"))))
+                                                                      axis.ticks.y = element_blank(),
+                                                                      plot.margin = unit(c(1,1,1,0), "lines"))))
 
 
 maxWidth = grid::unit.pmax(gA$widths[2:3], gB$widths[2:3])
