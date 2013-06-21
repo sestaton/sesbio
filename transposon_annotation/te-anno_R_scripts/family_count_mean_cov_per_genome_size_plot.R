@@ -1,0 +1,6 @@
+cvals <- read.table("aster_famct_cval_fammean.txt",header=T,sep="\t")
+ggplot(cvals, aes(x=Genome_size, y=Families, group=1)) + stat_smooth(method=lm) + scale_x_continuous(breaks=c(0,1500,2000,2500,3000,3500),labels=c(0,1500,2000,2500,3000,3500)) + geom_point(color="black",size=3) + theme(axis.text.y = element_text(color = "black", size = 14), axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.title.y = element_blank(), axis.title.x = element_blank())
+                                                                                                                                                      "Gerbera hybrida","Carthamus tinctorius",
+                                                                                                                                                      "Taraxacum kok-saghyz","Centrapallus pauciflorus",
+                                                                                                                                                      "Senecio vulgaris","Pseudognaphalium helleri",
+                                                                                                                                                    "Helianthus annuus","Ageratina altissima")) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
