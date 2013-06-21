@@ -17,26 +17,26 @@ p <- ggplot(filtered_full_df.gypsy, aes(x=Species, y=GPerc,group=1)) + stat_smoo
            labels=c("Nasanthus patagonicus","Fulcaldea stuessyi",
              "Gerbera hybrida","Carthamus tinctorius",
              "Taraxacum kok-saghyz","Centrapallus pauciflorus",
-             "Senecio vulgaris","Gnaph. sp.",
-             "Helianthus annuus","Ageratina sp."))
+             "Senecio vulgaris","Pseudognaphalium helleri",
+             "Helianthus annuus","Ageratina altissima"))
 
 
 p2 <- ggplot(filtered_full_df.copia, aes(x=Species, y=GPerc,group=1)) + stat_smooth(method=lm) + geom_point(color="aquamarine4",size=3) + coord_flip() + scale_x_discrete(limits=c("Calyc","Dasy","Gerb","Saff","TKS","CP","Sene","Gnaph","Ann","Ager"),
               labels=c("Nasanthus patagonicus","Fulcaldea stuessyi",
                 "Gerbera hybrida","Carthamus tinctorius",
                 "Taraxacum kok-saghyz","Centrapallus pauciflorus",
-                "Senecio vulgaris","Gnaph. sp.",
-                "Helianthus annuus","Ageratina sp."))
+                "Senecio vulgaris","Pseudognaphalium helleri",
+                "Helianthus annuus","Ageratina altissima"))
 
 ## align plots
 gA <- ggplot_gtable(ggplot_build(p 
-                                 + ylab("Genomic Proportion") 
+                                 + ylab("Genomic Coverage [%]") 
                                  + theme(axis.text.y = element_text(color = "black", size = 12),
                                          axis.title.y = element_blank(),
                                          plot.margin = unit(c(1,0,1,1), "lines")) ))
 
 gB <- ggplot_gtable(ggplot_build(p2 
-                                 + ylab("Genomic Proportion") + theme(axis.text.y = element_blank(),
+                                 + ylab("Genomic Coverage [%]") + theme(axis.text.y = element_blank(),
                                                                       axis.title.y = element_blank(),
                                                                       axis.ticks.y = element_blank(),
                                                                       plot.margin = unit(c(1,1,1,0), "lines"))))

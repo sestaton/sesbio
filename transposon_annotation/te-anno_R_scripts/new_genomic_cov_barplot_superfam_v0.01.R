@@ -117,8 +117,8 @@ filtered_full_df <- fullcp[fullcp$GPerc >= 0.3,]
 
 bp <- ggplot(filtered_full_df, aes(x=Species, y=Mbp, fill=Superfamily)) + geom_bar(stat="identity",color="black") + coord_flip() + scale_x_discrete(limits=c("Calyc","Dasy","Gerb","Saff","TKS","CP","Sene","Gnaph","Ann","Ager"),
                       labels=c("Nasanthus patagonicus","Fulcaldea stuessyi","Gerbera hybrida","Carthamus tinctorius",
-                               "Taraxacum kok-saghyz","Centrapallus pauciflorus","Senecio vulgaris","Gnaph. sp.",
-                               "Helianthus annuus","Ageratina sp.")) + scale_fill_manual(values = c("Gypsy" = "darkgreen","Copia" = "aquamarine4",
+                               "Taraxacum kok-saghyz","Centrapallus pauciflorus","Senecio vulgaris","Pseudognaphalium helleri",
+                               "Helianthus annuus","Ageratina altissima")) + scale_fill_manual(values = c("Gypsy" = "darkgreen","Copia" = "aquamarine4",
                                                                                            "DIRS" = "lightgreen","L1" = "darkgrey","EnSpm" = "azure2",
                                                                                            "Crypton" = "chartreuse", "hAT" = "darkkhaki",
                                                                                            "Helitron" = "darkolivegreen3","Mariner/Tc1" = "chocolate",
