@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+##TODO: 1) Filter matches by length, 2) Filter matches by repeat ratio
+
 use utf8;
 use v5.12;
 use strict;
@@ -211,8 +213,10 @@ open my $out, '>:utf8', $outfile;
 	    if (exists $seqmap->{$seqid}) {
 		if (exists $match_range{ $seqmap->{$seqid} }) {
 		    my ($match_len,$match_offset) = split /\|/, $match_range{ $seqmap->{$seqid} };
-		    my $seq_match = substr $useq, $match_offset, $match_len;
-		    say $out join "\n", ">".$seqid, $seq_match;
+		    if ($match_len >= $matchlen) {
+			my $seq_match = substr $useq, $match_offset, $match_len;
+			say $out join "\n", ">".$seqid, $seq_match;
+		    }
 		}
 	    }
 	}
