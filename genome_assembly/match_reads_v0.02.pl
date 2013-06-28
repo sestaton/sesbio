@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
-##TODO: 1) Filter matches by length, 2) Filter matches by repeat ratio
+##TODO: 1) Filter matches by length,       DONE 
+##      2) Filter matches by repeat ratio  (This could generate artifacts since there will be repetitive regions of most targets)
 
 use utf8;
 use v5.12;
@@ -41,13 +42,19 @@ GetOptions(
 	   'l|match_len=i'          => \$matchlen,
 	   'pid|percent_identity=i' => \$identity,
            'k|keep'                 => \$keep,
-           'f|filter'               => \$filter,
+           'f|filter_hitrange'      => \$filter,
 	   'c|clean'                => \$clean,
 	   'h|help'                 => \$help,
 	   );
 
 # help?
 usage() and exit(0) if $help;
+
+if ($filter && !$keep) {
+    say "\nERROR: Filtering the match parts of each sequence is only possible when keeping matches. Exiting.\n";
+    usage();
+    exit(1);
+}
 
 # check @ARGV
 if (!$infile || !$subject || !$outfile) {
@@ -74,6 +81,7 @@ if ($keep) {
     say "$qdb_exists ", if $qdb_exists;
     $qdb .= "_$str" if $qdb_exists;
     $seqmap = fas2idmap($infile);
+    #dd $seqmap; exit;
 }
 
 my $cwd = getcwd();
@@ -82,7 +90,6 @@ my $o_tmp = File::Temp->new( TEMPLATE => $tmpiname,
 			     DIR      => $cwd,
 			     SUFFIX   => $iext,
 			     UNLINK   => 0);
-my %match_range;
 
 # set paths to programs used
 my $mkvtree = find_prog("mkvtree");
@@ -109,7 +116,7 @@ catch {
 # Run Vmatch for the query
 # 
 my ($vmatch_o, $vmatch_e, $vmatch_cmd);
-my $vmerSearchSeqnum = $ifile."_vmermatches2";
+my $vmerSearchSeqnum = $ifile."_vmermatches_$str";
 if ($keep) {
     $vmatch_cmd = "$vmatch -q $infile -l $merlen";
     $vmatch_cmd .= " -identity $identity" if $identity;
@@ -149,6 +156,8 @@ else {
 #
 # Return the match list
 #
+my %match_range;
+
 if ($keep) {
     # capture the match range
     open my $vsearch, '<', $vsearch_out;
@@ -195,7 +204,7 @@ if ($keep) {
 #
 # Convert back to uppercase, select match range if keeping matches
 #
-my $scrSeqCt = 0;
+my ($scrSeqCt, $validscrSeqCt) = (0, 0);
 open my $fas, '<:utf8', $o_tmp;
 open my $out, '>:utf8', $outfile;
     
@@ -209,11 +218,13 @@ open my $out, '>:utf8', $outfile;
 	my $seq = join '', @seqs;
 	my $useq = uc($seq);
 	$scrSeqCt++ if defined $seq;
-	if ($keep) {
+	$seqid =~ s/\s.*//;
+	if ($keep && $filter) {
 	    if (exists $seqmap->{$seqid}) {
 		if (exists $match_range{ $seqmap->{$seqid} }) {
 		    my ($match_len,$match_offset) = split /\|/, $match_range{ $seqmap->{$seqid} };
 		    if ($match_len >= $matchlen) {
+			$validscrSeqCt++;
 			my $seq_match = substr $useq, $match_offset, $match_len;
 			say $out join "\n", ">".$seqid, $seq_match;
 		    }
@@ -227,19 +238,25 @@ open my $out, '>:utf8', $outfile;
 }
 close $fas;
 close $out;
+unlink $o_tmp;
 
-#unlink $o_tmp;
-
-# compute screening results
+#
+# Compute screening results
+#
 my ($qrySeqCt_o, $qrySetCt_e) = capture { system("grep -c '>' $infile"); }; 
 chomp $qrySeqCt_o;
 
-if ($keep) {
-    #my $totSeqScr = $qrySeqCt_o - $scrSeqCt;
-    my $totSeqScrPerc = sprintf("%.2f",$scrSeqCt/$qrySeqCt_o * 100);
+if ($keep && $filter) {
+    my $totSeqScrPerc = sprintf("%.2f",$validscrSeqCt/$qrySeqCt_o * 100);
     
+    say "\n$totSeqScrPerc % ($validscrSeqCt","/","$qrySeqCt_o) of reads were screened from ", basename($subject),
+	    " in ",basename($infile), ". $validscrSeqCt reads written to $outfile.\n";
+}
+elsif ($keep && !$filter) {
+    my $totSeqScrPerc = sprintf("%.2f",$scrSeqCt/$qrySeqCt_o * 100);
+
     say "\n$totSeqScrPerc % ($scrSeqCt","/","$qrySeqCt_o) of reads were screened from ", basename($subject),
-	    " in ",basename($infile), ". $scrSeqCt reads written to $outfile.\n";
+    " in ",basename($infile), ". $scrSeqCt reads written to $outfile.\n";
 }
 else {
     my $totSeqScr = $qrySeqCt_o - $scrSeqCt;
@@ -304,6 +321,7 @@ sub fas2idmap {
 	next if !length($line);
 	my ($seqid, @seqs) = split /\n/, $line;
 	my $seq = join '', @seqs;
+	$seqid =~ s/\s.*//;
 	$seqmap{$seqid} = $seqct;
 	$seqct++ if defined $seq;
     }
@@ -315,7 +333,7 @@ sub fas2idmap {
 sub usage {
     my $script = basename($0);
     print STDERR <<END
-USAGE: $script -i infile -o outfile -s subject -m merlen -l matchlen [-h] [-u] [-pid]
+USAGE: $script -i infile -o outfile -s subject -m merlen -l matchlen [-h] [-u] [-pid] [-k] [f] [-c]
 
 Required:
  -i|infile             :       A multifasta to screen for contamination.
@@ -324,6 +342,7 @@ Required:
 
 Options:
  -k|keep               :       Keep the sequences matching the subject intead of screening them (Default: no).
+ -f|filter_hitrange    :       Keep only the match parts of each sequence; can only be used with [--keep](Default: no).
  -m|merlen             :       Length to use for matching the index (Default: 20). 
  -l|matchlen           :       Minimum length of the query to keep (Default: 50).
  -pid|percent_identity :       Set the minimum percent identity (integer) threshold (Default: exact match).
