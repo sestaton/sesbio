@@ -257,6 +257,7 @@ if ($clean) {
     my ($clean_o, $clean_e) = capture { system("rm ${db}*"); }; 
     unlink $vsearch_out;
     unlink $o_tmp;
+    unlink $vmerSearchSeqnum;
 }
 
 #
