@@ -118,7 +118,7 @@ catch {
 my ($vmatch_o, $vmatch_e, $vmatch_cmd);
 my $vmerSearchSeqnum = $ifile."_vmermatches_$str";
 if ($keep) {
-    $vmatch_cmd = "$vmatch -showdesc 0 -q $infile -l $merlen";
+    $vmatch_cmd = "$vmatch -p -d -showdesc 0 -q $infile -l $merlen";
     $vmatch_cmd .= " -identity $identity" if $identity;
     $vmatch_cmd .= " $db";
 
@@ -136,7 +136,7 @@ if ($keep) {
     };
 }
 else {
-    $vmatch_cmd = "$vmatch -s -showdesc 0 -qnomatch $matchlen -q $infile -l $merlen";
+    $vmatch_cmd = "$vmatch -p -d -s -showdesc 0 -qnomatch $matchlen -q $infile -l $merlen";
     $vmatch_cmd .= " -identity $identity" if $identity;
     $vmatch_cmd .= " $db";
 
