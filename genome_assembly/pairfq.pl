@@ -84,7 +84,6 @@ The file of reverse sequences from an Illumina paired-end sequencing run.
 The output file to place the paired forward reads.
 
 =item -rp, --rev_paired                                                                                                                                                  
-
 The output file to place the paired reverse reads. 
 
 =item -fs, --forw_unpaired                                                                                                                                                  
@@ -112,6 +111,8 @@ Print a usage statement.
 Print the full documentation.
 
 =cut      
+
+##TODO: There is a bug returning too many reads to the reverse singletons file if the dbm file is used. 7/2/13
 
 use v5.10;
 use strict;
@@ -161,6 +162,7 @@ my %rseqhash;
 $DB_BTREE->{cachesize} = 100000;
 $DB_BTREE->{flags} = R_DUP;
 my $db_file = "pairfq.bdb";
+unlink $db_file if -e $db_file;
 
 unless (defined $memory) { 
    tie %rseqhash, 'AnyDBM_File', $db_file, O_RDWR|O_CREAT, 0666, $DB_BTREE
@@ -286,6 +288,7 @@ close $rs;
 $pct = $fpct + $rpct;
 $sct = $fsct + $rsct;
 untie %rseqhash if defined $memory;
+unlink $db_file if -e $db_file;
 
 say "Total forward reads in $fread:              $fct";
 say "Total reverse reads in $rread:              $rct";
