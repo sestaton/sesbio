@@ -112,7 +112,7 @@ Print the full documentation.
 
 =cut      
 
-##TODO: There is a bug returning too many reads to the reverse singletons file if the dbm file is used. 7/2/13
+##TODO: 
 
 use v5.10;
 use strict;
