@@ -17,7 +17,7 @@ do
   perl ~/ePerl/interleaved2pairs.pl -i $file -f $fFile -r $rFile
 
   # pair the reads and put singletons into separate files
-  perl ~/ePerl/pairfq.pl -f $fFile -r $rFile -fp $fpFile -rp $rpFile -fs $fsFile -rs $rsFile
+  perl ~/ePerl/pairfq.pl -f $fFile -r $rFile -fp $fpFile -rp $rpFile -fs $fsFile -rs $rsFile -im
 
   # interleave the read pairs for velvet
   ~/apps/bin/shuffleSeqs-fast $fpFile $rpFile > $iFile
