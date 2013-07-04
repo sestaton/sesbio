@@ -71,17 +71,19 @@ my ($sfile, $sdir, $sext) = fileparse($subject, qr/\.[^.]*/);
 my ($ifile, $idir, $iext) = fileparse($infile, qr/\.[^.]*/);
 my $vsearch_out = $ifile."_".$sfile."_$str".".vmatch";
 my $db = $sfile."_mkvtreedb";
-my $qdb = $ifile."_mkvtreedb";
-my $db_exists = file_exists($db);
-say "$db_exists ", if $db_exists;
-$db .= "_$str" if $db_exists;
-
-#if ($keep) {
-#    my $qdb_exists = file_exists($db);
-#    say "$qdb_exists ", if $qdb_exists;
-#    $qdb .= "_$str" if $qdb_exists;
-#    $seqmap = fas2idmap($infile);
-#    #dd $seqmap; exit;
+#my $tis = $db.".tis";
+#say $db;
+#my $re = qr/${db}\..*/;
+#if (-e $tis) {
+    #my $db_exists = file_exists($db);
+    #say "$db_exists ", if $db_exists;
+#if (glob("$db")) {
+    $db .= "_$str";
+    #say $db;
+    #exit;
+#}
+#else {
+#    exit;
 #}
 
 my $cwd = getcwd();
@@ -94,7 +96,7 @@ my $o_tmp = File::Temp->new( TEMPLATE => $tmpiname,
 # set paths to programs used
 my $mkvtree = find_prog("mkvtree");
 my $vmatch = find_prog("vmatch");
-my $samtools = find_prog("samtools");
+my $records = find_prog("faSomeRecords");
 
 #
 # Create the index
@@ -176,7 +178,7 @@ if ($keep) {
     # return the sequences matching the subject index
     my ($fa_o, $fa_e);
     try {
-	($fa_o, $fa_e) = capture { system("/usr/local/kent/latest/bin/faSomeRecords $infile $vmerSearchSeqnum $o_tmp") };
+	($fa_o, $fa_e) = capture { system("$records $infile $vmerSearchSeqnum $o_tmp") };
     }
     catch {
 	say "\nERROR: faSomeRecords appears to have exited abnormally. Here is the exception: $_\n" and exit(1);
@@ -285,10 +287,15 @@ sub find_prog {
 sub file_exists {
     # http://stackoverflow.com/a/8584761
     my ($qfn) = @_;
-    my $rv = -e $qfn;
-    die "Unable to determine if file exists: $!"
-	if !defined($rv) && !$!{ENOENT};
-    return $rv;
+    my $re = qr/$qfn\..*/;
+    if (! -e $re) {
+#    die "Unable to determine if file exists: $!"
+#	if !defined($rv) && !$!{ENOENT};
+	return $re;
+    } 
+    else {
+	return undef;
+    }
 }
 
 sub fas2idmap {
