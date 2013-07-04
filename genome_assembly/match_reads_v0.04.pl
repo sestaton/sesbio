@@ -2,6 +2,7 @@
 
 ##TODO: 1) Filter matches by length,       DONE 
 ##      2) Filter matches by repeat ratio  (This could generate artifacts since there will be repetitive regions of most targets)
+##      3) Putting the program in the background seems to cause capture to throw an exception
 
 use utf8;
 use v5.12;
@@ -71,20 +72,7 @@ my ($sfile, $sdir, $sext) = fileparse($subject, qr/\.[^.]*/);
 my ($ifile, $idir, $iext) = fileparse($infile, qr/\.[^.]*/);
 my $vsearch_out = $ifile."_".$sfile."_$str".".vmatch";
 my $db = $sfile."_mkvtreedb";
-#my $tis = $db.".tis";
-#say $db;
-#my $re = qr/${db}\..*/;
-#if (-e $tis) {
-    #my $db_exists = file_exists($db);
-    #say "$db_exists ", if $db_exists;
-#if (glob("$db")) {
-    $db .= "_$str";
-    #say $db;
-    #exit;
-#}
-#else {
-#    exit;
-#}
+$db .= "_$str";
 
 my $cwd = getcwd();
 my $tmpiname = $ifile."_XXXX";
@@ -281,20 +269,6 @@ sub find_prog {
     else {
 	say "\nERROR: Could not find $prog in PATH. Exiting.";
 	exit(1);
-    }
-}
-
-sub file_exists {
-    # http://stackoverflow.com/a/8584761
-    my ($qfn) = @_;
-    my $re = qr/$qfn\..*/;
-    if (! -e $re) {
-#    die "Unable to determine if file exists: $!"
-#	if !defined($rv) && !$!{ENOENT};
-	return $re;
-    } 
-    else {
-	return undef;
     }
 }
 
