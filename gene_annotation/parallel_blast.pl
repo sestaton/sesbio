@@ -125,7 +125,6 @@ use Pod::Usage;
 use Time::HiRes qw(gettimeofday);
 use File::Basename;
 use File::Temp;
-#use IPC::Open3;
 use IPC::System::Simple qw(system);
 use Try::Tiny;
 use Parallel::ForkManager;
@@ -202,9 +201,6 @@ my $pm = Parallel::ForkManager->new($thread);
 $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			  for my $bl (sort keys %$data_ref) {
 			      open my $report, '<', $bl or die "\nERROR: Could not open file: $bl\n";
-			      #while (my $line = <$report>) {
-				  #print $out $line;
-			      #}
 			      print $out $_ while <$report>;
 			      print $out "\n\n" if $blast_format == 0;
 			      close $report;
@@ -247,12 +243,6 @@ sub run_blast {
 	$blast_format,$num_alignments,$num_descriptions,
 	$evalue,$warn) = @_;
 
-#    $blast_program //= 'blastp';           
-#    $blast_format //= 8;
-#    $num_alignments //= 250;
-#    $num_descriptions //= 500;
-#    $evalue //= 1e-5;
-
     my ($dbfile,$dbdir,$dbext) = fileparse($database, qr/\.[^.]*/);
     my ($subfile,$subdir,$subext) = fileparse($subseq_file, qr/\.[^.]*/);
 
@@ -270,7 +260,7 @@ sub run_blast {
 
     my $blast_cmd = "blastall -p $blast_program ".
 	"-e $evalue ". 
-	"-F T ". #'m S' ".             # filter simple repeats with 'seg' by default (DUST for nuc)
+	"-F T ". #'m S' ".      # filter simple repeats with 'seg' by default (DUST for nuc)
 	"-v $num_alignments ".
 	"-b $num_descriptions ".
 	"-i $subseq_file ".
@@ -279,19 +269,6 @@ sub run_blast {
 	"-a $cpu ".
 	"-m $blast_format";
 
-    #my $bout = $subfile."_blast.out";
-    #my $berr = $subfile."_blast.err";
-    #my $pid;
-    #eval { $pid = open3(undef, $bout, $berr, $blast_cmd); };
-    #die "open3: $@\n" if $@;
-    #waitpid($pid, 0);
-    #if ($?) {
-	#die "\nERROR: child $pid exited with status of: $?\n";
-    #}
-    #if (defined $warn) {
-	#print "\n$_" while <$berr>;
-    #}
-    #close($bout); close($berr);
     try {
 	system($blast_cmd);
     }
