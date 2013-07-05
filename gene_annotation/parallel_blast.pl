@@ -188,6 +188,11 @@ if (!$infile || !$outfile || !$database || !$numseqs) {
 my $t0 = gettimeofday();
 $cpu //= 1;  
 $thread //= 1;
+$blast_program //= 'blastp';
+$blast_format //= 8;
+$num_alignments //= 250;
+$num_descriptions //= 500;
+$evalue //= 1e-5;
 
 my ($seq_files,$seqct) = split_reads($infile,$outfile,$numseqs);
 
@@ -201,7 +206,7 @@ $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump
 				  #print $out $line;
 			      #}
 			      print $out $_ while <$report>;
-			      print $out "\n\n" if $blast_format == '0';
+			      print $out "\n\n" if $blast_format == 0;
 			      close $report;
 			      unlink $bl;
 			  }
@@ -242,11 +247,11 @@ sub run_blast {
 	$blast_format,$num_alignments,$num_descriptions,
 	$evalue,$warn) = @_;
 
-    $blast_program //= 'blastp';           
-    $blast_format //= 8;
-    $num_alignments //= 250;
-    $num_descriptions //= 500;
-    $evalue //= 1e-5;
+#    $blast_program //= 'blastp';           
+#    $blast_format //= 8;
+#    $num_alignments //= 250;
+#    $num_descriptions //= 500;
+#    $evalue //= 1e-5;
 
     my ($dbfile,$dbdir,$dbext) = fileparse($database, qr/\.[^.]*/);
     my ($subfile,$subdir,$subext) = fileparse($subseq_file, qr/\.[^.]*/);
@@ -334,7 +339,7 @@ sub split_reads {
 
 	    push @split_files, $fname;
 	}
-	print $out join "\n", ">".$name, $seq;
+	say $out join "\n", ">".$name, $seq;
 	$count++;
     }
     close $in; close $out;
