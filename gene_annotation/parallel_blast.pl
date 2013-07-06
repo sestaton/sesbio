@@ -258,25 +258,30 @@ sub run_blast {
     }
     my $subseq_out = $subfile."_".$dbfile.$suffix;
 
-    my $blast_cmd = "blastall -p $blast_program ".
-	"-e $evalue ". 
-	"-F T ". #'m S' ".      # filter simple repeats with 'seg' by default (DUST for nuc)
-	"-v $num_alignments ".
-	"-b $num_descriptions ".
-	"-i $subseq_file ".
-	"-d $database ".
-	"-o $subseq_out ".
-	"-a $cpu ".
-	"-m $blast_format";
+    my ($niceload, $blast_cmd, $exit_value);
+    $niceload  = "niceload --noswap --hard --run-mem 10g";
+    $blast_cmd = "$niceload  ".
+	         "'blastall ". 
+                 "-p $blast_program ".
+	         "-e $evalue ". 
+	         "-F F ". #'m S' ".      # filter simple repeats with 'seg' by default (DUST for nuc) -- Can't set w/o knowing blast program
+	         "-v $num_alignments ".
+	         "-b $num_descriptions ".
+	         "-i $subseq_file ".
+	         "-d $database ".
+	         "-o $subseq_out ".
+	         "-a $cpu ".
+	         "-m $blast_format'";
+	         #"2>&1 >/dev/null'";       # we really don't want multiple processes complaining silmutaneously
 
     try {
-	system($blast_cmd);
+	$exit_value = system([0..5],$blast_cmd);
     }
     catch {
-	"\nERROR: BLAST exited abnormally. Here is the exception: $_\n";
+	"\nERROR: BLAST exited with exit value $exit_value. Here is the exception: $_\n";
     };
-    return $subseq_out;
 
+    return $subseq_out;
 }
 
 sub split_reads {
