@@ -1,5 +1,19 @@
 #!/usr/bin/env perl
 
+# Output of cmpthese() for a fasta file of ~500k sequences:
+#
+#            s/iter bioseqio  readseq   readfq
+#bioseqio     14.5       --     -88%    -100%
+#readseq      1.77     719%       --     -98%
+#readfq   3.98e-02   36372%    4356%       --
+#
+# Output of timethese() on same file:
+#
+#Benchmark: timing 50 iterations of bioseqio, readfq, readseq...
+#  bioseqio: 731 wallclock secs (726.93 usr +  1.18 sys = 728.11 CPU) @  0.07/s (n=50)
+#    readfq:  2 wallclock secs ( 2.06 usr +  0.02 sys =  2.08 CPU) @ 24.04/s (n=50)
+#   readseq: 91 wallclock secs (89.63 usr +  0.70 sys = 90.33 CPU) @  0.55/s (n=50)
+
 use 5.010;
 use strict;
 use warnings;
