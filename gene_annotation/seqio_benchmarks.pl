@@ -10,20 +10,18 @@ use autodie qw(open);
 my $usage = "perl $0 infile";
 my $infile = shift or die $usage;
 
-#open my $in, '<', $infile;
-
 my $count = 50;
 my $seqct = 0;
 my @aux = undef;
 my ($id, $seq, $qual);
-cmpthese($count, {
+
+timethese($count, {
     'readseq' => sub {
 	open my $in, '<', $infile;
 	while (($id, $seq) = readseq(\*$in)) {
 	    $seqct++ if defined $seq;
 	}
 	close $in;
-	#say $seqct, " seqs from readseq";
     },
     'readfq' => sub {
 	open my $in, '<', $infile;
@@ -31,7 +29,6 @@ cmpthese($count, {
 	    $seqct++ if defined $seq;
         }
 	close $in;
-	#say $seqct, " seqs from readfq";
     },
     'bioseqio' => sub {
 	open my $in, '<', $infile;
@@ -39,14 +36,12 @@ cmpthese($count, {
 	while (my $seq = $seqio->next_seq) {
 	    $seqct++ if defined $seq->seq;
 	}
-	#say $seqct, " seqs from bioseqio";
+	close $in;
     },
-	  });
-
-#close $in;
+	 });
 
 #
-# subroutines
+# subs
 #
 sub readseq {
     my ($self) = @_;
