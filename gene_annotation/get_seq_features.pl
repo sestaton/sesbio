@@ -25,13 +25,16 @@ if (scalar @embl_files < 1) {
 
 for my $file (@embl_files) {
     my $seqio = Bio::SeqIO->new(-file => $file, -format => 'EMBL');
-    my $seq = $seqio->next_seq;
-    for my $feat_obj ($seq->get_SeqFeatures) {
+    my $seq_obj = $seqio->next_seq;
+    for my $feat_obj ($seq_obj->get_SeqFeatures) {
 	if ($feat_obj->primary_tag eq "CDS") {
-	    print $feat_obj->spliced_seq->seq,"\n";
+	    #print $feat_obj->spliced_seq->seq,"\n";
 	    if ($feat_obj->has_tag('gene')) {
 		for my $gene ($feat_obj->get_tag_values('gene')) {
-		    print "gene: ", $gene,"\n";
+		    print ">".$indir."_".$gene."_".$feat_obj->location->start."_".$feat_obj->location->end,"\n";
+		    my $seq = $feat_obj->spliced_seq->seq;
+		    $seq =~ s/(.{60})/$1\n/gs;
+		    print $seq,"\n";
 		}
 	    }
 	}
