@@ -306,7 +306,7 @@ exit;
 #
 sub readfq {
     my ($fh, $aux) = @_;
-    @$aux = [undef, 0] if (!defined(@$aux));
+    @$aux = [undef, 0] if (!@$aux);
     return if ($aux->[1]);
     if (!defined($aux->[0])) {
         while (<$fh>) {
@@ -322,8 +322,8 @@ sub readfq {
         }
     }
     my $name;
-    if (/^.?(\S+\s\S+)/) {          # Illumina 1.8+
-	$name = $1;
+    if (/^.?(\S+)\s(\d)\S+/) {          # Illumina 1.8+
+	$name = $1."/".$2;
     }
     elsif (/^.?(\S+)/) {            # Illumina 1.3+
 	$name = $1;
