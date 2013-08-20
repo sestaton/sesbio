@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 =head1 NAME 
                                                                        
@@ -64,7 +64,7 @@ Print the full documentation.
 =cut   
 
 use strict;
-use lib qw(/usr/local/bioperl/latest/);
+use warnings;
 use Bio::SeqIO;
 use Getopt::Long;
 use Pod::Usage;
@@ -93,7 +93,7 @@ pod2usage( -verbose => 2 ) if $man;
 
 if (!$infile || !$num || $help) {
     print "\nERROR: No input was given.\n";
-    &usage;
+    usage();
     exit(1);
 }
 
@@ -103,20 +103,17 @@ my $seqover = 0;
 my $t0 = gettimeofday();
 
 # create SeqIO objects to read in and to write outfiles
-my $seq_in  = Bio::SeqIO->new( -format => 'fasta', 
-			       -file => $infile); 
+my $seq_in  = Bio::SeqIO->new( -format => 'fasta', -file => $infile); 
 
 my $outfile1 = $infile;
 $outfile1 =~ s/\.fa.*//;
 $outfile1 .= "_".$num.".fasta";
-my $seqs_out = Bio::SeqIO->new( -format => 'fasta',
-				-file => ">$outfile1");
+my $seqs_out = Bio::SeqIO->new( -format => 'fasta', -file => ">$outfile1");
 
 my $outfile2 = $outfile1;
 my $rem = "after"; 
 $outfile2 =~ s/$num/$rem/;
-my $seqs_out2 = Bio::SeqIO->new( -format => 'fasta',
-				 -file => ">$outfile2");
+my $seqs_out2 = Bio::SeqIO->new( -format => 'fasta', -file => ">$outfile2");
 
 while( my $seqs = $seq_in->next_seq() ) {
     if ($seqct < $num) {
@@ -137,7 +134,7 @@ my $t1 = gettimeofday();
 my $elapsed = $t1 - $t0;
 my $time = sprintf("%.2f",$elapsed/60);
 
-print "\n$seqtot reads ($seqct in file $outfile1, $seqover in file $outfafter) written in $time minutes.\n\n";
+say "\n$seqtot reads ($seqct in file $outfile1, $seqover in file $outfafter) written in $time minutes.\n";
 
 exit;
 
