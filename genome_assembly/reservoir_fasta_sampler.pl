@@ -18,8 +18,8 @@ GetOptions(
 
 die $usage if !$infile or !$outfile or !$k;
 
-open(my $in, '<', $infile);
-open(my $out, '>', $outfile);
+open my $in, '<', $infile;
+open my $out, '>', $outfile;
 
 # Use reservoir sampling to select $k random sequences:
 my @samples;
@@ -43,4 +43,4 @@ warn "Selected $k out of $n sequences (", 100 * $k / $n, "%).\n" if $n >= $k;
 
 # Print sampled sequences:
 print $out @$_ for @samples;
-close($out);
+close $out;
