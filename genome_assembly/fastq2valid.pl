@@ -2,7 +2,9 @@
 
 ##TODO: add POD
 
-use v5.14;
+## This is to fix sequences for prinseq
+
+use 5.014;
 use strict;
 use warnings;
 use autodie;
@@ -32,7 +34,7 @@ if (!$infile || !$outfile) {
 my $knseq = Bio::Kseq->new($infile);
 my $nt_it = $knseq->iterator;
 
-open(my $out, '>', $outfile);
+open my $out, '>', $outfile;
 
 while (my $nseq = $nt_it->next_seq) {
     my $seq = $nseq->{seq};
@@ -41,13 +43,12 @@ while (my $nseq = $nt_it->next_seq) {
 	$seq =~ s/^.//;
 	$qual =~ s/^.//;
     }
-    print $out "@".$nseq->{name},"\n";
-    print $out $seq,"\n";
-    print $out "+\n";
-    print $out $qual,"\n";
+    say $out "@".$nseq->{name};
+    say $out $seq;
+    say $out "+";
+    say $out $qual;
 }
-close($out);
-
+close $out;
 
 #
 #
@@ -62,8 +63,8 @@ Required:
      -o|outfile        :      A prinseq-compliant fastq file.
 
 Options:
-    -h|help           :       Print a usage statement.
-    -m|man            :       Print the full documentation.
+    -h|help           :       Print a usage statement (Not implemented).
+    -m|man            :       Print the full documentation (Not implemented).
 
 EOF
 }
