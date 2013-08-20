@@ -1,11 +1,10 @@
 #!/usr/bin/env perl
 
+use 5.010;
 use strict;
 use warnings;
 use autodie qw(open);
 use Getopt::Long;
-use feature 'say';
-use Data::Dump qw(dd);
 
 my $usage = "\n$0 -i in_fas -o outfile -n num\n\n";
 my $infile;
