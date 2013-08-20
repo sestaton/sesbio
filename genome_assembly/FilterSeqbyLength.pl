@@ -112,8 +112,8 @@ if ($over && $under) {
 }
 
 # create SeqIO objects to read in and to write outfiles
-my $seqs_in  = Bio::SeqIO->new('-file' => $infile, '-format' => 'fasta' );
-my $seqs_out = Bio::SeqIO->new('-file' => ">$outfile", '-format' => 'fasta'),
+my $seqs_in  = Bio::SeqIO->new(-file => $infile, -format => 'fasta' );
+my $seqs_out = Bio::SeqIO->new(-file => ">$outfile", -format => 'fasta'),
 
 while ( my $seq = $seqs_in->next_seq() ) {
     if ($over) {
