@@ -1,8 +1,8 @@
-#!/usr/bin/perl -w 
+#!/usr/bin/perl
 
 =head1 NAME 
                                                                        
-FilterSeqbyLength.pl - Does exactly what the name says.          
+FilterSeqbyLength.pl - Select sequences over or under a length threshold.
 
 =head1 SYNOPSIS    
 
@@ -32,11 +32,6 @@ The fasta file containing reads for contigs to filter.
 =item -o, --outfile
 
 A file to place the filtered reads for contigs.
-
-=item -e, --excluded
-
-A file to place the reads that did not pass the threshold 
-for filtering.
 
 =item -l, --length
 
@@ -69,22 +64,16 @@ Print the full documentation.
 
 =cut                                          
 
-#
-#-----------+
-# INCLUDES  |
-#-----------+
-use strict; 
+use 5.010;
+use strict;
+use warnings;
 use Bio::SeqIO;
 use Getopt::Long;
 use File::Basename;
 use Pod::Usage;
        
-#----------------+
-# VARIABLE SCOPE |
-#----------------+
 my $infile;       
 my $outfile;
-my $excluded;      
 my $length;
 my $over;
 my $under;
@@ -100,7 +89,6 @@ my $underCount = 0;
 GetOptions(
 	   'i|infile=s'     => \$infile,
 	   'o|outfile=s'    => \$outfile,
-	   'e|excluded=s'   => \$excluded,
 	   'l|length=i'     => \$length,
 	   'over'           => \$over,
 	   'under'          => \$under,
@@ -111,37 +99,23 @@ GetOptions(
 pod2usage( -verbose => 2 ) if $man;
 
 # get command-line arguments
-if (!$infile || !$outfile 
-    || !$length || !$excluded
-    || $help) {
-    print "\nERROR: No input was given.\n";
-    &usage();      
+if (!$infile || !$outfile || !$length || $help) {
+    say "\nERROR: No input was given.";
+    usage();      
     exit(0);
 }
 
 if ($over && $under) {
-    print "\nERROR: Cannot choose both --over and --under. Exiting.\n";
-    &usage();
+    say "\nERROR: Cannot choose both --over and --under. Exiting.";
+    usage();
     exit(0);
 }
 
 # create SeqIO objects to read in and to write outfiles
-my $seqs_in = Bio::SeqIO->new('-file' => "$infile",
-			      '-format' => 'fasta',
-			     );
+my $seqs_in  = Bio::SeqIO->new('-file' => $infile, '-format' => 'fasta' );
+my $seqs_out = Bio::SeqIO->new('-file' => ">$outfile", '-format' => 'fasta'),
 
-my %seqs_out = (
-                'selected' => Bio::SeqIO->new('-file' => ">$outfile",
-					   '-format' => 'fasta'),
-                'excluded' => Bio::SeqIO->new('-file' => ">$excluded",
-					    '-format' => 'fasta'),
-		);
-
-#------------------+
-# 
-#------------------+
 while ( my $seq = $seqs_in->next_seq() ) {
-  #partition the sequences by length
     if ($over) {
 	if ( $seq->length >= $length ) {     
 	    $overCount++;
@@ -150,7 +124,6 @@ while ( my $seq = $seqs_in->next_seq() ) {
 	} else {	
 	    $underCount++;
 	    $underTotal += $seq->length;
-	    $seqs_out{'excluded'}->write_seq($seq);
 	}
     }
     if ($under) {
@@ -161,7 +134,6 @@ while ( my $seq = $seqs_in->next_seq() ) {
         } else {
 	    $overCount++;
             $overTotal += $seq->length;
-	    $seqs_out{'excluded'}->write_seq($seq);
         }
     }
 } 
@@ -170,29 +142,20 @@ my $count = $overCount + $underCount;
 my $total = $overTotal + $underTotal;
 my $mean  = sprintf("%.2f", $total/$count);
 
-#-----------------------+
-#   
-#-----------------------+
-print "=======================  $infile length summary","\n";
-print "Total -------> $count; Mean length $mean bp\n";
-print "=========================================================","\n";
+say "=======================  $infile length summary";
+say "Total -------> $count; Mean length $mean bp";
+say "=========================================================";
 if ($overCount >= 1) {
     my $overMean = sprintf("%.2f", $overTotal/$overCount); 
-    print "Total number over $length bp : $overCount; Mean length: $overMean bp\n";
-    #print "********** Sequences written to file -----------> $outfile\n";
+    say "Total number over $length bp : $overCount; Mean length: $overMean bp";
 } else {
-   print "WARNING: There are no sequences over $length\n";
+   say "WARNING: There are no sequences over $length";
 }
 if ($underCount >= 1) {
     my $underMean = sprintf("%.2f", $underTotal/$underCount); 
-    print "Total number under $length bp: $underCount; Mean length: $underMean bp\n";
+    say "Total number under $length bp: $underCount; Mean length: $underMean bp";
 } 
-#print "********** Sequences written to file -----------> $outfile\n";
 exit;
-
-#------------
-# SUBS
-#------------
 
 sub usage {
   my $script = basename($0);
@@ -202,8 +165,6 @@ USAGE: $script -i seqsin.fas -o filterseqs.fas -e undesired.fas -l length [--ove
 Required:
     -i|infile    :    Fasta file of reads or contigs to filter.
     -o|outfile   :    File to place the filtered reads or contigs.
-    -e|excluded  :    File to place the reads that did not pass the
-                      threshold. 
     -l|length    :    Length (integer) to be used as the lower
                       threshold for filtering.
     --over       :    Keep only sequences over the chosen length.
@@ -214,9 +175,4 @@ Options:
     -h|help      :    Print usage statement.
     -m|man       :    Print full documentation.
 END
-}
-  
-#-------------------+
-# REVISION HISTORY  |
-#-------------------+
-# 
+
