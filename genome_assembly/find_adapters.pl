@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # TODO: make the threshold an option
 
@@ -44,9 +44,9 @@ if (!$infile  || !$five_prime_outfile || !$three_prime_outfile) {
     exit(1);
 }
 
-open(my $in, '<', $infile) or die "ERROR: Could not open file: $infile\n";
-open(my $fout, '>', $five_prime_outfile) or die "ERROR: Could not open file: $five_prime_outfile\n";
-open(my $rout, '>', $three_prime_outfile) or die "ERROR: Could not open file: $three_prime_outfile\n";
+open my $in, '<', $infile or die "ERROR: Could not open file: $infile\n";
+open my $fout, '>', $five_prime_outfile or die "ERROR: Could not open file: $five_prime_outfile\n";
+open my $rout, '>', $three_prime_outfile or die "ERROR: Could not open file: $three_prime_outfile\n";
 
 my (%rseqhash, %fseqhash);
 $DB_BTREE->{cachesize} = 100000;
@@ -62,28 +62,25 @@ $threshold //= 100;
 while (($name, $seq, $qual) = readfq(\*$in, \@aux)) {
     my $radapter = substr($seq, -25, 25);
     my $fadapter = substr($seq, 0, 25);
-
     $rseqhash{$radapter}++;
     $fseqhash{$fadapter}++;        
 }
 
 for my $fkey (reverse sort { $fseqhash{$a} <=> $fseqhash{$b} } keys %fseqhash) {
     if ($fseqhash{$fkey} > $threshold) {
-	print $fout join("\t",$fkey, $fseqhash{$fkey}),"\n";
+	say $fout join "\t", $fkey, $fseqhash{$fkey};
     }
 }
 for my $rkey (reverse sort { $rseqhash{$a} <=> $rseqhash{$b} } keys %rseqhash) {
     if ($rseqhash{$rkey} > $threshold) {
-	print $rout join("\t", $rkey, $rseqhash{$rkey}),"\n";
+	say $rout join "\t", $rkey, $rseqhash{$rkey};
     }
 }
-close($fout);
-close($rout);
+close $fout;
+close $rout;
 
 untie %fseqhash;
-#undef %fseqhash;
 untie %rseqhash;
-#undef %rseqhash;
 
 exit;
 #
