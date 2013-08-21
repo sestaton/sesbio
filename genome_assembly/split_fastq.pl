@@ -2,7 +2,7 @@
 
 ##TODO: add POD
 
-use v5.14;
+use 5.014;
 use strict;
 use warnings;
 use autodie;
@@ -32,25 +32,29 @@ if (!$infile || !$outfile) {
 }
 
 $numreads //= '20000000';
+my $num = 0;
 
 my $knseq = Bio::Kseq->new($infile);
 my $nt_it = $knseq->iterator;
 
-open(my $out, '>', $outfile);
+open my $out, '>', $outfile;
 
 while (my $nseq = $nt_it->next_seq) {
-    my $seq = $nseq->{seq};
-    my $qual = $nseq->{qual};
-    if ($seq =~ /^\./) {
-	$seq =~ s/^.//;
-	$qual =~ s/^.//;
+    $num++;
+    if ($num <= $numreads) {
+	my $seq = $nseq->{seq};
+	my $qual = $nseq->{qual};
+	if ($seq =~ /^\./) {
+	    $seq =~ s/^.//;
+	    $qual =~ s/^.//;
+	}
+	say $out "@".$nseq->{name};
+	say $out $seq;
+	say $out "+";
+	say $out $qual;
     }
-    print $out "@".$nseq->{name},"\n";
-    print $out $seq,"\n";
-    print $out "+\n";
-    print $out $qual,"\n";
 }
-close($out);
+close $out;
 
 
 #
