@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use v5.10;
+use 5.010;
 use strict;
 use warnings;
 use autodie qw(open);
@@ -20,9 +20,6 @@ while (my $l = <$in>) {
     if (@f) { # check for blank lines in input
 	next if exists $match_range{$f[0]};
 	$match_range{$f[0]} = join "|", $f[6], $f[7];
-    }
-    else {
-	#say "Here is the error at line: $.", join "\t", @f;
     }
 }
 close $in;
@@ -44,15 +41,11 @@ my ($scrSeqCt, $validscrSeqCt) = (0, 0);
 	    my ($match_start, $match_end) = split /\|/, $match_range{$seqid};
 	    if (defined $match_start && defined $match_end) {
 		my $match_length = $match_end - $match_start;
-		#say join "\t", $match_start, $match_end, $match_length;
 		if ($match_length >= 50) {
 		    $validscrSeqCt++;
 		    my $seq_match = substr $useq, $match_start, $match_length;
 		    say join "\n", ">".$seqid, $seq_match;
 		}
-	    }
-	    else {
-		#say "Not defined start: $match_start and end: $match_end";
 	    }
 	}
     }
