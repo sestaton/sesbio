@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 =head1 NAME 
                                                                        
@@ -61,7 +61,9 @@ Print the full documentation.
 #
 # Includes
 #
+use 5.010;
 use strict;
+use warnings;
 use File::Basename;
 use Getopt::Long;
 use Pod::Usage;
@@ -94,8 +96,8 @@ pod2usage( -verbose => 2 ) if $man;
 usage() and exit(0) if $help;
 
 if (!$qseq || !$fastq) {
-    print "\nERROR: Command line not parsed correctly.\n";
-    &usage();
+    say "\nERROR: Command line not parsed correctly.";
+    usage();
     exit(1);
 }
 
@@ -106,55 +108,55 @@ my $t0 = gettimeofday();
 my $readnum = 0;
 my $filterednum = 0;
 
-open(my $qs, '<', $qseq) or die "\nERROR: Could not open file: $qseq\n";
-open(my $fq, '>', $fastq) or die "\nERROR: Could not open file: $fastq\n";
+open my $qs, '<', $qseq or die "\nERROR: Could not open file: $qseq\n";
+open my $fq, '>', $fastq or die "\nERROR: Could not open file: $fastq\n";
 
 while (my $line = <$qs>) {
     chomp $line;
-    my @reads = split(/\t/,$line);
+    my @reads = split /\t/, $line;
     $readnum++;
     if ($chastity && $description) {
 	if ($reads[10] == 1) {
 	    $filterednum++;
-	    print $fq "@","$reads[0]:$reads[2]:$reads[3]:$reads[4]:$reads[5]#$reads[6]/$reads[7]\n";
-	    print $fq "$reads[8]\n";
-	    print $fq "+","$reads[0]:$reads[2]:$reads[3]:$reads[4]:$reads[5]#$reads[6]/$reads[7]\n";
-	    print $fq "$reads[9]\n";
+	    say $fq "@","$reads[0]:$reads[2]:$reads[3]:$reads[4]:$reads[5]#$reads[6]/$reads[7]";
+	    say $fq "$reads[8]";
+	    say $fq "+","$reads[0]:$reads[2]:$reads[3]:$reads[4]:$reads[5]#$reads[6]/$reads[7]";
+	    say $fq "$reads[9]";
 	}
     }
     if ($chastity && !$description) {
 	if ($reads[10] == 1) {
 	    $filterednum++;
-            print $fq "@","$reads[0]:$reads[2]:$reads[3]:$reads[4]:$reads[5]#$reads[6]/$reads[7]\n";
-            print $fq "$reads[8]\n";
-            print $fq "+\n";
-            print $fq "$reads[9]\n";
+            say $fq "@","$reads[0]:$reads[2]:$reads[3]:$reads[4]:$reads[5]#$reads[6]/$reads[7]";
+            say $fq "$reads[8]";
+            say $fq "+";
+            say $fq "$reads[9]";
         }
     }
     if (!$chastity && $description) {
-	print $fq "@","$reads[0]:$reads[2]:$reads[3]:$reads[4]:$reads[5]#$reads[6]/$reads[7]\n";
-	print $fq "$reads[8]\n";
-	print $fq "+","$reads[0]:$reads[2]:$reads[3]:$reads[4]:$reads[5]#$reads[6]/$reads[7]\n";
-	print $fq "$reads[9]\n";
+	say $fq "@","$reads[0]:$reads[2]:$reads[3]:$reads[4]:$reads[5]#$reads[6]/$reads[7]";
+        say $fq "$reads[8]";
+	say $fq "+","$reads[0]:$reads[2]:$reads[3]:$reads[4]:$reads[5]#$reads[6]/$reads[7]";
+	say $fq "$reads[9]";
     }
     if (!$chastity && !$description) {
-	print $fq "@","$reads[0]:$reads[2]:$reads[3]:$reads[4]:$reads[5]#$reads[6]/$reads[7]\n";
-	print $fq "$reads[8]\n";
-	print $fq "+\n";
-	print $fq "$reads[9]\n";
+	say $fq "@","$reads[0]:$reads[2]:$reads[3]:$reads[4]:$reads[5]#$reads[6]/$reads[7]";
+	say $fq "$reads[8]";
+	say $fq "+";
+	say $fq "$reads[9]";
     }
 }
-close($qs);
-close($fq);
+close $qs;
+close $fq;
 
 my $t1 = gettimeofday();
 my $elapsed = $t1 - $t0;
 my $time = sprintf("%.2f",$elapsed/60);
 
 if ($chastity) {
-    print "\n========== Done. $readnum reads total. $filterednum Chastity filtered reads converted in $time minutes.\n";
+    say "\n========== Done. $readnum reads total. $filterednum Chastity filtered reads converted in $time minutes.";
 } else {
-    print "\n========== Done. $readnum reads converted in $time minutes.\n";
+    say "\n========== Done. $readnum reads converted in $time minutes.";
 }
 
 exit; 
