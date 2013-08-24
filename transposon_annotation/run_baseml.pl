@@ -1,107 +1,83 @@
-#!/usr/bin/perl -w 
-#_______________________________________________________________________+
-#                                                                       |
-# run_baseml.pl               
-#_______________________________________________________________________+
-#                                                                       |
-# Description: 
-#                                                                       |
-# Author: S. Evan Staton                                                |
-# Contact: statonse<at>uga.edu                                          |
-# Started: 1.6.11                                                      |                                                
-# Updated:                                                      
-#                                                                       |
-# Suggested usage:                                                      |
+#!/usr/bin/env perl
 
-#_______________________________________________________________________+
-# TODO: 
-
+use 5.010;
+use warnings;
 use strict;
 use Getopt::Long;
 
 # define vars
 my $usage = "USAGE: batch_run_baseml.pl -i /path/to/dir/of/phylip_files <options>
 
-\tRequired:
+Required:
 \t -i|indir      :     The input directory of interleaved phylip and *dnd tree files
 \t                     from clustalw. 
 
-\tOptions:
+Options:
 \t --clean       :     Remove all the output of PAML.";
 
-my $in_dir; # = shift or die "\n$usage\n\n";
+my $in_dir;
 my $clean;
 
 
-GetOptions(# Required arguments
-	   "i|indir=s"         => \$in_dir,                    # indir (for now)
-	   "clean"             => \$clean,
+GetOptions(
+	   'i|indir=s'  => \$in_dir,
+	   'clean'      => \$clean,
 	  );
 
 
-# NOT SURE THIS IS THE RIGHT SYNTAX FOR open() in this case
-if (!$in_dir) {
-    die "\n","ERROR: No input directory was given at the command line\n\n",$usage,"\n\n";
-} else {
-    if ($in_dir) {
+die $usage if !$in_dir;
 
-	#print $in_dir,"\n";
-
-	opendir(DIR, $in_dir) || die "ERROR: Could not open directory: $in_dir\n";
+opendir my $dir, $in_dir or die "\nERROR: Could not open directory: $in_dir\n";
 	
-	my @phy_files;
-	my @tree_files;
-	while (my $file = readdir(DIR)) {
-	    if ($file =~ m/\.phy$|\.phylip$/) {
-		push(@phy_files,$file);
-	    }
-	    if ($file =~ m/\.dnd$/) {
-		push(@tree_files,$file);
-	    }
-	}
-	closedir(DIR);
-	chdir($in_dir);
-	my $div_time_files = "Divergence_time_files";
-	unless ( -e $div_time_files) {
-	    mkdir($div_time_files) || die "ERROR: Could not create directory: $div_time_files\n";
-	}
+my @phy_files;
+my @tree_files;
+while (my $file = readdir($dir)) {
+    if ($file =~ m/\.phy$|\.phylip$/) {
+	push @phy_files, $file;
+    }
+    if ($file =~ m/\.dnd$/) {
+	push @tree_files, $file;
+    }
+}
+closedir($dir);
+chdir $in_dir;
+my $div_time_files = "Divergence_time_files";
+unless ( -e $div_time_files) {
+    mkdir($div_time_files) || die "ERROR: Could not create directory: $div_time_files\n";
+}
 
-	my $phy_count = @phy_files;
-	my $tree_count = @tree_files;
-	if ($phy_count == $tree_count) {
-	    print "\nThere are $phy_count phylip files and $tree_count treefiles being processed...\n";
-	} else {
-	    if ($phy_count != $tree_count) {
-		die "ERROR: Can not proceed! Any unequal number of sequence files and tree files were found.\n";	
-	    }
-	}
-	foreach my $phy (@phy_files) {
-
-	    foreach my $tree (@tree_files) {
-
-		$phy =~ s/\.phy$//;
-		$tree =~ s/\.dnd$//;
-		if ($phy =~ $tree) {
-		    
-		    run_baseml($phy);
-		    if ($clean) {
-
-			# remove the PAML output but keep the summary produced
-			# by this script in a separate directory.
-			system("rm 2base.t rub rst* lnf rates in.basemlg *txt *out");
-
-		    }		    
-		}
-	    }	    
-	}
-	chdir("$div_time_files");
-	my $summary_file = "all_divergence_times_summary.txt";
-	system("cat *txt > $summary_file");
+my $phy_count = @phy_files;
+my $tree_count = @tree_files;
+if ($phy_count == $tree_count) {
+    say "\nThere are $phy_count phylip files and $tree_count treefiles being processed...";
+} else {
+    if ($phy_count != $tree_count) {
+	die "ERROR: Can not proceed! Any unequal number of sequence files and tree files were found.\n";	
     }
 }
 
+for my $phy (sort @phy_files) {
+    for my $tree (sort @tree_files) {
+	$phy =~ s/\.phy$//;
+	$tree =~ s/\.dnd$//;
+	if ($phy =~ $tree) {
+	    run_baseml($phy);
+	    if ($clean) {
+		# remove the PAML output but keep the summary produced
+		# by this script in a separate directory.
+		system("rm 2base.t rub rst* lnf rates in.basemlg *txt *out");
+	    }		    
+	}
+    }	    
+}
+chdir($div_time_files);
+my $summary_file = "all_divergence_times_summary.txt";
+system("cat *txt > $summary_file");
+
+exit;
+
+#
 sub run_baseml {
-    
     my $name     = shift;
     my $divfile  = $name."-divergence.txt";
     my $outfile  = $name."-paml.out";
@@ -144,16 +120,16 @@ sub run_baseml {
        method = 0  * Optimization method 0: simultaneous; 1: one branch a time";
 
     my $control_file = "baseml.ctl";
-    open(TMP, ">$control_file") || die "ERROR: Could not open control file: $control_file\n";
+    open my $tmp_ctl, '>', $control_file or die "\nERROR: Could not open control file: $control_file\n";
     
-    print TMP @ctl_file;
-    close(TMP);
+    print $tmp_ctl @ctl_file;
+    close $tmp_ctl;;
     system("baseml 2>&1 > /dev/null");
     #my $pwdivfile = "2base.t";     # using the output now to get kappa and divergence
-    open(DIVIN, $outfile) || die "ERROR: Could not open divergence file: $outfile\n";
-    open(DIVOUT, ">$divfile") || die "ERROR: Could not open divergence file: $divfile\n";
+    open my $divin, '<', $outfile or die "ERROR: Could not open divergence file: $outfile\n";
+    open my $divout, '>', $divfile or die "ERROR: Could not open divergence file: $divfile\n";
  
-    while (<DIVIN>) {
+    while (<$divin>) {
 	chomp;
 	if (m/^\d\w+\s+\d\.\d+\(\s/) {
 	    # 3prime_Ung         0.0269( 8.7752)
@@ -164,7 +140,7 @@ sub run_baseml {
 	    my $time = $divergence_time/(1e-8 * 2);   # T=k/2r, k=1.0 × 10-8
 
 	    # alignID divergence age Ts:Tv
-	    print DIVOUT join("\t",($phylip,$divergence_time,$time,$kappa)),"\n";
+	    say $divout join "\t", $phylip,$divergence_time,$time,$kappa;
 	}
 	elsif (m/^(\d\w+)         (\d\.\d+\()(\d+\.\d+\))/) {
 	    # 3prime_RL1         0.0087(999.0000)
@@ -176,7 +152,7 @@ sub run_baseml {
 	    my $time = $divergence_time/(1e-8 * 2);
 
 	    # alignID divergence age Ts:Tv
-	    print DIVOUT join("\t",($phylip,$divergence_time,$time,$kappa)),"\n";
+	    say $divout join "\t", $phylip,$divergence_time,$time,$kappa;
 	}
 	elsif (m/^(\d\w+)         (\d\.\d+\()(\-\d+\.\d+\))/) {
 	    # 3prime_RL1         0.0017(-0.0025)
@@ -188,16 +164,13 @@ sub run_baseml {
 	    my $time = $divergence_time/(1e-8 * 2);
 
 	    # alignID divergence age Ts:Tv
-	    print DIVOUT join("\t",($phylip,$divergence_time,$time,$kappa)),"\n";
+	    say $divout join "\t", $phylip,$divergence_time,$time,$kappa;
 	}
     }
-
-    close(DIVIN);
-    close(DIVOUT);
+    close $divin;
+    close $divout;
     my $summary_file_path = "Divergence_time_files";
     system("cp $divfile $summary_file_path");
-    unlink($control_file);           # instead of overwriting, delete so the last one is not left
-
+    unlink $control_file;           # instead of overwriting, delete so the last one is not left
 }
 
-exit;
