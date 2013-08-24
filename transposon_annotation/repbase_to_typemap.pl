@@ -1,15 +1,18 @@
 #!/usr/bin/env perl
 
-use v5.14; ## I probably only need v5.12 for this
+use 5.014; ## This is important, we need at least v5.12 for this script
 use strict;
 use warnings;
 use autodie qw(open);
 use Data::Dump qw(dd);
 use JSON;
 
+## NB: The input is a RepBase ID list (grep ">" repbase.fasta | sed 's/>//g' > idlist).
+##     Though, there is code in transposome to perform this same task without creating the ID list manually.
+
 my $usage = "$0 idlist\n";
 my $infile = shift or die $usage;
-open(my $in, '<', $infile);
+open my $in, '<', $infile;
 
 my $matches = build_repbase_hash();
 
@@ -30,7 +33,7 @@ while (my $line = <$in>) {
 	$family_map{$sf} = [];
     }
 }
-close($in);
+close $in;
 
 for my $type (keys %$matches) {
     unless ($type eq 'pseudogene' || $type eq 'integrated_virus') {
@@ -68,18 +71,15 @@ for my $type (keys %$matches) {
 }
 
 #dd $matches;
-    
 my $json = JSON->new->utf8->space_after->encode($matches);
-#say $json;
 
 my $hash = JSON->new->utf8->space_after->decode($json);
-dd $hash;
+#dd $hash;
 
 #
 # subs
 #
 sub build_repbase_hash {
-
     my $matches = {};
     
     $matches->{'transposable_element'}{'dna_transposon'} = [{'Mariner/Tc1' => []}, {'hAT' => []}, 
