@@ -2,11 +2,11 @@
 
 =head1 NAME 
                                                                        
-parse_blast_to_screened_reads.pl - Retain portions of query sequences matching a target.
+screen_reads_blast.pl - Retain portions of query sequences matching a target.
 
 =head1 SYNOPSIS    
 
-parse_blast_to_screened_reads.pl -f seqs.fas -b seqs_db.bln -o screened_seqs.fas
+screen_reads_blast.pl -f seqs.fas -b seqs_db.bln -o screened_seqs.fas
 
 =head1 DESCRIPTION
                                                                    
