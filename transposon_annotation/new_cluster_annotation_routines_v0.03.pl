@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 use utf8;
-use v5.12;
+use 5.012;
 use strict;
 use warnings;
 use warnings FATAL => "utf8";
@@ -56,8 +56,8 @@ GetOptions(
 
 # open the infile or die with a usage statement
 if (!$indir || !$outdir || !$database || !$report || !$json) {
-    print "\nERROR: Input not parsed correctly.\n";
-    print $usage;
+    say "\nERROR: Input not parsed correctly.";
+    say $usage;
     exit(1);
 }
 
@@ -135,7 +135,7 @@ sub annotate_clusters {
 
 
     if (scalar @clus_fas_files < 1) {
-        say "\nERROR: Could not find any fasta files in $cls_with_merges_dir. Exiting.\n";
+        say "\nERROR: Could not find any fasta files in $cls_with_merges_dir. Exiting.";
         exit(1);
     }
 
