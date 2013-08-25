@@ -2,11 +2,11 @@
 
 =head1 NAME 
                                                                        
-parallel_blast.pl - Run multiple BLAST threads concurrently
+parallel_mgblast.pl - Run multiple mgblast threads concurrently
 
 =head1 SYNOPSIS    
  
-parallel_blast.pl -i seqs.fas -o seqs_nt.bln -f fasta -t 2 -n 100000 -cpu 2
+parallel_mgblast.pl -i seqs.fas -o seqs_nt.bln -f fasta -t 2 -n 100000 -cpu 2
 
 =head1 DESCRIPTION
      
@@ -92,12 +92,6 @@ The number of descriptions to keep for each hit. Default is 500.
 =item -p, --blast_prog
 
 The BLAST program to execute. Default is blastp.
-
-=item -bf, --blast_format
-
-The BLAST output format. Default is 8.
-NB: The only allowed options are '8' which is "blasttable" (tabular BLAST output),
-or '7' with is "blastxml" (BLAST XML output).
 
 =item -e, --evalue
 
