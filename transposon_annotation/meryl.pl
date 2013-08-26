@@ -1,7 +1,8 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
-
+use 5.010;
 use strict;
+use warnings;
 use Bio::SeqIO;
 use Getopt::Long;
 use File::Basename;
@@ -38,8 +39,8 @@ GetOptions(# Required
 	   );
 
 if (!$infile || !$outfile || !$index) {
-    print "\nERROR: No input was given.\n";
-    &usage;
+    say "\nERROR: No input was given.";
+    usage();
     exit(1);
 }
 
@@ -55,59 +56,50 @@ if ($search) {
 
 my ($seqid,$seqlen) = return_seq($infile);
  
-open(my $mers,'<',$matches) or die "\nERROR: Could not open file: $matches\n";
-open(my $gff,'>',$outfile) or die "\nERROR: Could not open file: $outfile\n";
+open my $mers,'<',$matches or die "\nERROR: Could not open file: $matches\n";
+open my $gff,'>',$outfile or die "\nERROR: Could not open file: $outfile\n";
 
-print $gff "##gff-version 3\n";
-print $gff "##sequence-region ",$seqid," 1 ",$seqlen,"\n";
+say $gff "##gff-version 3";
+say $gff "##sequence-region ",$seqid," 1 ",$seqlen;
 
 my $merct = 0;
 
 while(my $match = <$mers>) {
     chomp $match;
-    my ($offset, $count) = split(/\t/,$match);
+    my ($offset, $count) = split /\t/, $match;
     $offset =~ s/\s//g;
     $count =~ s/\s//g;
     eval { $count = sprintf("%.2f",log($count)) if $log; };
     $merct++;
-    print $gff join("\t",
-		    ($seqid, "meryl", "MDR", $offset, $offset, $count, ".", "+",
-		     join(";",
-			  ("Name=mapMers-depth_".$k."_mer","ID=mer:$merct","dbxref=SO:0000657")
-			  )
-		     )
-		    ),"\n"; 
+    say $gff join "\t", $seqid, "meryl", "MDR", $offset, $offset, $count, ".", "+",
+		     join ";", "Name=mapMers-depth_".$k."_mer","ID=mer:$merct","dbxref=SO:0000657"; 
 }
-close($mers);
-close($gff);
-unlink($matches);
+close $mers;
+close $gff;
+unlink $matches;
 
 exit;
 #
 # Subs
 #
 sub findprog {
-
     my $prog = shift;
     my $path = `which $prog 2> /dev/null`;
     chomp $path;
     if ( (! -e $path) && (! -x $path) ) {
 	die "\nERROR: Cannot find $prog binary. Exiting.\n";
     } else {
-	return ($path);
+	return $path;
     }
-
 }
 
 sub return_seq {
-
     my $infile = shift;
-    my $seq_in  = Bio::SeqIO->new( -format => 'fasta', 
-				   -file => $infile);
+    my $seq_in  = Bio::SeqIO->new( -format => 'fasta', -file => $infile);
 
     my %seq;  
     my $seqct = 0;
-    while(my $fas = $seq_in->next_seq()) {
+    while (my $fas = $seq_in->next_seq) {
 	$seqct++;
 	$seq{$fas->id} = $fas;
 	return ($fas->id, $fas->length);
@@ -115,16 +107,15 @@ sub return_seq {
 
     if ($seqct > 1) {
 	die "\nERROR: $seqct sequences present in $infile when only 1 sequence is expected. Exiting.\n";
-    } else {
-	foreach (keys(%seq)) {
-	    print "\n========> Running meryl on sequence: $_\n" unless $quiet;
+    } 
+    else {
+	for (keys %seq) {
+	    say "\n========> Running meryl on sequence: $_" unless $quiet;
 	}
     }
-
 }
 
 sub build_index {
-
     my ($db, $indexname, $k) = @_;
 
     my $index = "$meryl ".
@@ -134,13 +125,11 @@ sub build_index {
 		"-o $indexname ";
 		$index .= $index." 2>&1 > /dev/null" if $quiet;
 
-    print "\n========> Creating meryl index for mersize $k for sequence: $db\n";
+    say "\n========> Creating meryl index for mersize $k for sequence: $db";
     system($index);
-
 }
 
 sub meryl_search {
-
     my ($infile, $indexname, $k) = @_;
     my ($seqfile,$seqdir,$seqext) = fileparse($infile, qr/\.[^.]*/);
     my ($indfile,$inddir,$indext) = fileparse($indexname, qr/\.[^.]*/);
@@ -151,10 +140,9 @@ sub meryl_search {
 		 "-mers $indexname ".
 		 "-seq $infile ".
                  "> $searchout";
-    print "\n========> Searching $infile with $indexname\n" unless $quiet;
+    say "\n========> Searching $infile with $indexname" unless $quiet;
     system($search);
-    return($searchout);
-
+    return $searchout;
 }
 
 sub usage {
