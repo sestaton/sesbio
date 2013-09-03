@@ -1,10 +1,10 @@
 #!/usr/bin/env perl
 
+use 5.010;
 use strict;
 use warnings;
 use Getopt::Long;
 use autodie qw(open);
-use feature 'say';
 
 my $usage = "\n$0 -i interleaved.fasta -f reads_1.fas -r reads_2.fas\n\n";
 my $forward;
@@ -19,9 +19,9 @@ GetOptions(
 
 die $usage if !$infile or !$forward or !$reverse;
 
-open(my $in, '<', $infile);
-open(my $f, '>', $forward);
-open(my $r, '>', $reverse); 
+open my $in, '<', $infile;
+open my $f, '>', $forward;
+open my $r, '>', $reverse; 
 
 {
     local $/ = '>';
@@ -36,6 +36,6 @@ open(my $r, '>', $reverse);
     }
 }
 
-close($in);
-close($f);
-close($r);
+close $i;
+close $f;
+close $r;
