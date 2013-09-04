@@ -1,6 +1,8 @@
 #!/usr/bin/env perl
 
-use v5.12;
+## NB: BLAST+ uses a lot of memory, so use this with care. It is preferred to use the parallel_blast.pl script.
+
+use 5.012;
 use strict;
 use warnings;
 use Cwd;
@@ -59,10 +61,10 @@ usage() and exit(0) if $help;
 
 pod2usage( -verbose => 2 ) if $man;
 
-if (!$infile || !$format || 
+if (!$infile  || !$format || 
     !$outfile || !$database || 
     !$numseqs) {
-    print "\nERROR: No input was given.\n";
+    say "\nERROR: No input was given.";
     usage();
     exit(1);
 }
@@ -76,17 +78,17 @@ $thread = defined($thread) ? $thread : '1'; # to work with Perl versions release
 
 my ($seq_files,$seqct) = split_reads($infile,$outfile,$numseqs,$format);
 
-open(my $out, '>>', $outfile) or die "\nERROR: Could not open file: $outfile\n"; 
+open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n"; 
 
 my $pm = Parallel::ForkManager->new($thread);
 $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
-			  foreach my $bl (sort keys %$data_ref) {
-			      open(my $report, '<', $bl) or die "\nERROR: Could not open file: $bl\n";
-			      while(my $line = <$report>) {
+			  for my $bl (sort keys %$data_ref) {
+			      open my $report, '<', $bl or die "\nERROR: Could not open file: $bl\n";
+			      while (my $line = <$report>) {
 				  print $out $line;
 			      }
-			      close($report);
-			      unlink($bl);
+			      close $report;
+			      unlink $bl;
 			  }
 			  my $t1 = gettimeofday();
 			  my $elapsed = $t1 - $t0;
@@ -94,24 +96,24 @@ $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump
 			  print "$ident just finished with PID $pid and exit code: $exit_code in $time minutes\n";
 		      } );
 
-foreach my $seqs (@$seq_files) {
+for my $seqs (@$seq_files) {
     $pm->start($seqs) and next;
     my $blast_out = run_blast($seqs,$database,$cpu,$blast_program,$blast_format,$num_alignments,$num_descriptions,$evalue);
     $blasts{$blast_out} = 1;
     
-    unlink($seqs);
+    unlink $seqs;
     $pm->finish(0, \%blasts);
 }
 
 $pm->wait_all_children;
 
-close($out);
+close $out;
 
 my $t2 = gettimeofday();
 my $total_elapsed = $t2 - $t0;
 my $final_time = sprintf("%.2f",$total_elapsed/60);
 
-print "\n========> Finihsed running BLAST on $seqct sequences in $final_time minutes\n";
+say "\n========> Finihsed running BLAST on $seqct sequences in $final_time minutes";
 
 exit;
 #
@@ -121,11 +123,11 @@ sub run_blast {
     
     my ($subseq_file,$database,$cpu,$blast_program,$blast_format,$num_alignments,$num_descriptions,$evalue) = @_;
 
-    $blast_program = defined($blast_program) ? $blast_program : 'blastp';          # We can set defaults with much less typing 
-    $blast_format  = defined($blast_format) ? $blast_format : '8';                 # if we 'use 5.010' but we'll try to be compatible.
-    $num_alignments = defined($num_alignments) ? $num_alignments : '250';          # These are the BLAST defaults, increase as needed       
-    $num_descriptions = defined($num_descriptions) ? $num_descriptions : '500';    # e.g., for OrthoMCL.
-    $evalue = defined($evalue) ? $evalue : '1e-5';
+    $blast_program //= 'blastp';
+    $blast_format  //= '8';       
+    $num_alignments //= '250';
+    $num_descriptions //= '500';
+    $evalue //= '1e-5';
 
     my ($dbfile,$dbdir,$dbext) = fileparse($database, qr/\.[^.]*/);
     my ($subfile,$subdir,$subext) = fileparse($subseq_file, qr/\.[^.]*/);
@@ -149,8 +151,7 @@ sub run_blast {
 		    "-max_target_seqs 100000";
 
 		    system($blast_cmd);
-    return($subseq_out);
-
+    return $subseq_out;
 }
 
 sub split_reads {
@@ -159,7 +160,7 @@ sub split_reads {
 
     my ($iname, $ipath, $isuffix) = fileparse($input, qr/\.[^.]*/);
     
-    my $seq_in  = Bio::SeqIO->new(-file  => $input,
+    my $seq_in  = Bio::SeqIO->new(-file  => $input, 
 				  -format => $format);
     my $count = 0;
     my $fcount = 1;
