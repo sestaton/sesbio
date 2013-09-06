@@ -1,8 +1,9 @@
-#!/usr/bin/perl -w 
-
+#!/usr/bin/env perl
 # TODO: 
 
+use 5.010;
 use strict;
+use warnings;
 use Getopt::Long;
 use File::Basename;
 
@@ -19,7 +20,7 @@ GetOptions(
 	  );
  
 if (!$infile && !$outfile) {
-    print "\nERROR: No input was given at the command line.\n\n";
+    say "\nERROR: No input was given at the command line.\n";
     usage();
     exit(1);
 }
@@ -28,25 +29,24 @@ my $length_threshold = defined($length) ? $length : "0";
 my $percentID_threshold = defined($percentID) ? $percentID : "80";
 
 #my ($file,$dir,$ext) = fileparse($infile, qr/\.[^.]*/);
-open( my $in, '<', $infile ) or die "\nERROR: Can't open file: $infile\n";
-open( my $out, '>', $outfile ) or die "\nERROR: Can't open file: $outfile\n";
+open my $in, '<', $infile or die "\nERROR: Can't open file: $infile\n";
+open my $out, '>', $outfile or die "\nERROR: Can't open file: $outfile\n";
 
 my @matches;
 my $total = 0;
 
 while (<$in>) {
     chomp;
-    my @hits = split(/\t/,$_);
+    my @hits = split /\t/, $_;
     if ( ($hits[3] >= $length_threshold) && ($hits[2] >= $percentID_threshold) ) {
 	$total += $hits[3];
     }
 }
-print $out join("\t",($infile,$total)),"\n";
-close($in);
-close($out);
+say $out join "\t", $infile, $total;
+close $in;
+close $out;
 
 exit;
-
 #
 # subs
 #
@@ -62,5 +62,6 @@ Required:
 Options:
  -l|length      :     Length of match to accept. (Default: no cutoff).
  -p|percentid   :     Percent identity threshold. (Default: 80).\n
+
 END
 }
