@@ -17,26 +17,26 @@ GetOptions(
 	   );
 
 if (!$infile or !$outfile) {
-    print $usage,"\nERROR: No input was given. Exiting.\n";
+    say $usage,"\nERROR: No input was given. Exiting.";
     exit(1);
 }
 
 my $seq_in = Bio::SeqIO->new(-file => $infile, -format => 'fasta');
-open(my $out, ">", $outfile) or die "\nERROR: Could not open file: $outfile";
+open my $out, ">", $outfile or die "\nERROR: Could not open file: $outfile";
 
 my %seqhash;
 my $seqct = 0;
 my $t0 = gettimeofday();
 
-while(my $seq = $seq_in->next_seq()) {
+while (my $seq = $seq_in->next_seq()) {
     $seqhash{$seq->id} = $seq->seq;
     $seqct++;
 }
 
 for my $k (sort keys %seqhash) {
-    print $out join("\n",(">".$k,$seqhash{$k})),"\n";
+    say $out join "\n", ">".$k,$seqhash{$k};
 }
-close($out);
+close $out;
 
 my $t1 = gettimeofday();
 my $elapsed = $t1 - $t0;
