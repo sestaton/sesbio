@@ -1,6 +1,8 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
+use 5.010;
 use strict;
+use warnings;
 use Bio::SeqIO;
 use Getopt::Long;
 use File::Basename;
@@ -37,7 +39,7 @@ usage() and exit(0) if $help;
 if (!$infile || !$outfile || 
     !$name || 
     !$start && !$end) {
-    print "\nERROR: No input was given.\n";
+    say "\nERROR: No input was given.";
     usage();
     exit(1);
 }
@@ -69,7 +71,6 @@ while( my $seq = $seq_in->next_seq() ) {
 }
 
 exit;
-
 #
 # subs
 #
