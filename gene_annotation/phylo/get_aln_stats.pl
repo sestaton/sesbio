@@ -1,7 +1,8 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 # TODO: 
 use strict;
+use warnings;
 use Bio::AlignIO;
 #use Data::Dumper;
 
@@ -12,7 +13,7 @@ my $pos = 0;
 
 my @gap_arr = parse_aln($infile);
 
-foreach my $hash (@gap_arr) {
+for my $hash (@gap_arr) {
     #print Dumper $hash;
     for my $key (%$hash) {
 	$pos++;
