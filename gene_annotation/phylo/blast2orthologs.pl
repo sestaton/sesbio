@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
 
+use 5.010;
 use strict;
 use warnings;
-#use Bio::SeqIO;
 use Getopt::Long;
 use Data::Dumper;
 use File::Basename;
@@ -34,7 +34,7 @@ GetOptions(
 if (!$blast_i || !$blast_j || !$blast_f || 
     !$fas_i || !$fas_j || !$fas_f || 
     !$species_i || !$species_j || !$species_f) {
-    print "\nERROR: Command line not parsed correctly. Exiting.\n";
+    say "\nERROR: Command line not parsed correctly. Exiting.";
     usage();
     exit(1);
 }
@@ -49,7 +49,7 @@ my $fa_hash_f = seq2hash($fas_f);
 
 my $bl_match_hash = {};
 
-foreach my $gene (keys %$bl_hash_f) {
+for my $gene (keys %$bl_hash_f) {
     if (exists $bl_hash_i->{$gene} && exists $bl_hash_j->{$gene}) {
 	$bl_match_hash->{$gene}->{$species_i} = $bl_hash_i->{$gene};
         $bl_match_hash->{$gene}->{$species_j} = $bl_hash_j->{$gene};
@@ -57,61 +57,60 @@ foreach my $gene (keys %$bl_hash_f) {
     }
 }
 
-foreach my $match (keys %$bl_match_hash) {
+for my $match (keys %$bl_match_hash) {
 
     my $gene_file = $match.".fasta";
-    open(my $out, ">>", $gene_file) or die "\nERROR: Could not open file: $!\n";
+    open my $out, ">>", $gene_file or die "\nERROR: Could not open file: $!\n";
 
-    foreach my $gene_i_copy (@{$bl_match_hash->{$match}->{$species_i}}) {
+    for my $gene_i_copy (@{$bl_match_hash->{$match}->{$species_i}}) {
 	if (exists $fa_hash_i->{ $gene_i_copy }) {
-	    print $out ">".$species_i."_".$gene_i_copy,"\n";
-	    print $out $fa_hash_i->{ $gene_i_copy },"\n"; 
+	    say $out ">".$species_i."_".$gene_i_copy;
+	    say $out $fa_hash_i->{ $gene_i_copy }; 
 	} 
-	else {
-	    print "$species_i\t$match\t$gene_i_copy\n";
+	else { # for debug
+	    say "$species_i\t$match\t$gene_i_copy";
 	}
     }
 
-    foreach my $gene_j_copy (@{$bl_match_hash->{$match}->{$species_j}}) {
+    for my $gene_j_copy (@{$bl_match_hash->{$match}->{$species_j}}) {
 	if (exists $fa_hash_j->{ $gene_j_copy }) {
-	    print $out ">".$species_j."_".$gene_j_copy,"\n";
-	    print $out $fa_hash_j->{ $gene_j_copy },"\n"; 
+	    say $out ">".$species_j."_".$gene_j_copy;
+	    say $out $fa_hash_j->{ $gene_j_copy }; 
 	} 
-	else {
-	    print "$species_j\t$match\t$gene_j_copy\n";
+	else { # for debug
+	    say "$species_j\t$match\t$gene_j_copy";
 	}
     }
 
-    foreach my $gene_f_copy (@{$bl_match_hash->{$match}->{$species_f}}) {
+    for my $gene_f_copy (@{$bl_match_hash->{$match}->{$species_f}}) {
 	if (exists $fa_hash_f->{ $gene_f_copy }) {
-	    print $out ">".$species_f."_".$gene_f_copy,"\n";
-	    print $out $fa_hash_f->{ $gene_f_copy },"\n";
+	    say $out ">".$species_f."_".$gene_f_copy;
+	    say $out $fa_hash_f->{ $gene_f_copy };
 	} 
 	else {
-	    print "$species_f\t$match\t$gene_f_copy\n";
+	    say "$species_f\t$match\t$gene_f_copy";
 	}
     }
     
-    close($out);
+    close $out;
 
 }
 
 exit;
-
 #
 # Subs
 #
 sub blast2hash {
     my $bl = shift;
 
-    open(my $fh, '<', $bl) or die "\nERROR: Could not open file: $!\n";
+    open my $fh, '<', $bl or die "\nERROR: Could not open file: $!\n";
 
     my %hash;
 
     while(my $line = <$fh>) {
 	chomp $line;
 	next if $line =~ /^Query/ || $line =~ /^#/;
-	my @fields = split(/\t/,$line);
+	my @fields = split /\t/, $line;
 	my $contigID = $fields[0];
 	#$contigID =~ s/\_\d\_ORF\d//;           # this is for cleaning up ids from sixpack translation to match velvet contig IDs
 	my $geneID = $fields[1];
@@ -124,7 +123,7 @@ sub blast2hash {
 	    $hash{$geneID} = [ $contigID ];
 	}
     }
-    close($fh);
+    close $fh;
 
     return(\%hash);
 }
@@ -135,21 +134,18 @@ sub seq2hash {
     my %seqhash;
     my $seqct = 0;
     
-   open(my $seq_in, "<", $fas) or die "\nERROR: Could not open file: $fas\n";  
-
-    #my $seq_in = Bio::SeqIO->new(-file => $fas, -format => 'fasta');
+    open my $seq_in, "<", $fas or die "\nERROR: Could not open file: $fas\n";  
 
     my ($name, $seq, $qual);
     my @aux = undef;
 
     while (($name, $seq, $qual) = readfq(\*$seq_in, \@aux)) {
-    #while(my $seq = $seq_in->next_seq) {
 	$seqct++;
 	$seqhash{$name} = $seq;
     }
-    close($seq_in);
+    close $seq_in;
 
-    print "$seqct sequences in $fas\n";
+    say "$seqct sequences in $fas";
     return(\%seqhash);
 }
 
