@@ -2,6 +2,7 @@
 
 #TODO: Take multiple hmm names at the command line
 #
+use 5.010;
 use strict;
 use warnings;
 use Bio::SearchIO;                                                  
@@ -23,15 +24,15 @@ GetOptions(
 	   );
 
 # open the infile or die with a usage statement
-usage() and exit(1) if !$infile || !$outfile;
+usage() and exit(1) if !$infile or !$outfile;
 
-open(my $out, ">", $outfile) or die "\nERROR: Could not open file: $!\n";
-if ($seqfile) { open($seq, ">", $seqfile) or die "\nERROR: Could not open file: $!\n"; }
-if ($hmmname) { open($hmmseq, ">", $hmmname) or die "\nERROR: Could not open file: $!\n"; }
+open my $out, ">", $outfile or die "\nERROR: Could not open file: $!\n";
+if ($seqfile) { open $seq, '>', $seqfile or die "\nERROR: Could not open file: $!\n"; }
+if ($hmmname) { open $hmmseq, '>', $hmmname or die "\nERROR: Could not open file: $!\n"; }
 
 my $hmmer_in = Bio::SearchIO->new(-file => $infile, -format => 'hmmer');
 
-print $out join("\t", ("query", "query_length", "number_of_hits", "hit_name", "hit_acc", "hit_score", "hit_significance", "hsp_length", "hsp_query_start", "hsp_query_end", "hsp_hit_start", "hsp_hit_end")), "\n";
+say $out join "\t", "query", "query_length", "number_of_hits", "hit_name", "hit_acc", "hit_score", "hit_significance", "hsp_length", "hsp_query_start", "hsp_query_end", "hsp_hit_start", "hsp_hit_end";
 
 while( my $result = $hmmer_in->next_result() ) {
     
@@ -58,26 +59,25 @@ while( my $result = $hmmer_in->next_result() ) {
 
 	    my $seqid = ">".$query."|".$hitid."_".$qstart."-".$qstop;
 	     
-	    print $out join("\t", ($query, $qlen, $num_hits, $hitid, $hitacc, $score, $signif, $hsplen, $qstart, $qstop, $hstart, $hstop)), "\n";
+	    say $out join "\t", $query, $qlen, $num_hits, $hitid, $hitacc, $score, $signif, $hsplen, $qstart, $qstop, $hstart, $hstop;
 		
 	    if ($seqfile) {
-		print $seq $seqid."\n".$qstring."\n";
+		say $seq join "\n", $seqid, $qstring;
 		
 	    }
 	    if ($hmmname) {
 		if ($hmmname =~ /$hitid/) {
-		    print $hmmseq $seqid."\n".$qstring."\n";
+		    say $hmmseq join "\n", $seqid, $qstring;
 		}
 	    }
 	}
     }
 }
-close($out);
-close($seq) if $seqfile;
-close($hmmseq) if $hmmname;
+close $out;
+close $seq if $seqfile;
+close $hmmseq if $hmmname;
 
 exit;
-
 #
 # Subs
 #
