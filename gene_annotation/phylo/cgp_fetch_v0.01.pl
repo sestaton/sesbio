@@ -1,10 +1,11 @@
 #!/usr/bin/env perl
 
+#TODO: add POD
 
 #
 # INCLUDES
 #
-use v5.10;
+use 5.010;
 use strict;
 use warnings;
 use Getopt::Long;
@@ -15,6 +16,7 @@ use HTML::TreeBuilder;
 use Data::Dump qw(dd);
 use IPC::System::Simple qw(system);
 use Try::Tiny;
+use Pod::Usage;
 
 #
 # VARIABLE SCOPE
@@ -45,14 +47,14 @@ GetOptions(
 	   'm|man'            => \$man,
 	  );
 
-pod2usage( -verbose => 1 ) if $help;
-pod2usage( -verbose => 2 ) if $man;
+#pod2usage( -verbose => 1 ) if $help;
+#pod2usage( -verbose => 2 ) if $man;
 
 #
 # Check @ARGV
 #
 if (!$assemblies && !$sequences && !$alignments) {
-   print "\nERROR: Command line not parsed correctly. Exiting.\n";
+   say "\nERROR: Command line not parsed correctly. Exiting.";
    usage();
    exit(1);
 }
