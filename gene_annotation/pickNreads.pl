@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 =head1 NAME 
                                                                        
@@ -68,6 +68,7 @@ Print the full documentation.
 =cut   
 
 use strict;
+use warnings;
 use Bio::SeqIO;
 use Getopt::Long;
 use Pod::Usage;
