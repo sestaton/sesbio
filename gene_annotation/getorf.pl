@@ -142,7 +142,7 @@ pod2usage( -verbose => 2 ) if $man;
 usage() and exit(0) if $help;
 
 if (!$infile || !$outfile) {
-    print "\nERROR: No input was given.\n";
+    say "\nERROR: No input was given.\n";
     usage();
     exit(1);
 }
@@ -159,12 +159,12 @@ if (-e $outfile) {
 # test to make sure it does not exist.
     die "\nERROR: $outfile already exists. Exiting.\n";
 }
-open(my $out, ">>", $outfile) or die "\nERROR: Could not open file: $outfile";
+open my $out, ">>", $outfile or die "\nERROR: Could not open file: $outfile";
 
 my ($fasnum, $seqhash) = seqct($infile);
 
 if ($$fasnum >= 1) {
-    print "\n========== Searching for ORFs with minimum length of $orflen.\n";
+    say "\n========== Searching for ORFs with minimum length of $orflen.";
 } else {
     die "\nERROR: No sequences were found! Check input. Exiting.\n";
 }
@@ -182,30 +182,29 @@ while (my ($id, $seq) = each %$seqhash) {
 	while (my ($k, $v) = each %$longest_seq) {
 	    if (defined $sense) {
 		my ($sense_name, $sense_seq) = revcom($k,$v);
-		print $out join("\n",(">".$sense_name, $sense_seq)), "\n";
+		say $out join "\n", ">".$sense_name, $sense_seq;
 	    }
 	    else {
-		print $out join("\n",(">".$k, $v)), "\n";
+		say $out join "\n", ">".$k, $v;
 	    }
 	}
     }
-    unlink($orffile);
+    unlink $orffile;
 }
-close($out);
+close $out;
 
 my $with_orfs_perc = sprintf("%.2f",$orfseqstot/$$fasnum);
-print "\n========== $fcount and $$fasnum sequences in $infile.\n";
-print "\n========== $orfseqstot sequences processed with ORFs above $orflen.\n";
-print "\n========== $with_orfs_perc percent of sequences contain ORFs above $orflen.\n";
+say "\n========== $fcount and $$fasnum sequences in $infile.";
+say "\n========== $orfseqstot sequences processed with ORFs above $orflen.";
+say "\n========== $with_orfs_perc percent of sequences contain ORFs above $orflen.";
 
 exit;
-
 #
 # Subs
 #
 sub readfq {
     my ($fh, $aux) = @_;
-    @$aux = [undef, 0] if (!defined(@$aux));
+    @$aux = [undef, 0] if (!@$aux);
     return if ($aux->[1]);
     if (!defined($aux->[0])) {
         while (<$fh>) {
@@ -260,7 +259,7 @@ sub readfq {
 sub find_prog {
     my $prog = shift;
     my ($path, $err) = capture { system("which $prog"); };
-    chomp($path);
+    chomp $path;
     
     if ($path !~ /getorf$/) {
 	say 'Couldn\'t find getorf in PATH. Will keep looking.';
@@ -278,12 +277,12 @@ sub find_prog {
 	when ('') { die "Could not find getorf. Exiting.\n"; }
 	default { die "Could not find getorf. Trying installing EMBOSS or adding it's location to your PATH. Exiting.\n"; }
     }
-    return($path);
+    return $path;
 }
 
 sub seqct {
     my $f = shift;
-    open(my $fh, "<", $f) or die "\nERROR: Could not open file: $f\n";
+    open my $fh, "<", $f or die "\nERROR: Could not open file: $f\n";
     my ($name, $seq, $qual);
     my @aux = undef;
     my $seqct = 0;
@@ -294,12 +293,12 @@ sub seqct {
         # unexpected renaming of sequences, so warn that it's not this script doing
         # the renaming.
 	given ($name) {
-	    when (/\:|\;|\||\(|\)|\.|\s/) { die "WARNING: Identifiers such as \"$name\" will produce unexpected renaming with EMBOSS."; }
+	    when (/\:|\;|\||\(|\)|\.|\s/) { die "WARNING: Identifiers such as '$name' will produce unexpected renaming with EMBOSS."; }
 	    when ('') { say 'WARNING: Sequences appear to have no identifiers. Continuing.'; }
 	}
 	$seqhash{$name} = $seq;
     }
-    close($fh);
+    close $fh;
     return(\$seqct,\%seqhash);
 }
 
@@ -312,11 +311,11 @@ sub getorf {
                                  SUFFIX => $isuffix,
                                  UNLINK => 0);
 
-    open(my $fh, ">", $fname) or die "\nERROR: Could not open file: $fname\n";
+    open my $fh, ">", $fname or die "\nERROR: Could not open file: $fname\n";
 
-    print $fh join("\n",(">".$id, $seq)),"\n";
+    say $fh join "\n", ">".$id, $seq;
 
-    close($fh);
+    close $fh;
 
     my $orffile = $fname."_orfs";
 
@@ -337,15 +336,15 @@ sub getorf {
 
     my ($stdout, $stderr, @res) = capture { system($getorfcmd); };
     
-    unlink($fname);
+    unlink $fname;
 
-    return($orffile);
+    return $orffile;
 }
 
 sub largest_seq {
     my ($file, $sense) = shift;
  
-    open(my $fh, "<", $file) or die "\nERROR: Could not open file: $file\n";
+    open my $fh, "<", $file or die "\nERROR: Could not open file: $file\n";
     
     my ($name, $seq, $qual);
     my @aux = undef;
@@ -354,7 +353,7 @@ sub largest_seq {
     while (($name, $seq, $qual) = readfq(\*$fh, \@aux)) {
 	    $seqhash{$name} = $seq;
     }
-    close($fh);
+    close $fh;
 
     # modified from:
     # http://stackoverflow.com/a/5958473
