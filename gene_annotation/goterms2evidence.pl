@@ -1,5 +1,6 @@
-#!/usr/bin/perl 
+#!/usr/bin/env perl 
 
+use 5.010;
 use strict; 
 use warnings;
 use Getopt::Long;
@@ -22,16 +23,14 @@ if (!$outfile) {
     die "\nERROR: No outfile found.\n",$usage;
 }
 
-open(my $in, '<', $infile) or die "\nERROR: Could not open file: $infile\n";
-open(my $out, '>', $outfile) or die "\nERROR: Could not open file: $outfile\n";
+open my $in, '<', $infile or die "\nERROR: Could not open file: $infile\n";
+open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
 while(<$in>) {
     chomp;
     my @f = split(/\t/,$_);
-    print $out $f[4]."\t"."ND\t".$f[0]."\n";
+    say join "\t", $out $f[4], "ND", $f[0];
 }
 
-close($in);
-close($out);
-
-exit;
+close $in;
+close $out;
