@@ -1,16 +1,15 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 # TODO: Add minimal POD
-
-
+use 5.010;
 use strict;
+use warnings;
 use Bio::SeqIO;
 use Getopt::Long;
        
 #
 # Vars
 #
-# get command-line arguments
 my $usage = "\nUSAGE: $0 -i infile -o outfile\n\nThe outfile will contain a summary of all the contig lengths formatted as:\nread_name\tlength(bp)\n\n";
 my $infile; 
 my $outfile;
@@ -25,13 +24,11 @@ if (!$infile || !$outfile) {
 }
 
 # create SeqIO objects to read in and to write outfiles
-my $seq_in  = Bio::SeqIO->new( -format => 'fasta', 
-                               -file => $infile); 
+my $seq_in  = Bio::SeqIO->new( -format => 'fasta', -file => $infile); 
 
-open( my $out, '>', $outfile) or die "\nERROR: Could not open file: $outfile\n";
+open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 while(my $seq = $seq_in->next_seq()) {
-    print $out $seq->id."\t".$seq->length."\n";
+    say join "\t", $out $seq->id, $seq->length;
 }
 
-close($out);
-exit;
+close $out;
