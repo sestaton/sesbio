@@ -1,6 +1,7 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 use strict;
+use warnings;
 use File::Basename;
 use Getopt::Long;
 
@@ -14,18 +15,18 @@ GetOptions(# Required arguments
 
 # open the infile or die with a usage statement
 die usage() if !$infile or !$outfile;
-open(my $in, '<', $infile) || print "\nERROR: Could not open file: $infile\n";
-open(my $out, '>', $outfile) || print "\nERROR: Could not open file: $outfile\n";
+open my $in, '<', $infile or die "\nERROR: Could not open file: $infile\n";
+open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
 #
 # comments must be removed or they will be counted
 #
 my @contigs = map +(split "\t")[1], <$in>;
-close($in);
+close $in;
 
 @contigs = sort { $a <=> $b } @contigs;
 my @lengths;
-foreach my $len (@contigs) {
+for my $len (@contigs) {
     chomp $len;
     push(@lengths,$len);
 }
@@ -38,16 +39,15 @@ my $total = @contigs;
 print "\n","There are: ", $total, " total contigs.\n";
 print "\n","There are: ", $unique, " unique contig lengths.\n\n";
 
-count_unique ( @contigs );
-close($out);
+count_unique(@contigs);
+close $out;
 
 exit;
-
 #
 # sub
 #
 sub count_unique {
-
+    #should be taking a reference here
     my @array = @_;
     my %count;
     map { $count{$_}++ } @array;
