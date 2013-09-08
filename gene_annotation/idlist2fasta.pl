@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+## NB: faSomeRecords from Kent source is the fastest for this task.
+
+use 5.010;
 use strict;
 use warnings;
 use File::Basename;
@@ -22,39 +25,38 @@ if (!$fas_in || !$fas_out || !$idlist) {
     exit(1);
 }
 
-open(my $out, ">", $fas_out) or die "\nERROR: Could not open file: $fas_out\n";
+open my $out, ">", $fas_out or die "\nERROR: Could not open file: $fas_out\n";
 
 my $idlist_hash = id2hash($idlist);
 my $fa_hash = seq2hash($fas_in);
 
-foreach my $gene (keys %$idlist_hash) {
+for my $gene (keys %$idlist_hash) {
     if (exists $fa_hash->{$gene}) {
-	print $out join("\n",(">".$gene,$fa_hash->{$gene})),"\n";
+	say $out join "\n", ">".$gene, $fa_hash->{$gene};
     }
 }
-close($out);
+close $out;
 
 exit;
-
 #
 # Subs
 #
 sub id2hash {
     my $idlist = shift;
-    open(my $fh, '<', $idlist) or die "\nERROR: Could not open file: $!\n";
+    open my $fh, '<', $idlist or die "\nERROR: Could not open file: $!\n";
 
     my %hash;
-    while(<$fh>) {
+    while (<$fh>) {
 	chomp;
 	$hash{$_} = 1;
     }
-    close($fh);
+    close $fh;
     return(\%hash);
 }
 
 sub seq2hash {
     my $fas = shift;
-    open(my $f, '<', $fas) or die "\nERROR: Could not open file: $fas\n";
+    open my $f, '<', $fas or die "\nERROR: Could not open file: $fas\n";
 
     my ($name, $seq, $qual);
     my @aux = undef; 
@@ -66,13 +68,14 @@ sub seq2hash {
 	$seqhash{$name} = $seq;
     }
     
-    print "$seqct sequences in $fas\n";
+    close $f;
+    say "$seqct sequences in $fas";
     return(\%seqhash);
 }
 
 sub readfq {
     my ($fh, $aux) = @_;
-    @$aux = [undef, 0] if (!defined(@$aux));
+    @$aux = [undef, 0] if (!@$aux);
     return if ($aux->[1]);
     if (!defined($aux->[0])) {
         while (<$fh>) {
@@ -102,7 +105,6 @@ sub readfq {
     return ($name, $seq) if ($c ne '+');
     my $qual = '';
     while (<$fh>) {
-
        chomp;
         $c = substr($_, 0, 1);
         last if ($c eq '>' || $c eq '@' || $c eq '+');
