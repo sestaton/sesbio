@@ -1,5 +1,6 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
+use 5.010;
 use strict;
 use warnings;
 use Getopt::Long;
@@ -25,10 +26,10 @@ if (!$blast) {
 if (!$outfile) {
     die "\nERROR: No outfile found.\n",$usage;
 }
-open(my $in, '<', $infile) or die "\nERROR: Could not open file: $infile\n";
-open(my $bl, '<', $blast) or die "\nERROR: Could not open file: $blast\n";
+open my $in, '<', $infile or die "\nERROR: Could not open file: $infile\n";
+open my $bl, '<', $blast or die "\nERROR: Could not open file: $blast\n";
 
-open(my $out, '>', $outfile) or die "\nERROR: Could not open file: $outfile\n";
+open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
 my %ids;
 while(<$in>) {
@@ -36,23 +37,26 @@ while(<$in>) {
     next if /^\#/;
     $ids{$_} = 1;
 }
-close($in);
+close $in;
 
-my %pfamids;
+#my %pfamids;
+
 while(<$bl>) {
     chomp;
     next if /^\#/;
-    my ($target_name, $accession, $query_name, $accession_q, $E_value_full, $score_full, $bias_full, $E_value_best, $score_best, $bias_best, $exp, $reg, $clu, $ov, $env, $dom,$rev, $inc, $description_of_target) = split;
+    my ($target_name, $accession, $query_name, $accession_q, $E_value_full, $score_full, 
+	$bias_full, $E_value_best, $score_best, $bias_best, $exp, $reg, $clu, $ov, $env, 
+	$dom,$rev, $inc, $description_of_target) = split;
     #my $query_eval = join(",",$query_name,$E_value_full,$description_of_target);
     #$accession =~ s/\..*//;
     #$pfamids{$query_eval} = $accession;
-    foreach my $key (sort keys %ids) {
+    for my $key (sort keys %ids) {
 	if ($key eq $query_name) {
-	    print $out join("\t",($target_name, $accession, $query_name, $accession_q, $E_value_full, $score_full, $bias_full, $E_value_best, $score_best, $bias_best, $exp, $reg, $clu, $ov, $env, $dom, $rev, $inc, $description_of_target)), "\n";
+	    say $out join "\t", $target_name, $accession, $query_name, $accession_q, 
+	    $E_value_full, $score_full, $bias_full, $E_value_best, $score_best, 
+	    $bias_best, $exp, $reg, $clu, $ov, $env, $dom, $rev, $inc, $description_of_target;
 	}
     }
 }
-close($bl);
-close($out);
-
-exit;
+close $bl;
+close $out;
