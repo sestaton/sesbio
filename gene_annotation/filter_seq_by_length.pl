@@ -67,7 +67,9 @@ Print the full documentation.
 #
 # 
 #
+use 5.010;
 use strict; 
+use warnings;
 use Bio::SeqIO;
 use Getopt::Long;
 use File::Basename;
@@ -109,30 +111,22 @@ pod2usage( -verbose => 2 ) if $man;
 
 if (!$infile || !$outfile 
     || !$length) {
-    print "\nERROR: No input was given.\n";
+    say "\nERROR: No input was given.";
     usage();      
     exit(1);
 }
 
 if ($over && $under) {
-    print "\nERROR: Cannot choose both --over and --under. Exiting.\n";
+    say "\nERROR: Cannot choose both --over and --under. Exiting.";
     usage();
     exit(1);
 }
 
 # create SeqIO objects to read in and to write outfiles
-my $seqs_in = Bio::SeqIO->new('-file' => "$infile",
-			      '-format' => 'fasta',
-			     );
+my $seqs_in = Bio::SeqIO->new(-file => $infile, -format => 'fasta' );
+my $seqs_out = Bio::SeqIO->new(-file => ">$outfile", -format => 'fasta' );
 
-my $seqs_out = Bio::SeqIO->new('-file' => ">$outfile",
-			       '-format' => 'fasta',
-                              );
-
-
-#
-# 
-#
+# partition the sequences by length
 while ( my $seq = $seqs_in->next_seq() ) {
   #partition the sequences by length
     if ($over) {
@@ -161,30 +155,26 @@ my $count = $overCount + $underCount;
 my $total = $overTotal + $underTotal;
 my $mean  = sprintf("%.2f", $total/$count);
 
-#
-#   
-#
-print "=======================  $infile length summary","\n";
-print "Total -------> $count; Mean length $mean bp\n";
-print "=========================================================","\n";
+say "=======================  $infile length summary";
+say "Total -------> $count; Mean length $mean bp";
+say "=========================================================";
 if ($overCount >= 1) {
     my $overMean = sprintf("%.2f", $overTotal/$overCount); 
-    print "Total number over $length bp : $overCount; Mean length: $overMean bp\n";
+    say "Total number over $length bp : $overCount; Mean length: $overMean bp";
     #print "********** Sequences written to file -----------> $outfile\n";
 } else {
-   print "WARNING: There are no sequences over $length\n";
+   say "WARNING: There are no sequences over $length";
 }
 if ($underCount >= 1) {
     my $underMean = sprintf("%.2f", $underTotal/$underCount); 
-    print "Total number under $length bp: $underCount; Mean length: $underMean bp\n";
+    say "Total number under $length bp: $underCount; Mean length: $underMean bp";
 } 
 #print "********** Sequences written to file -----------> $outfile\n";
 exit;
 
-#------------
+#
 # SUBS
-#------------
-
+#
 sub usage {
   my $script = basename($0);
   print STDERR <<END
