@@ -1,6 +1,8 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
+use 5.010;
 use strict;
+use warnings;
 use File::Basename;
 use Getopt::Long;
 #use Data::Dumper;
@@ -17,44 +19,44 @@ GetOptions(
 	   's|species=s' => \$species,
 	   );
 
-if (!$infile || !$outfile || 
+if (!$infile  || !$outfile || 
     !$species || !$GOfile) {
     usage();
     exit(1);
 }
 
-open(my $in, '<', $infile) or die "\nERROR: Could not open file: $infile\n";
-open(my $go, '<', $GOfile) or die "\nERROR: Could not open file: $GOfile\n";
-open(my $out, '>', $outfile) or die "\nERROR: Could not open file: $outfile\n";
+open my $in, '<', $infile or die "\nERROR: Could not open file: $infile\n";
+open my $go, '<', $GOfile or die "\nERROR: Could not open file: $GOfile\n";
+open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
-print $out "!gaf-version: 2.0\n";
+say $out "!gaf-version: 2.0";
 
 my %gohash;
-while(<$go>) {
+while (<$go>) {
     chomp;
     next if /^!/;
     my @go_data = split;
     next if $go_data[-1] eq "obs";
     $gohash{$go_data[0]} = $go_data[-1];
 }
-close($go);
+close $go;
 
-while(<$in>) {
+while (<$in>) {
     chomp;
-    my @go_mappings = split(/\t/,$_);
+    my @go_mappings = split /\t/, $_;
     my $dbstring = "db.".$go_mappings[0];
-    my @go_terms = split(",",$go_mappings[1]);
-    foreach my $term (@go_terms) {
+    my @go_terms = split /\,/, $go_mappings[1];
+    for my $term (@go_terms) {
 	if (exists $gohash{$term}) {
-	    print $out join("\t",($species,$dbstring,$go_mappings[0],"0",$term,"PMID:0000000","ISO","0",$gohash{$term},"0","0","gene","taxon:79327","23022011","PFAM")),"\n";
+	    say $out join "\t", $species,$dbstring,$go_mappings[0],"0",$term,"PMID:0000000",
+                    "ISO","0",$gohash{$term},"0","0","gene","taxon:79327","23022011","PFAM";
 	}
     }
 }
-close($in);
-close($out);
+close $in;
+close $out;
 
 exit;
-
 #
 #
 #
