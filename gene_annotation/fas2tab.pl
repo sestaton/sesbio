@@ -1,6 +1,8 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
+use 5.010;
 use strict;
+use warnings;
 use Bio::SeqIO;
 
 my $usage = "$0 infile > out\n";
@@ -10,7 +12,5 @@ my $seq_in = Bio::SeqIO->new(-file => $infile,
 			     -format => 'fasta');
 
 while(my $seq = $seq_in->next_seq) {
-    print join("\t",($seq->id,$seq->seq)),"\n";
+    say join "\t", $seq->id, $seq->seq;
 }
-
-exit;
