@@ -55,6 +55,7 @@ Print the full documentation.
 #
 # Includes
 #
+use 5.010;
 use strict;
 use warnings;
 use File::Basename;
@@ -83,13 +84,13 @@ pod2usage( -verbose => 2 ) if $man;
 usage() and exit(0) if $help;
 
 if (!$infile || !$outfile) {
-    print "\nERROR: No input was given.\n";
-    &usage();
+    say "\nERROR: No input was given.\n";
+    usage();
     exit(1);
 }
 
-open(my $in, '<', $infile) or die "ERROR: Could not open file: $infile\n";
-open( my $out, '>', $outfile ) or die "\nERROR: Could not open file: $outfile\n";
+open my $in, '<', $infile or die "ERROR: Could not open file: $infile\n";
+open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
 # counters
 my $t0 = gettimeofday();
@@ -124,7 +125,7 @@ while (($seqname, $seq, $qual) = readfq(\*$in, \@aux)) {
     }
  
     my @nt = split(//,$seq);
-    foreach my $base (@nt) {
+    for my $base (@nt) {
 	if ($base !~ m/A|C|G|T|N|a|c|g|t|n/) {
 	    $non_atgcn++;
 	    $base = "N";
@@ -137,26 +138,25 @@ while (($seqname, $seq, $qual) = readfq(\*$in, \@aux)) {
     my $nonnucleic = (length($dna) - $nucleic_bc);
     $dna =~ s/(.{60})/$1\n/gs;        
 
-    print $out ">"."$seqname\n"."$dna\n";
+    say $out join "\n", ">".$seqname, $dna;
 }
-close($in);
-close($out);
+close $in;
+close $out;
 
 my $t1 = gettimeofday();
 my $elapsed = $t1 - $t0;
 my $time = sprintf("%.2f",$elapsed);
 
-print "\n========== Done. $fasnum sequences read and cleaned in $time seconds.\n"; 
-print "========== $non_atgcn Non-ATGCN characters changed in sequence. $headchar characters changed in headers.\n\n";
+say "\n========== Done. $fasnum sequences read and cleaned in $time seconds."; 
+say "========== $non_atgcn Non-ATGCN characters changed in sequence. $headchar characters changed in headers.\n";
 
 exit;
-
 #
 # subs
 #
 sub readfq {
     my ($fh, $aux) = @_;
-    @$aux = [undef, 0] if (!defined(@$aux));
+    @$aux = [undef, 0] if (!@$aux);
     return if ($aux->[1]);
     if (!defined($aux->[0])) {
 	while (<$fh>) {
