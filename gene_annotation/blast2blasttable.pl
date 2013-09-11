@@ -1,11 +1,10 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 # Convert a blastxml report to a blast table
-     
-# 
-#TODO: 
-#
+
+use 5.010;
 use strict;
+use warnings;
 use Bio::SearchIO; # for searchio stuff with blast reports
 use Getopt::Long; # for getting options at the command line
 use File::Basename;
@@ -38,69 +37,54 @@ GetOptions(
 # Check @ARGVs 
 #
 if (!$infile){
-    print "\nERROR: No infile was given at the command line\n\n";
+    say "\nERROR: No infile was given at the command line\n";
     usage();
     exit(0);
 }
 if (!$outfile){
-    print "\nERROR: No outfile was given at the command line\n\n";
+    say "\nERROR: No outfile was given at the command line\n";
     usage();
     exit(0);
 }
 if (!$format){
-    print "\nERROR: No blastformat was given at the command line\n\n";
+    say "\nERROR: No blastformat was given at the command line\n";
+    usage();
+    exit(0);
 }
 
 my $allq = 0;
-$length_thresh = defined($length_thresh) ? $length_thresh : '0';          # we are going to set defaults this way
-$pid_thresh = defined($pid_thresh) ? $pid_thresh : '0';                   # to work with Perl versions released prior to 5.10
+$length_thresh //= 0;
+$pid_thresh //= 0;
 
-open(my $blastout, '>', $outfile) or die "\nERROR: Could not open file: $!\n";
+open my $blastout, '>', $outfile or die "\nERROR: Could not open file: $!\n";
 
 # create SearchIO object to read in blast report and to write outfile
 my $search_in = Bio::SearchIO->new(-format => $format, -file => $infile, -tempfile => 1);
 
 
-#my $header = "#Query\tHit\tPercent_ID\tHSP_len\tNum_mismatch\tNum_gaps\tQuery_start\tQuery_end\tHit_start\tHit_end\tE-value\tBit_score\n";
-#print $blastout $header;
+#say $blastout "#Query\tHit\tPercent_ID\tHSP_len\tNum_mismatch\tNum_gaps\tQuery_start\tQuery_end\tHit_start\tHit_end\tE-value\tBit_score";
 
 while ( my $result = $search_in->next_result ) {
-    $allq++;
     while( my $hit = $result->next_hit ) {
-	my $hitlen = $hit->length();
-	    
+	#my $hitlen = $hit->length();
 	while( my $hsp = $hit->next_hsp ) {
 	    my $hsplen = $hsp->length('total');
-	    
 	    if( $hsplen >= $length_thresh && $hsp->percent_identity >= $pid_thresh ) {
-			
+		$allq++;
 		my $percent_identity = sprintf("%.2f",$hsp->percent_identity);
 		
 		my @matches = $hsp->matches('hit');
 		my $matches = @matches;
 		my $mismatches = $hsplen - $matches;
 		
-		my $bl_hits = $result->query_name."\t".
-		    $hit->name."\t".
-		    $percent_identity."\t".
-		    $hsplen."\t".
-		    $mismatches."\t".
-		    $hsp->gaps."\t".
-		    $hsp->start('query')."\t".
-		    $hsp->end('query')."\t".
-		    $hsp->start('hit')."\t".
-		    $hsp->end('hit')."\t".
-		    $hsp->evalue."\t".
-		    $hsp->bits."\n";
-       		    			
-		print $blastout $bl_hits;
-		
+		say $blastout join "\t", $result->query_name, $hit->name, $percent_identity, $hsplen, $mismatches, $hsp->gaps,
+		$hsp->start('query'), $hsp->end('query'), $hsp->start('hit'), $hsp->end('hit'), $hsp->evalue, $hsp->bits;
 	    }  
 	}
     }
 }
 
-close($blastout);
+close $blastout;
 
 if ($verbose) {
     print "$allq total hits written to report $blastout.\n";
@@ -117,7 +101,7 @@ Required:
    -f|format     :     The BLAST format (e.g. blastxml, blast);
    -o|outfile    :     A file to place the desired BLAST results.
 
-       Options:
+Options:
    -t|top        :     Print the top BLAST hit for each query sequence.
    -l|length     :     Keep only hits above a certain length threshhold (integer).
    -p|percentid  :     Keep only hits above a certain percent identity threshhold (integer).
