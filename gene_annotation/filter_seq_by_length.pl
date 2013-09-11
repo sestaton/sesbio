@@ -2,7 +2,7 @@
 
 =head1 NAME 
                                                                        
-filter_seq_by_length.pl - Does exactly what the name says.          
+filter_seq_by_length.pl - Partition a set of reads for contigs by length.
 
 =head1 SYNOPSIS    
 
@@ -32,6 +32,11 @@ The fasta file containing reads for contigs to filter.
 =item -o, --outfile
 
 A file to place the filtered reads for contigs.
+
+=item -e, --excluded
+
+A file to place the reads that did not pass the threshold 
+for filtering.
 
 =item -l, --length
 
@@ -64,12 +69,9 @@ Print the full documentation.
 
 =cut                                          
 
-#
-# 
-#
 use 5.010;
-use strict; 
-use warnings;
+use strict;
+use warnings; 
 use Bio::SeqIO;
 use Getopt::Long;
 use File::Basename;
@@ -80,6 +82,7 @@ use Pod::Usage;
 #
 my $infile;       
 my $outfile;
+my $excluded;      
 my $length;
 my $over;
 my $under;
@@ -95,6 +98,7 @@ my $underCount = 0;
 GetOptions(
 	   'i|infile=s'     => \$infile,
 	   'o|outfile=s'    => \$outfile,
+	   'e|excluded=s'   => \$excluded,
 	   'l|length=i'     => \$length,
 	   'over'           => \$over,
 	   'under'          => \$under,
@@ -110,7 +114,7 @@ usage() and exit(0) if $help;
 pod2usage( -verbose => 2 ) if $man;
 
 if (!$infile || !$outfile 
-    || !$length) {
+    || !$length || !$excluded) {
     say "\nERROR: No input was given.";
     usage();      
     exit(1);
@@ -123,10 +127,17 @@ if ($over && $under) {
 }
 
 # create SeqIO objects to read in and to write outfiles
-my $seqs_in = Bio::SeqIO->new(-file => $infile, -format => 'fasta' );
-my $seqs_out = Bio::SeqIO->new(-file => ">$outfile", -format => 'fasta' );
+my $seqs_in = Bio::SeqIO->new('-file' => "$infile",
+			      '-format' => 'fasta',
+			     );
 
-# partition the sequences by length
+my %seqs_out = (
+                'selected' => Bio::SeqIO->new('-file' => ">$outfile",
+					   '-format' => 'fasta'),
+                'excluded' => Bio::SeqIO->new('-file' => ">$excluded",
+					    '-format' => 'fasta'),
+		);
+
 while ( my $seq = $seqs_in->next_seq() ) {
   #partition the sequences by length
     if ($over) {
@@ -134,9 +145,10 @@ while ( my $seq = $seqs_in->next_seq() ) {
 	    $overCount++;
 	    $overTotal += $seq->length;
 	    $seqs_out{'selected'}->write_seq($seq);
-	} else {
+	} else {	
 	    $underCount++;
 	    $underTotal += $seq->length;
+	    $seqs_out{'excluded'}->write_seq($seq);
 	}
     }
     if ($under) {
@@ -147,7 +159,8 @@ while ( my $seq = $seqs_in->next_seq() ) {
         } else {
 	    $overCount++;
             $overTotal += $seq->length;
-	}
+	    $seqs_out{'excluded'}->write_seq($seq);
+        }
     }
 } 
 
@@ -158,10 +171,11 @@ my $mean  = sprintf("%.2f", $total/$count);
 say "=======================  $infile length summary";
 say "Total -------> $count; Mean length $mean bp";
 say "=========================================================";
+
 if ($overCount >= 1) {
     my $overMean = sprintf("%.2f", $overTotal/$overCount); 
     say "Total number over $length bp : $overCount; Mean length: $overMean bp";
-    #print "********** Sequences written to file -----------> $outfile\n";
+    #say "********** Sequences written to file -----------> $outfile\n";
 } else {
    say "WARNING: There are no sequences over $length";
 }
@@ -169,20 +183,22 @@ if ($underCount >= 1) {
     my $underMean = sprintf("%.2f", $underTotal/$underCount); 
     say "Total number under $length bp: $underCount; Mean length: $underMean bp";
 } 
-#print "********** Sequences written to file -----------> $outfile\n";
-exit;
+#say "********** Sequences written to file -----------> $outfile";
 
+exit;
 #
 # SUBS
 #
 sub usage {
   my $script = basename($0);
   print STDERR <<END
-USAGE: $script -i seqsin.fas -o filterseqs.fas -l length [--over] [--under]
+USAGE: $script -i seqsin.fas -o filterseqs.fas -e undesired.fas -l length [--over] [--under]
 
 Required:
     -i|infile    :    Fasta file of reads or contigs to filter.
     -o|outfile   :    File to place the filtered reads or contigs.
+    -e|excluded  :    File to place the reads that did not pass the
+                      threshold. 
     -l|length    :    Length (integer) to be used as the lower
                       threshold for filtering.
     --over       :    Keep only sequences over the chosen length.
@@ -194,4 +210,4 @@ Options:
     -m|man       :    Print full documentation.
 END
 }
-  
+
