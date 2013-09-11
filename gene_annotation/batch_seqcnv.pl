@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
 
+use 5.010;
 use strict;
 use warnings;
 use Bio::SeqIO;
@@ -19,7 +20,7 @@ die $usage if !$indir;
 $indir =~ s/\/$// if $indir =~ /\/$/;
 my @embl_files = glob("$indir/*.embl");
 if (scalar @embl_files < 1) {
-    print "\nERROR: Could not find any embl files in $indir. Must end with \".embl\". Exiting.\n";
+    say "\nERROR: Could not find any embl files in $indir. Must end with \".embl\". Exiting.";
     exit(1);
 }
 
