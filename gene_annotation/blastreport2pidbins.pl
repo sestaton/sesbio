@@ -1,7 +1,8 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
-
+use 5.010;
 use strict;
+use warnings;
 use Getopt::Long;
 
 my $usage = "USAGE: $0 -i blasttablein -o tophitsout <--graph> <--full_report> <--annot_by_bin> <--idlist>\n\n";
@@ -22,11 +23,11 @@ GetOptions(
 	   );
 
 if (!$infile || !$outfile) {
-    die "\nERROR: No infile/outfile was found. Exiting.\n\n",$usage;
+    die "\nERROR: No input was found. Exiting.\n\n",$usage;
 }
 
-open(my $in , '<', $infile) or die "\nERROR: Could not open file: $!\n";
-open(my $out , '>', $outfile) or die "\nERROR: Could not open file: $!\n";
+open my $in , '<', $infile or die "\nERROR: Could not open file: $!\n";
+open my $out , '>', $outfile or die "\nERROR: Could not open file: $!\n";
 
 my $totalhits = 0;
 my $onehun2ninety = 0;
@@ -59,20 +60,20 @@ my ($onehun2ninety_idlist_hndl, $eightynine2eighty_idlist_hndl, $seventynine2sev
 
 # add test for --annot_by_bin option; otherwise, do not create all these files
 if ($annotations) {
-    open($onehun2ninety_annot_hndl, '>', $onehun2ninety_annot) or die "\nERROR: Could not open file: $!\n";
-    open($eightynine2eighty_annot_hndl, '>', $eightynine2eighty_annot) or die "\nERROR: Could not open file: $!\n"; 
-    open($seventynine2seventy_annot_hndl, '>', $seventynine2seventy_annot) or die "\nERROR: Could not open file: $!\n";
-    open($sixtynine2sixty_annot_hndl, '>', $sixtynine2sixty_annot) or die "\nERROR: Could not open file: $!\n";
-    open($fiftynine2fifty_annot_hndl, '>', $fiftynine2fifty_annot)  or die "\nERROR: Could not open file: $!\n";
-    open($lessthanfifty_annot_hndl, '>', $lessthanfifty_annot) or die "\nERROR: Could not open file: $!\n";
+    open $onehun2ninety_annot_hndl, '>', $onehun2ninety_annot or die "\nERROR: Could not open file: $!\n";
+    open $eightynine2eighty_annot_hndl, '>', $eightynine2eighty_annot or die "\nERROR: Could not open file: $!\n"; 
+    open $seventynine2seventy_annot_hndl, '>', $seventynine2seventy_annot or die "\nERROR: Could not open file: $!\n";
+    open $sixtynine2sixty_annot_hndl, '>', $sixtynine2sixty_annot or die "\nERROR: Could not open file: $!\n";
+    open $fiftynine2fifty_annot_hndl, '>', $fiftynine2fifty_annot  or die "\nERROR: Could not open file: $!\n";
+    open $lessthanfifty_annot_hndl, '>', $lessthanfifty_annot or die "\nERROR: Could not open file: $!\n";
 }
 if ($ids) {
-    open($onehun2ninety_idlist_hndl, '>', $onehun2ninety_idlist) or die "\nERROR: Could not open file: $!\n";
-    open($eightynine2eighty_idlist_hndl, '>', $eightynine2eighty_idlist) or die "\nERROR: Could not open file: $!\n";
-    open($seventynine2seventy_idlist_hndl, '>', $seventynine2seventy_idlist) or die "\nERROR: Could not open file: $!\n";
-    open($sixtynine2sixty_idlist_hndl, '>', $sixtynine2sixty_idlist) or die "\nERROR: Could not open file: $!\n";
-    open($fiftynine2fifty_idlist_hndl, '>', $fiftynine2fifty_idlist)  or die "\nERROR: Could not open file: $!\n";
-    open($lessthanfifty_idlist_hndl, '>', $lessthanfifty_idlist) or die "\nERROR: Could not open file: $!\n";
+    open $onehun2ninety_idlist_hndl, '>', $onehun2ninety_idlist or die "\nERROR: Could not open file: $!\n";
+    open $eightynine2eighty_idlist_hndl, '>', $eightynine2eighty_idlist or die "\nERROR: Could not open file: $!\n";
+    open $seventynine2seventy_idlist_hndl, '>', $seventynine2seventy_idlist or die "\nERROR: Could not open file: $!\n";
+    open $sixtynine2sixty_idlist_hndl, '>', $sixtynine2sixty_idlist or die "\nERROR: Could not open file: $!\n";
+    open $fiftynine2fifty_idlist_hndl, '>', $fiftynine2fifty_idlist  or die "\nERROR: Could not open file: $!\n";
+    open $lessthanfifty_idlist_hndl, '>', $lessthanfifty_idlist or die "\nERROR: Could not open file: $!\n";
 }
 
 while (<$in>) { 
@@ -82,59 +83,58 @@ while (<$in>) {
     my @blfields = split(/\t/, $_);
     if ($blfields[2] >= 90.00 && $blfields[2] <= 100.00) {
 	$onehun2ninety++;
-	print $onehun2ninety_annot_hndl join("\t",(@blfields),"\n") if $annotations;
-	print $onehun2ninety_idlist_hndl $blfields[0]."\n" if $ids;
+	say $onehun2ninety_annot_hndl join "\t", @blfields if $annotations;
+	say $onehun2ninety_idlist_hndl $blfields[0] if $ids;
     }
     elsif ($blfields[2] >= 80.00 && $blfields[2] <= 89.99) {
 	$eightynine2eighty++;
-	print $eightynine2eighty_annot_hndl join("\t",(@blfields),"\n") if $annotations;
-	print $eightynine2eighty_idlist_hndl $blfields[0]."\n" if $ids;
+	say $eightynine2eighty_annot_hndl join "\t", @blfields if $annotations;
+	say $eightynine2eighty_idlist_hndl $blfields[0] if $ids;
     }
     elsif ($blfields[2] >= 70.00 && $blfields[2] <= 79.99) {
 	$seventynine2seventy++;
-	print $seventynine2seventy_annot_hndl join("\t",(@blfields),"\n") if $annotations;
-	print $seventynine2seventy_idlist_hndl $blfields[0]."\n" if $ids;
+	say $seventynine2seventy_annot_hndl join "\t", @blfields if $annotations;
+	say $seventynine2seventy_idlist_hndl $blfields[0] if $ids;
     }
     elsif ($blfields[2] >= 60.00 && $blfields[2] <= 69.99) {
 	$sixtynine2sixty++;
-	print $sixtynine2sixty_annot_hndl join("\t",(@blfields),"\n") if $annotations;
-	print $sixtynine2sixty_idlist_hndl $blfields[0]."\n" if $ids;
+	say $sixtynine2sixty_annot_hndl join "\t", @blfields if $annotations;
+	say $sixtynine2sixty_idlist_hndl $blfields[0] if $ids;
     }
     elsif ($blfields[2] >= 50.00 && $blfields[2] <= 59.99) {
 	$fiftynine2fifty++;
-	print $fiftynine2fifty_annot_hndl join("\t",(@blfields),"\n") if $annotations;
-	print $fiftynine2fifty_idlist_hndl $blfields[0]."\n" if $ids;
+	say $fiftynine2fifty_annot_hndl join "\t", @blfields if $annotations;
+	say $fiftynine2fifty_idlist_hndl $blfields[0] if $ids;
     }
     elsif ($blfields[2] < 49.99) {
 	$lessthanfifty++;
-	print $lessthanfifty_annot_hndl join("\t",(@blfields),"\n") if $annotations;
-	print $lessthanfifty_idlist_hndl $blfields[0]."\n" if $ids;
+	say $lessthanfifty_annot_hndl join "\t", @blfields if $annotations;
+	say $lessthanfifty_idlist_hndl $blfields[0] if $ids;
     } 
 }
 
 if ($annotations) {
-    close($onehun2ninety_annot_hndl);
-    close($eightynine2eighty_annot_hndl);
-    close($seventynine2seventy_annot_hndl);
-    close($sixtynine2sixty_annot_hndl);
-    close($fiftynine2fifty_annot_hndl);
-    close($lessthanfifty_annot_hndl);
+    close $onehun2ninety_annot_hndl;
+    close $eightynine2eighty_annot_hndl;
+    close $seventynine2seventy_annot_hndl;
+    close $sixtynine2sixty_annot_hndl;
+    close $fiftynine2fifty_annot_hndl;
+    close $lessthanfifty_annot_hndl;
 }
 if ($ids) {
-    close($onehun2ninety_idlist_hndl);
-    close($eightynine2eighty_idlist_hndl);
-    close($seventynine2seventy_idlist_hndl);
-    close($sixtynine2sixty_idlist_hndl);
-    close($fiftynine2fifty_idlist_hndl);
-    close($lessthanfifty_idlist_hndl);
+    close $onehun2ninety_idlist_hndl;
+    close $eightynine2eighty_idlist_hndl;
+    close $seventynine2seventy_idlist_hndl;
+    close $sixtynine2sixty_idlist_hndl;
+    close $fiftynine2fifty_idlist_hndl;
+    close $lessthanfifty_idlist_hndl;
 }
 
-print $out "#total_hits\t100-90\t89-80\t79-70\t69-60\t59-50\t<50\n";
+say $out "#total_hits\t100-90\t89-80\t79-70\t69-60\t59-50\t<50";
 if ($graph) {
-
     my $rscript = $outfile."_rscript";
     my $graph_file = $rscript.".png";
-    open(my $tmprscript, '>', $rscript) or die "\nERROR: Could not open file: $rscript\n";
+    open my $tmprscript, '>', $rscript  or die "\nERROR: Could not open file: $rscript\n";
     print $tmprscript "arr <- c($totalhits,$onehun2ninety,$eightynine2eighty,$seventynine2seventy,$sixtynine2sixty,$fiftynine2fifty,$lessthanfifty);
 for (i in 1:6) {arr.i <- arr[i+1]/arr[1]; if (i == 1) { arrbins <- arr.i } else { arrbins <- append(arrbins,arr.i)} };
 png(filename=\"$graph_file\",width=1024,height=640);
@@ -142,21 +142,14 @@ barplot(arrbins,names.arg=c(\"100-90\",\"89-80\",\"79-70\",\"69-60\",\"59-50\",\
 tmp<-dev.off();
 quit();
 ";
-    close($tmprscript);
+    close $tmprscript;
     system("R --vanilla --slave --silent < $rscript 2>/dev/null");
-    unlink($rscript);
-
+    unlink $rscript;
 } 
 
 if ($full_report) {
-
-    print $out $totalhits."\t".
-               $onehun2ninety."\t".
-               $eightynine2eighty."\t".
-               $seventynine2seventy."\t".
-               $sixtynine2sixty."\t".
-               $fiftynine2fifty."\t".
-               $lessthanfifty."\n";
+    say $out join "\t", $totalhits, $onehun2ninety, $eightynine2eighty, $seventynine2seventy, 
+    $sixtynine2sixty, $fiftynine2fifty, $lessthanfifty;
 
     my $onehundred2ninety_percent = sprintf("%.2f",$onehun2ninety/$totalhits);
     my $eightynine2eighty_percent = sprintf("%.2f",$eightynine2eighty/$totalhits);
@@ -165,27 +158,16 @@ if ($full_report) {
     my $fiftynine2fifty_percent = sprintf("%.2f",$fiftynine2fifty/$totalhits);
     my $lessthanfifty_percent = sprintf("%.2f",$lessthanfifty/$totalhits);
 
-    print $out "#100-90_percent\t89-80_percent\t79-70_percent\t69-60_percent\t59-50_percent\t<50_percent\n";
-    print $out $onehundred2ninety_percent."\t".
-               $eightynine2eighty_percent."\t".
-               $seventynine2seventy_percent."\t".
-               $sixtynine2sixty_percent."\t".
-               $fiftynine2fifty_percent."\t".
-               $lessthanfifty_percent."\n";
+    say $out "#100-90_percent\t89-80_percent\t79-70_percent\t69-60_percent\t59-50_percent\t<50_percent";
+    say $out join "\t", $onehundred2ninety_percent, $eightynine2eighty_percent, $seventynine2seventy_percent, 
+    $sixtynine2sixty_percent, $fiftynine2fifty_percent, $lessthanfifty_percent;
 
 } else {
-
-    print $out $totalhits."\t".
-	       $onehun2ninety."\t".
-               $eightynine2eighty."\t".
-               $seventynine2seventy."\t".
-               $sixtynine2sixty."\t".
-               $fiftynine2fifty."\t".
-               $lessthanfifty."\n";
+    say $out join "\t", $totalhits, $onehun2ninety, $eightynine2eighty, $seventynine2seventy, 
+    $sixtynine2sixty, $fiftynine2fifty, $lessthanfifty;
 
 }
 
-close($in);
-close($out);
+close $in;
+close $out;
 
-exit;
