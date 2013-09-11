@@ -1,5 +1,9 @@
 #!/usr/bin/env perl
 
+# used for benchmarking
+
+use strict;
+use warnings;
 use Bio::SeqIO;
 
 my $usage = "$0 infile\n";
@@ -9,7 +13,7 @@ my $seq_in = Bio::SeqIO->new(-file => $infile, -format => 'fasta');
 
 my $seqct = 0;
 
-while(my $seq = $seq_in->next_seq) {
+while (my $seq = $seq_in->next_seq) {
     $seqct++;
 }
 
