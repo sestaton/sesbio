@@ -1,12 +1,12 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 =head1 NAME 
                                                                        
- Illumina2Sanger.pl - Converts Illumina Phred+64 to Sanger Phred+33 
+ illumina_to_sanger.pl - Converts Illumina Phred+64 to Sanger Phred+33 
 
 =head1 SYNOPSIS    
 
- Illumina2Sanger.pl -i s_1_sequence.fastq -o s_1_sequence_sanger.fastq 
+ illumina_to_sanger.pl -i s_1_sequence.fastq -o s_1_sequence_sanger.fastq 
 
 =head1 DESCRIPTION
                                                                    
@@ -75,8 +75,8 @@ Print the full documentation.
 # INCLUDES    
 #
 use strict;
+use warnings;
 use Getopt::Long;
-#use lib qw(/usr/local/bioperl/latest/); 
 use Bio::Factory::EMBOSS;
 use Pod::Usage;
 
@@ -89,11 +89,11 @@ my $help;
 my $man;
 
 GetOptions(# Required
-           "-i|infile=s"     => \$infile,
-           "-o|outfile=s"    => \$outfile,
+           '-i|infile=s'     => \$infile,
+           '-o|outfile=s'    => \$outfile,
            # Options
-	   "-h|help"         => \$help,
-           "-m|man"          => \$man,
+	   '-h|help'         => \$help,
+           '-m|man'          => \$man,
 	   );
 
 pod2usage( -verbose => 1 ) if $help;
@@ -108,7 +108,7 @@ if (!$infile || !$outfile) {
 }
     
 #                       
-# DO THE CONVERSION    
+# USE EMBOSS FOR CONVERSION
 #
 my $factory = Bio::Factory::EMBOSS->new;
 my $seqret = $factory->program('seqret'); 
