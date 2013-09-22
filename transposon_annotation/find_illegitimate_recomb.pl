@@ -22,9 +22,7 @@ use Bio::Seq;
 use Bio::SeqIO;
 use Bio::AlignIO;
 use Bio::SearchIO;
-use lib qw(/iob_home/jmblab/statonse/apps/perlmod/bioperl-run/lib); # Using my own copy of the Run package  
 use Bio::Tools::Run::StandAloneBlast;
-use Data::Dumper;
 use Statistics::Descriptive;
 use Getopt::Long;
 use File::Basename;
@@ -33,6 +31,7 @@ use File::Temp;
 use Text::LevenshteinXS;       # This is exactly what I want: For string comparison to get the edit distance (num deletions, insertions)
 use String::Approx;            # This may also be useful: For string matching
 #---------------------------------
+#use Data::Dumper
 
 my $aln_file;
 my $outfile;
