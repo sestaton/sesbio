@@ -29,12 +29,13 @@
 #  bioseqio: 1762 wallclock secs (1757.15 usr +  0.61 sys = 1757.76 CPU) @  0.01/s (n=10)
 #    readfq:  6 wallclock secs ( 6.69 usr +  0.03 sys =  6.72 CPU) @  1.49/s (n=10)
 #transposome_seqio: 578 wallclock secs (560.79 usr + 16.02 sys = 576.81 CPU) @  0.02/s (n=10)
+##TODO: Update with biome
 
 use 5.010;
 use strict;
 use warnings;
 use Bio::SeqIO;
-use SeqIO;
+use Transposome::SeqIO;
 use Benchmark qw(:all);
 use autodie qw(open);
 
@@ -48,10 +49,10 @@ my ($id, $seq, $qual);
 
 cmpthese($count, {
     'transposome_seqio' => sub {
-	 my $seqio = SeqIO->new( file => $infile );
+	 my $seqio = Transposome::SeqIO->new( file => $infile );
 	 my $fh = $seqio->get_fh;
 	 while (my $seq = $seqio->next_seq($fh)) {
-	     $seqct++ if $seq->has_seq;
+	     $seqct++ if defined $seq;
 	 }
     },
     'readseq' => sub {
@@ -72,7 +73,7 @@ cmpthese($count, {
 	open my $in, '<', $infile;
 	my $seqio = Bio::SeqIO->new(-fh => $in, -format => 'fasta');
 	while (my $seq = $seqio->next_seq) {
-	    $seqct++ if defined $seq->seq;
+	    $seqct++ if defined $seq;
 	}
 	close $in;
     },
