@@ -2,34 +2,35 @@
 
 # Output of cmpthese() for a fasta file of 1m sequences:
 #
-#                  s/iter    bioseqio transposome_seqio      readseq       readfq
-#bioseqio            28.1          --               -1%         -88%         -98%
-#transposome_seqio   27.9          1%                --         -88%         -98%
-#readseq             3.39        729%              724%           --         -85%
-#readfq             0.499       5523%             5493%         579%           --
+#                  s/iter biome_seqio bioseqio transposome_seqio base_perl readfq
+#biome_seqio         54.5          --      -4%              -49%      -86%   -98%
+#bioseqio            52.2          4%       --              -47%      -86%   -98%
+#transposome_seqio   27.8         96%      88%                --      -73%   -96%
+#base_perl           7.48        629%     598%              272%        --   -86%
+#readfq              1.06       5040%    4824%             2521%      605%     --
 #
 # Output of timethese() on same file:
 #
-#Benchmark: timing 10 iterations of bioseqio, readfq, readseq, transposome_seqio...
-#  bioseqio: 278 wallclock secs (277.15 usr +  0.29 sys = 277.44 CPU) @  0.04/s (n=10)
-#    readfq:  5 wallclock secs ( 4.93 usr +  0.01 sys =  4.94 CPU) @  2.02/s (n=10)
-#   readseq: 34 wallclock secs (33.53 usr +  0.19 sys = 33.72 CPU) @  0.30/s (n=10)
-#transposome_seqio: 277 wallclock secs (261.90 usr + 14.62 sys = 276.52 CPU) @  0.04/s (n=10)
+#Benchmark: timing 10 iterations of base_perl, biome_seqio, bioseqio, readfq, transposome_seqio...
+# base_perl: 73 wallclock secs (67.23 usr +  5.50 sys = 72.73 CPU) @  0.14/s (n=10)
+# biome_seqio: 546 wallclock secs (539.17 usr +  7.35 sys = 546.52 CPU) @  0.02/s (n=10)
+# bioseqio: 526 wallclock secs (518.96 usr +  6.13 sys = 525.09 CPU) @  0.02/s (n=10)
+# readfq: 10 wallclock secs ( 9.94 usr +  0.60 sys = 10.54 CPU) @  0.95/s (n=10)
+#transposome_seqio: 281 wallclock secs (184.67 usr + 95.54 sys = 280.21 CPU) @  0.04/s (n=10)
 #
 # Output of cmpthese() for a fastq file of 1m sequences:
 #
-#                 s/iter          bioseqio transposome_seqio            readfq
-#bioseqio             174                --              -68%             -100%
-#transposome_seqio   56.5              209%                --              -99%
-#readfq             0.673            25792%             8292%                --
+#                  s/iter          bioseqio transposome_seqio            readfq
+#bioseqio             465                --              -93%             -100%
+#transposome_seqio   31.2             1390%                --              -96%
+#readfq              1.38            33534%             2157%                --
 #
 # Output of timethese() for a fastq file of 1m sequences:
 #
 #Benchmark: timing 10 iterations of bioseqio, readfq, transposome_seqio...
-#  bioseqio: 1762 wallclock secs (1757.15 usr +  0.61 sys = 1757.76 CPU) @  0.01/s (n=10)
-#    readfq:  6 wallclock secs ( 6.69 usr +  0.03 sys =  6.72 CPU) @  1.49/s (n=10)
-#transposome_seqio: 578 wallclock secs (560.79 usr + 16.02 sys = 576.81 CPU) @  0.02/s (n=10)
-##TODO: Update with biome
+#  bioseqio: 4540 wallclock secs (4528.11 usr + 11.55 sys = 4539.66 CPU) @  0.00/s (n=10)
+#  readfq: 14 wallclock secs (13.10 usr +  0.87 sys = 13.97 CPU) @  0.72/s (n=10)
+#transposome_seqio: 314 wallclock secs (209.94 usr + 104.05 sys = 313.99 CPU) @  0.03/s (n=10)
 
 use 5.010;
 use strict;
@@ -37,6 +38,8 @@ use warnings;
 use Bio::SeqIO;
 use Transposome::SeqIO;
 use Benchmark qw(:all);
+#use lib qw(/home/jmblab/statonse/apps/perlmod/biome/blib/lib);
+use Biome::SeqIO;
 use autodie qw(open);
 
 my $usage = "perl $0 infile";
@@ -48,16 +51,22 @@ my @aux = undef;
 my ($id, $seq, $qual);
 
 cmpthese($count, {
-    'transposome_seqio' => sub {
-	 my $seqio = Transposome::SeqIO->new( file => $infile );
-	 my $fh = $seqio->get_fh;
-	 while (my $seq = $seqio->next_seq($fh)) {
-	     $seqct++ if defined $seq;
-	 }
+    'biome_seqio' => sub {
+        my $seqio = Biome::SeqIO->new( file => $infile, format => 'fasta' );
+        while (my $seq = $seqio->next_Seq) {
+            $seqct++ if defined $seq;
+        }
     },
-    'readseq' => sub {
+    'transposome_seqio' => sub {
+	my $seqio = Transposome::SeqIO->new( file => $infile );
+	my $fh = $seqio->get_fh;
+	while (my $seq = $seqio->next_seq($fh)) {
+	    $seqct++ if defined $seq;
+	}
+    },
+    'base_perl' => sub {
 	open my $in, '<', $infile;
-	while (($id, $seq) = readseq(\*$in)) {
+	while (($id, $seq) = base_perl(\*$in)) {
 	    $seqct++ if defined $seq;
 	}
 	close $in;
@@ -71,18 +80,18 @@ cmpthese($count, {
     },
     'bioseqio' => sub {
 	open my $in, '<', $infile;
-	my $seqio = Bio::SeqIO->new(-fh => $in, -format => 'fasta');
+	my $seqio = Bio::SeqIO->new(-fh => $in, -format => 'fastq');
 	while (my $seq = $seqio->next_seq) {
 	    $seqct++ if defined $seq;
 	}
 	close $in;
     },
-	 });
+});
 
 #
 # subs
 #
-sub readseq {
+sub base_perl {
     my ($self) = @_;
     
     local $/ = "\n>";
@@ -112,7 +121,7 @@ sub readfq {
         }
     }
     my $name;
-    if (/^.?(\S+\s(\d)\S+)/) {          # Illumina 1.8+
+    if (/^.?(\S+\s(\d)\S+)/) {      # Illumina 1.8+
 	$name = $1."/".$2;
     }
     elsif (/^.?(\S+)/) {            # Illumina 1.3+
