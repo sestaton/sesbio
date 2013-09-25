@@ -33,11 +33,6 @@ The fasta file containing reads for contigs to filter.
 
 A file to place the filtered reads for contigs.
 
-=item -e, --excluded
-
-A file to place the reads that did not pass the threshold 
-for filtering.
-
 =item -l, --length
 
 An integer specifying the length to be used as a lower
@@ -82,7 +77,6 @@ use Pod::Usage;
 #
 my $infile;       
 my $outfile;
-my $excluded;      
 my $length;
 my $over;
 my $under;
@@ -98,7 +92,6 @@ my $underCount = 0;
 GetOptions(
 	   'i|infile=s'     => \$infile,
 	   'o|outfile=s'    => \$outfile,
-	   'e|excluded=s'   => \$excluded,
 	   'l|length=i'     => \$length,
 	   'over'           => \$over,
 	   'under'          => \$under,
@@ -113,8 +106,7 @@ usage() and exit(0) if $help;
 
 pod2usage( -verbose => 2 ) if $man;
 
-if (!$infile || !$outfile 
-    || !$length || !$excluded) {
+if (!$infile || !$outfile || !$length) {
     say "\nERROR: No input was given.";
     usage();      
     exit(1);
@@ -134,8 +126,6 @@ my $seqs_in = Bio::SeqIO->new('-file' => "$infile",
 my %seqs_out = (
                 'selected' => Bio::SeqIO->new('-file' => ">$outfile",
 					   '-format' => 'fasta'),
-                'excluded' => Bio::SeqIO->new('-file' => ">$excluded",
-					    '-format' => 'fasta'),
 		);
 
 while ( my $seq = $seqs_in->next_seq() ) {
@@ -148,7 +138,6 @@ while ( my $seq = $seqs_in->next_seq() ) {
 	} else {	
 	    $underCount++;
 	    $underTotal += $seq->length;
-	    $seqs_out{'excluded'}->write_seq($seq);
 	}
     }
     if ($under) {
@@ -159,7 +148,6 @@ while ( my $seq = $seqs_in->next_seq() ) {
         } else {
 	    $overCount++;
             $overTotal += $seq->length;
-	    $seqs_out{'excluded'}->write_seq($seq);
         }
     }
 } 
@@ -192,13 +180,11 @@ exit;
 sub usage {
   my $script = basename($0);
   print STDERR <<END
-USAGE: $script -i seqsin.fas -o filterseqs.fas -e undesired.fas -l length [--over] [--under]
+USAGE: $script -i seqsin.fas -o filterseqs.fas -l length [--over] [--under]
 
 Required:
     -i|infile    :    Fasta file of reads or contigs to filter.
     -o|outfile   :    File to place the filtered reads or contigs.
-    -e|excluded  :    File to place the reads that did not pass the
-                      threshold. 
     -l|length    :    Length (integer) to be used as the lower
                       threshold for filtering.
     --over       :    Keep only sequences over the chosen length.
