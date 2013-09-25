@@ -3,7 +3,7 @@
 
 ## TODO: Change names for printing out full Genus name in plot
 
-use v5.14;
+use 5.014;
 use utf8;
 use strict;
 use warnings;
@@ -11,7 +11,6 @@ use warnings FATAL => "utf8";
 use autodie qw(open);
 use Data::Dump qw(dd);
 use charnames qw(:full :short);
-use Statistics::Descriptive;
 
 my $usage = "perl $0 outfile\n";
 my $outfile = shift or die $usage;
@@ -25,7 +24,6 @@ my %df;
 my %fams;
 my %sph;
 
-#my $stat = Statistics::Descriptive::Full->new;
 my $cvalh = {
     Ageratina => '1973',
     Ann1238   => '3600',
@@ -105,13 +103,13 @@ for my $sp (sort keys %df) {
 
 sub min {
     my $min = shift;
-    foreach ( @_ ) { $min = $_ if $_ < $min }
+    for ( @_ ) { $min = $_ if $_ < $min }
     return $min;
 }
 
 sub max {
     my $max = shift;
-    foreach ( @_ ) { $max = $_ if $_ > $max }
+    for ( @_ ) { $max = $_ if $_ > $max }
     return $max;
 }
 
@@ -119,7 +117,7 @@ sub mean {
     my @array = @_; 
     my $sum; 
     my $count = scalar @array; 
-    foreach (@array) { $sum += $_; } 
+    for (@array) { $sum += $_; } 
     return sprintf("%.8f",$sum / $count); 
 }
 
