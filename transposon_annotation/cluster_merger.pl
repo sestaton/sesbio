@@ -3,7 +3,7 @@
 ## TODO: Need to write all clusters, those below threshold included, to new .cls file
 
 use utf8;
-use v5.12;
+use 5.012;
 use strict;
 use warnings;
 use warnings qw(FATAL utf8);
@@ -44,8 +44,8 @@ $cls_with_merges .= "_merged_$str.cls";
 my $cls_dir_path = $ipath.$cls_dir;
 make_path($cls_dir_path, {verbose => 0, mode => 0711,}); # allows for recursively making paths
 my $cls_with_merges_path = File::Spec->catfile($ipath, $cls_with_merges);
-open(my $rep, '>', $report);
-open(my $clsnew, '>', $cls_with_merges_path);
+open my $rep, '>', $report;
+open my $clsnew, '>', $cls_with_merges_path;
 
 # find union in clusters
 $cluster_size //= '500';
@@ -69,7 +69,7 @@ for my $group (values %cluster) {
     say $clsnew ">G$group_index $groupseqnum";
     my $group_file = "Cluster_grouping_".$group_index.".fas";
     my $group_file_path = File::Spec->catfile($cls_dir_path, $group_file);
-    open(my $groupout, '>', $group_file_path);
+    open my $groupout, '>', $group_file_path;
     
     for my $clus (@$group) {
 	if (exists $read_pairs->{$clus}) {
@@ -87,7 +87,7 @@ for my $group (values %cluster) {
 	delete $read_pairs->{$clus}
     }
     print $clsnew "\n";
-    close($groupout);
+    close $groupout;
     $group_index++;
 }
 
@@ -101,7 +101,7 @@ for my $non_paired_cls (keys %$read_pairs) {
     if (scalar(@{$read_pairs->{$non_paired_cls}}) >= $cluster_size) {
 	my $non_paired_clsfile .= $non_paired_cls.".fas";
 	my $cls_file_path = File::Spec->catfile($cls_dir_path, $non_paired_clsfile);
-	open(my $clsout, '>', $cls_file_path);
+	open my $clsout, '>', $cls_file_path;
 
 	for my $non_paired_read (@{$read_pairs->{$non_paired_cls}}) {
 	    if (exists $seqs->{$non_paired_read}) {
@@ -111,11 +111,11 @@ for my $non_paired_cls (keys %$read_pairs) {
 		say "WARNING: $non_paired_read not found. This is a bug. Please report it.";
 	    }
 	}
-	close($clsout);
+	close $clsout;
     }
 }
-close($rep);
-close($clsnew);
+close $rep;
+close $clsnew;
 
 #
 # subs
@@ -134,7 +134,7 @@ sub find_pairs {
     {
 	local $/ = '>';
 	
-	open(my $in, '<', $cls_file);	
+	open my $in, '<', $cls_file;	
 	while (my $line = <$in>) {
 	    $line =~ s/>//g;
 	    next if !length($line);
@@ -143,7 +143,7 @@ sub find_pairs {
 	    my @ids = split /\s+/, $seqids;
 	    push @{$read_pairs{$clsid}}, $_ for @ids;
 	}
-	close($in);
+	close $in;
     }
 
     while (my ($cls, $reads) = each %read_pairs) {
@@ -201,7 +201,7 @@ sub find_pairs {
 
 sub fas2hash {
     my $fas_file = shift;
-    open(my $fas, '<', $fas_file);
+    open my $fas, '<', $fas_file;
 
     my %seqhash;
 
@@ -215,7 +215,7 @@ sub fas2hash {
         $seqhash{$seqid} = $seq;
         $seqct++ if defined $seq;
     }
-    close($fas);
+    close $fas;
     
     return(\%seqhash, $seqct);
 }
