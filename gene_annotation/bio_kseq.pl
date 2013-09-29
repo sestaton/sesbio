@@ -3,6 +3,8 @@
 # used for benchmarking;
 # NB: As of this writing, there is memory leak in Bio::Kseq
 
+## Memory leak has been fixed: https://github.com/cjfields/Bio-Kseq/issues/1
+
 use strict;
 use warnings;
 use Bio::Kseq;
