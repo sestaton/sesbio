@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 #--------------------------------------------------------------+
 # cnv_LTRdigest_gff3_to_valid.pl - Convert to standard gff3    |
 #--------------------------------------------------------------+
@@ -28,11 +28,12 @@
 # Convert directory of files instead of one at a time.
 
 use strict;
+use warnings;
 use Getopt::Long;
 
 my $infile;
 my $outfile;
-my $usage = "USAGE: cnv_LTRdigest_gff3_to_valid.pl -i in.gff3 -o out.gff3";
+my $usage = "USAGE: cnv_LTRdigest_gff3_to_valid.pl -i in.gff3 -o out.gff3\n";
 
 GetOptions(
            "i|infile=s"           => \$infile,
@@ -40,41 +41,30 @@ GetOptions(
 	  );
 
 # open the infile or die with a usage statement
-if ($infile && $outfile) {
-    open (INFILE, "<$infile") || print "ERROR: Can't open $infile\n";
-    open (SEQNAME, "<$infile");
-    open (OUTFILE, ">$outfile");
-    
-}
-else {
-    if (!$infile){
-        die "\n","ERROR: No infile was given at the command line\n\n",$usage,"\n\n"; 
-    }
-    if (!$outfile){
-        die "\n","ERROR: No outfile was given at the command line\n\n",$usage,"\n\n";
-    }
+if (!$infile || !$outfile) {
+    print $usage and exit(1);
 }
 
-my @contig = grep {/# (\w)/} <SEQNAME>;
-close(SEQNAME);
+open my $in, '<', $infile or die "ERROR: Can't open file: $infile\n";
+open my $seq, '<', $infile or die "ERROR: Can't open file: $infile\n";
+open my $out, '>', $outfile or die "ERROR: Can't open file: $outfile\n";
+
+
+my @contig = grep {/# (\w)/} <$seq>;
+close $seq;
 my $contigID = get_contig(@contig);
 
-my @gff = <INFILE>;
-foreach my $line (@gff) {
-   
+my @gff = <$in>;
+for my $line (@gff) {
     chomp $line;
     if ($line =~ m/^##gff-version /) {
-
-	print OUTFILE $line,"\n";
+	print $out $line,"\n";
     }
     if ($line =~ m/^##sequence-region /) {
-	
 	my @seq_region = split(/\s+/, $line);
-	
-	print OUTFILE $seq_region[0]," ",$contigID," ",$seq_region[2]," ",$seq_region[3],"\n";
+	print $out $seq_region[0]," ",$contigID," ",$seq_region[2]," ",$seq_region[3],"\n";
     }
     if ($line =~ m/^seq/) {
-	
 	my @gff_fields = split(/\s+/,$line);
 	my $correctID = $gff_fields[0];
 	$correctID =~ s/(\w*)/$contigID/;
@@ -90,30 +80,21 @@ foreach my $line (@gff) {
 	#			$gff_fields[8]."\n";    # Column 9: "attributes"  ==> Need to fix here too. (Parent=repeat_region2)
 	
 				
-	print OUTFILE join("\t",($correctID,$gff_fields[1],$gff_fields[2],$gff_fields[3],$gff_fields[4],$gff_fields[5],
+	print $out join("\t",($correctID,$gff_fields[1],$gff_fields[2],$gff_fields[3],$gff_fields[4],$gff_fields[5],
 				 $gff_fields[6],$gff_fields[7],$gff_fields[8])), "\n";
-	
     }
-  
 }
 
 sub get_contig {
-  
     my @name = @_;
-    for(@name)  {
-    
-    my ($comm, $contig) = split(/\s+/,$_);
-
+    for (@name) {
+    my ($comm, $contig) = split /\s+/, $_;
     return $contig;
-    
     }
-    
 }
 
-close(INFILE);
-close(OUTFILE);
-
-exit;
+close $in;
+close $out;
 
 #----------------+
 # CHANGELOG      |
