@@ -3,7 +3,7 @@
 #TODO: add POD
 
 #
-# INCLUDES
+# Libs
 #
 use 5.010;
 use strict;
@@ -19,7 +19,7 @@ use Try::Tiny;
 use Pod::Usage;
 
 #
-# VARIABLE SCOPE
+# Vars
 #
 my $all;
 my $genus;
@@ -40,9 +40,9 @@ GetOptions(
 	   'g|genus=s'        => \$genus,
 	   's|species=s'      => \$species,
 	   'o|outfile=s'      => \$outfile,
-	   'seq|sequences'  => \$sequences,
-           'aln|alignments' => \$alignments,
-           'asm|assemblies' => \$assemblies,
+	   'seq|sequences'    => \$sequences,
+           'aln|alignments'   => \$alignments,
+           'asm|assemblies'   => \$assemblies,
 	   'h|help'           => \$help,
 	   'm|man'            => \$man,
 	  );
@@ -100,7 +100,7 @@ unless ($response->is_success) {
 # Open and parse the results
 #
 open my $out, '>', $cgp_response or die "\nERROR: Could not open file: $!\n";
-print $out $response->content,"\n";
+say $out $response->content;
 close $out;
 $tree->parse_file($cgp_response);
 
@@ -176,11 +176,12 @@ sub fetch_files {
     }
 
     my $endpoint = $urlbase.$data_dir.$file;
+    my $exit_code;
     try {
-	system("wget -O $file $endpoint");
+	$exit_code = system([0..5], "wget -O $file $endpoint");
     }
     catch {
-	say "\nERROR: wget exited abnormally. Here is the exception: $_\n";
+	say "\nERROR: wget exited abnormally with exit code $exit_code. Here is the exception: $_\n";
     };
 }
 
