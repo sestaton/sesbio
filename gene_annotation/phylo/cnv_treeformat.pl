@@ -20,7 +20,7 @@ GetOptions(
            'of|outformat:s' => \$oformat,
            );
 
-usage() and exit(0) if !$infile or !$outfile;
+say $usage and exit(0) if !$infile or !$outfile;
 
 $iformat //= 'nexus';
 $oformat //= 'newick';
