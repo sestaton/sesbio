@@ -27,11 +27,24 @@ fi
 
 blast=$1
 query=$2
-echo "The BLAST report is: "$blast
-echo "The Fasta query is : "$query
+
+if [ ! -e $blast ]; then
+    echo "ERROR: Could not find file: $blast"
+    usage
+    exit 1
+fi
+
+if [ ! -e $query ]; then
+    echo "ERROR: Could not find file: $query"
+    usage
+    exit 1
+fi
+
+echo "The BLAST report is: $blast"
+echo "The Fasta query is : $query"
 echo ""
 curquery=$(tail -2 $blast | head -1 | cut -f 1)
 curline=$(grep ">" $query | grep -n $curquery | cut -f 1 -d ':')
 nblines=$(grep -c ">" $query)
 percent=$(echo "($curline/$nblines) *100" | bc -l | cut -c 1-4)
-echo "The BLAST job is $percent % done..."
+echo "The BLAST job is $percent% done..."
