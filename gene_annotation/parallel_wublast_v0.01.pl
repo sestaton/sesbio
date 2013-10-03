@@ -10,6 +10,8 @@ use Time::HiRes qw(gettimeofday);
 use File::Basename;
 use File::Temp;
 use Parallel::ForkManager;
+use Try::Tiny;
+use IPC::System::Simple qw(system);
 use autodie qw(open);
 
 #
@@ -19,7 +21,6 @@ my $infile;
 my $outfile;
 my $database;
 my $numseqs;
-my $format;
 my $thread;
 my $cpu;
 my $help;
@@ -38,7 +39,6 @@ GetOptions(# Required
 	   'o|outfile=s'        => \$outfile,
 	   'd|database=s'       => \$database,
 	   'n|numseqs=i'        => \$numseqs,
-	   'sf|seq_format=s'    => \$format,
 	   # Options
 	   'a|cpu=i'            => \$cpu,
 	   'b|num_aligns=i'     => \$num_alignments,
@@ -58,9 +58,7 @@ usage() and exit(0) if $help;
 
 pod2usage( -verbose => 2 ) if $man;
 
-if (!$infile  || !$format || 
-    !$outfile || !$database || 
-    !$numseqs) {
+if (!$infile || !$outfile || !$database || !$numseqs) {
     say "\nERROR: No input was given.";
     usage();
     exit(1);
@@ -73,7 +71,7 @@ my $t0 = gettimeofday();
 $cpu //= 1;
 $thread //= 1;
 
-my ($seq_files,$seqct) = split_reads($infile,$outfile,$numseqs,$format);
+my ($seq_files,$seqct) = split_reads($infile,$outfile,$numseqs);
 
 open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n"; 
 
@@ -108,14 +106,13 @@ my $t2 = gettimeofday();
 my $total_elapsed = $t2 - $t0;
 my $final_time = sprintf("%.2f",$total_elapsed/60);
 
-say "\n========> Finihsed running BLAST on $seqct sequences in $final_time minutes";
+say "\n========> Finished running BLAST on $seqct sequences in $final_time minutes";
 
 exit;
 #
 # Subs
 #
 sub run_blast {
-    
     my ($subseq_file,$database,$cpu,$blast_program,$blast_format,$num_alignments,$num_descriptions,$evalue) = @_;
 
     $blast_program //= '/usr/local/wublast/latest/blastn';
@@ -136,7 +133,6 @@ sub run_blast {
     }
     my $subseq_out = $subfile."_".$dbfile.$suffix;
 
-    #/usr/local/wublast/latest/blastn 11_comp_species_est_assemblies_xddb Ann1238_GGCTAC_L004_interl_59mer.fasta M 1 N -3 -Q 3 -R 1 -cpus 12 -mformat 2
     my $blast_cmd = "$blast_program ".
                     "$database ".
 	            "$subseq_file ".
@@ -149,19 +145,24 @@ sub run_blast {
 	            "-o $subseq_out ".
                     "2>&1 > /dev/null";
 
+    my $exit_code;
+    try {
+	$exit_code = system([0..5], $blast_cmd);
+    }
+    catch {
+	say "ERROR: blastn failed with exit code: $exit_code. Here is the excpetion: $_. Exiting.\n";
+	exit(1);
+    };
 
-    system $blast_cmd;
     return $subseq_out;
 }
 
 sub split_reads {
+    my ($infile,$outfile,$numseqs) = @_;
 
-    my ($input,$output,$numseqs,$format) = @_;
-
-    my ($iname, $ipath, $isuffix) = fileparse($input, qr/\.[^.]*/);
+    my ($iname, $ipath, $isuffix) = fileparse($infile, qr/\.[^.]*/);
     
-    open my $in, '<', $input;
-
+    my $out;
     my $count = 0;
     my $fcount = 1;
     my @split_files;
@@ -173,37 +174,29 @@ sub split_reads {
     my $fname = File::Temp->new( TEMPLATE => $tmpiname,
                                  DIR => $cwd,
 				 SUFFIX => ".fasta",
-				 UNLINK => 0);
+                                 UNLINK => 0);
+    open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
     
-    open my $out, '>', $fname;
     push @split_files, $fname;
-
+    open my $in, '<', $infile or die "\nERROR: Could not open file: $infile\n";
     my @aux = undef;
     my ($name, $comm, $seq, $qual);
-    my ($n, $slen, $qlen) = (0, 0, 0);
     while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
-	if ($count % $numseqs == 0 && $count > 0) {
-	    $fcount++;
+        if ($count % $numseqs == 0 && $count > 0) {
+            $fcount++;
             $tmpiname = $iname."_".$fcount."_XXXX";
-            $fname = File::Temp->new( TEMPLATE => $tmpiname,
-                                      DIR => $cwd,
-				      SUFFIX => ".fasta",
-				      UNLINK => 0);
+            my $fname = File::Temp->new( TEMPLATE => $tmpiname,
+					 DIR => $cwd,
+					 SUFFIX => ".fasta",
+                                         UNLINK => 0);
+            open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
 
-	    open my $out, '>', $fname;
-	    push @split_files, $fname;
-	}
-	#my $pair = /^(\d)/ ? $1 : '';
-	#$name = $name."/".$pair if length $pair;
-	if ($name =~ /\s+(\d)/) {
-            my $pair = $1;
-            $name =~ s/\s.*//;
-            $name = $name."/".$pair;
-	}
-	say $out join "\n", ">".$name, $seq;
-	$count++;
+            push @split_files, $fname;
+        }
+        say $out join "\n", ">".$name, $seq;
+        $count++;
     }
-
+    close $in; close $out;
     return (\@split_files, $count);
 }
 
@@ -255,12 +248,11 @@ sub usage {
     my $script = basename($0);
     print STDERR <<END
 
-USAGE: $script -i seqs.fas -d db -sf fasta|fastq -o blast_result -n num [-t] [-a] [-b] [-v] [-p] [-bf] [-e] [-h] [-m]
+USAGE: $script -i seqs.fas -d db -o blast_result -n num [-t] [-a] [-b] [-v] [-p] [-bf] [-e] [-h] [-m]
 
 Required:
     -i|infile        :    Fasta file to search (contig or chromosome).
     -o|outfile       :    File name to write the blast results to.
-    -sf|seq_format   :    The format of the sequence (must be "fasta" or "fastq").
     -d|database      :    Database to search.
     -n|numseqs       :    The number of sequences to write to each split.
 
