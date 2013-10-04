@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use v5.14;
+use 5.014;
 use strict;
 use warnings;
 use open qw(:encoding(UTF-8) :std);
@@ -46,14 +46,14 @@ while (<$in>) {
 	    push @{$list{$f[0]}}, mk_key($f[1], $f[6], $f[7], $f[8], $f[9]);
 	}
 	else {
-	    $list{$f[0]} = [ mk_key($f[1], $f[6], $f[7], $f[8], $f[9] ];
+	    $list{$f[0]} = [ mk_key($f[1], $f[6], $f[7], $f[8], $f[9]) ];
 	}
 	$seen{$k} = 1;
 	#$seenall{$f[0]} = 1;
 	#$seenall{$f[1]} = 1;
     }
 }
-
+close $in;
 #dd \%list;
 
 for my $k (keys %list) {
