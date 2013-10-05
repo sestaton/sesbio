@@ -1,10 +1,10 @@
 #!/usr/bin/env perl
 
 # TODO: 
+
 use strict;
 use warnings;
 use Bio::AlignIO;
-#use Data::Dumper;
 
 my $usage = "\nUSAGE: get_aln_stats.pl infile\n\n";
 my $infile = shift or die $usage;
@@ -14,7 +14,6 @@ my $pos = 0;
 my @gap_arr = parse_aln($infile);
 
 for my $hash (@gap_arr) {
-    #print Dumper $hash;
     for my $key (%$hash) {
 	$pos++;
 	if (defined $hash->{$key}) {
@@ -28,13 +27,11 @@ exit;
 # Subs
 #
 sub parse_aln {
-
     my $aln_file = shift;
     my $aln_in = Bio::AlignIO->new(-file   => $aln_file,
 				   -format => 'fasta');
 				   
     while ( my $aln = $aln_in->next_aln() ) {
-
 	my $percentID = sprintf("%.2f",$aln->percentage_identity);
 	my $sim = $percentID/100;
 	my $dive = 1-$sim;
@@ -50,8 +47,6 @@ sub parse_aln {
 	#print "Cons string: ",$aln->consensus_string, "\n";
 	#print Dumper $aln->gap_col_matrix;
 	return $aln->gap_col_matrix;
-
     }
-
 }
 
