@@ -101,13 +101,13 @@ exit;
 # Subs
 #
 sub blast2hash {
-    my $bl = shift;
+    my ($bl) = @_;
 
     open my $fh, '<', $bl or die "\nERROR: Could not open file: $!\n";
 
     my %hash;
 
-    while(my $line = <$fh>) {
+    while (my $line = <$fh>) {
 	chomp $line;
 	next if $line =~ /^Query/ || $line =~ /^#/;
 	my @fields = split /\t/, $line;
@@ -125,11 +125,11 @@ sub blast2hash {
     }
     close $fh;
 
-    return(\%hash);
+    return \%hash;
 }
 
 sub seq2hash {
-    my $fas = shift;
+    my ($fas) = @_;
 
     my %seqhash;
     my $seqct = 0;
@@ -146,7 +146,7 @@ sub seq2hash {
     close $seq_in;
 
     say "$seqct sequences in $fas";
-    return(\%seqhash);
+    return \%seqhash;
 }
 
 sub readfq {
