@@ -99,22 +99,22 @@ my $headchar = 0;
 my $non_atgcn = 0;
 
 my @aux = undef;
-my ($seqname, $seq, $qual);
+my ($name, $comm, $seq, $qual);
 my ($n, $slen, $qlen) = (0, 0, 0);
 
-while (($seqname, $seq, $qual) = readfq(\*$in, \@aux)) {
+while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
     $fasnum++;
-    if ($seqname =~ m/\s+|\;|\:|\(|\)|\./g) {
+    if ($name =~ m/\s+|\;|\:|\(|\)|\./g) {
 	$headchar++;
-	$seqname =~ s/\s/\_/g;
-	$seqname =~ s/\;/\_/g;
-	$seqname =~ s/\:/\_/g;
-	$seqname =~ s/\(/\_/g;
-	$seqname =~ s/\)/\_/g;
-	$seqname =~ s/\./\_/g;
-	$seqname =~ s/\|/\_/g;
-	if ($seqname =~ m/\_+/g) {
-	    $seqname =~ s/\_+/\_/g;
+	$name =~ s/\s/\_/g;
+	$name =~ s/\;/\_/g;
+	$name =~ s/\:/\_/g;
+	$name =~ s/\(/\_/g;
+	$name =~ s/\)/\_/g;
+	$name =~ s/\./\_/g;
+	$name =~ s/\|/\_/g;
+	if ($name =~ m/\_+/g) {
+	    $name =~ s/\_+/\_/g;
 	}
 	# TODO: shorten the header, optionally
     }
@@ -124,14 +124,14 @@ while (($seqname, $seq, $qual) = readfq(\*$in, \@aux)) {
 	$seq =~ s/\n//;     # Unix
     }
  
-    my @nt = split(//,$seq);
+    my @nt = split //, $seq;
     for my $base (@nt) {
 	if ($base !~ m/A|C|G|T|N|a|c|g|t|n/) {
 	    $non_atgcn++;
 	    $base = "N";
 	}
     }       
-    my $dna = join('',@nt);
+    my $dna = join '', @nt;
     $dna =~ s/\s//g;
 
     my $nucleic_bc = ($dna =~ tr/NACGTacgtn//);
@@ -171,7 +171,8 @@ sub readfq {
 	    return;
 	}
     }
-    my $name = /^.(\S+)/? $1 : '';
+    my ($name, $comm) = /^.(\S+)(?:\s+)(\S+)/ ? ($1, $2) : 
+	                /^.(\S+)/ ? ($1, '') : ('', '');
     my $seq = '';
     my $c;
     $aux->[0] = undef;
@@ -183,14 +184,14 @@ sub readfq {
     }
     $aux->[0] = $_;
     $aux->[1] = 1 if (!defined($aux->[0]));
-    return ($name, $seq) if ($c ne '+');
+    return ($name, $comm, $seq) if ($c ne '+');
     my $qual = '';
     while (<$fh>) {
 	chomp;
 	$qual .= $_;
 	if (length($qual) >= length($seq)) {
 	    $aux->[0] = undef;
-	    return ($name, $seq, $qual);
+	    return ($name, $comm, $seq, $qual);
 	}
     }
     $aux->[1] = 1;
