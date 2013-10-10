@@ -5,7 +5,7 @@
 ##      3) Putting the program in the background seems to cause capture to throw an exception
 
 use utf8;
-use v5.12;
+use 5.012;
 use strict;
 use warnings;
 use warnings FATAL => "utf8";
@@ -244,7 +244,7 @@ else {
 
 # clean up
 if ($clean) {
-    my ($clean_o, $clean_e) = capture { system("rm ${db}*"); }; 
+    my ($clean_o, $clean_e) = capture { system("rm ${db}*"); };
     unlink $vsearch_out;
     unlink $o_tmp;
     unlink $vmerSearchSeqnum;
