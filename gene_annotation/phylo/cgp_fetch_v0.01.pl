@@ -3,7 +3,7 @@
 #TODO: add POD
 
 #
-# Libs
+# library imports
 #
 use 5.010;
 use strict;
@@ -19,7 +19,7 @@ use Try::Tiny;
 use Pod::Usage;
 
 #
-# Vars
+# lexical vars
 #
 my $all;
 my $genus;
@@ -33,7 +33,7 @@ my $assemblies;
 my $cgp_response = "CGP_DB_response.html"; # HTML
 
 #
-# Opts
+# set opts
 #
 GetOptions(
            'all'              => \$all,
@@ -51,7 +51,7 @@ GetOptions(
 #pod2usage( -verbose => 2 ) if $man;
 
 #
-# Check @ARGV
+# check @ARGV
 #
 if (!$assemblies && !$sequences && !$alignments) {
    say "\nERROR: Command line not parsed correctly. Exiting.";
@@ -61,13 +61,13 @@ if (!$assemblies && !$sequences && !$alignments) {
 
 
 #
-# Counters
+# counters
 #
 my $t0 = gettimeofday();
 my $records = 0;
 
 #
-# Set terms for search
+# set terms for search
 #
 my ($gen, $sp);
 if ($genus) {
@@ -78,31 +78,33 @@ if ($species) {
 }
 
 #
-# Create the UserAgent
+# create the UserAgent
 # 
 my $ua = LWP::UserAgent->new;
 my $tree = HTML::TreeBuilder->new;
 
 #
-# Perform the request
+# perform the request
 #
 my $urlbase = 'http://cgpdb.ucdavis.edu/asteraceae_assembly/';
 my $response = $ua->get($urlbase);
 
 #
-# Check for a response
+# check for a response
 #
 unless ($response->is_success) {
     die "Can't get url $urlbase -- ", $response->status_line;
 }
 
 #
-# Open and parse the results
+# cpen and parse the results
 #
 open my $out, '>', $cgp_response or die "\nERROR: Could not open file: $!\n";
 say $out $response->content;
 close $out;
 $tree->parse_file($cgp_response);
+
+##TODO parse tag 'b' and check available; also, fetch by category such as mono vs multi sp.
 
 for my $tag ($tree->look_down(_tag => 'a')) {
     if ($tag->attr('href')) {
@@ -145,7 +147,7 @@ for my $tag ($tree->look_down(_tag => 'a')) {
 unlink $cgp_response;
 
 #
-# Subroutines
+# subroutines
 #
 sub filter_search {
     my ($genus, $species, $gen, $sp, $file, $type) = @_;
