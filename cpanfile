@@ -1,0 +1,1 @@
+requires 'HTML::TreeBuilder', '>= 5.06';
