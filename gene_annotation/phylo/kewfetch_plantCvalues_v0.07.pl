@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 =head1 NAME 
                                                                        
@@ -118,8 +118,9 @@ use HTTP::Request::Common qw(GET);
 use Pod::Usage;
 use Time::HiRes qw(gettimeofday);
 #use Term::ProgressBar::Simple;
-#use Tie::IxHash;
 
+# given/when emits warnings in v5.18+
+no if $] >= 5.018, 'warnings', "experimental::switch";
 
 #
 # VARIABLE SCOPE
@@ -151,8 +152,8 @@ pod2usage( -verbose => 2 ) if $man;
 # Check @ARGV
 #
 if (!$family || !$email || !$outfile) {
-   print "\nERROR: Command line not parsed correctly. Exiting.\n";
-   &usage;
+   say "\nERROR: Command line not parsed correctly. Exiting.";
+   usage();
    exit(0);
 }
 
@@ -160,12 +161,12 @@ if (!$family || !$email || !$outfile) {
 # Set the Kew database to search
 #
 given ($db) {
-    when (/angiosperm/i) { $db = "Angiosperm"; }
-    when (/gymnosperm/i) { $db = "gymnosperm"; }
+    when (/angiosperm/i) {   $db = "Angiosperm"; }
+    when (/gymnosperm/i) {   $db = "gymnosperm"; }
     when (/pteridophyte/i) { $db = "pteridophyte"; }
-    when (/bryophyte/i) { $db = "bryophyte"; }
-    when (/algae/i) { $db = "algae"; }
-    default { die "Invalid name for option db."; }
+    when (/bryophyte/i) {    $db = "bryophyte"; }
+    when (/algae/i) {        $db = "algae"; }
+    default {                die "Invalid name for option db."; }
 }
 
 #
@@ -209,10 +210,10 @@ unless ($response->is_success) {
 #
 # Open and parse the results
 #
-open (my $XHTML, '<', $Kew_response) or die "\nERROR: Could not open file: $Kew_response";
-open (my $Kew_results, '>', $outfile) or die "\nERROR: Could not open file: $outfile";
+open my $xhtml, '<', $Kew_response or die "\nERROR: Could not open file: $Kew_response";
+open my $Kew_results, '>', $outfile or die "\nERROR: Could not open file: $outfile";
 
-while (my $cvalues = <$XHTML>) {
+while (my $cvalues = <$xhtml>) {
     chomp $cvalues;
     my $FAM = uc($family);
     while ($cvalues =~ m/($FAM)<.*?><.*?>(\w+)<.*?><.*?>(\w+.*?)<.*?><.*?>(\d+|)<.*?><.*?>(\d+|)<.*?><.*?>(\d+)/g) {
@@ -238,28 +239,27 @@ while (my $cvalues = <$XHTML>) {
 		for ( 1..2 ) { 
 		    $tr = $entrezdb->get_Taxonomy_Node(-taxonid => $tr->parent_id);
 		}
-		print $Kew_results join("\t",($kewfam, $sf->scientific_name, $tr->scientific_name, $genus, $species, $chrnum, $ploidy, $cval)),"\n"		    
+		say $Kew_results join "\t", $kewfam, $sf->scientific_name, $tr->scientific_name, $genus, $species, $chrnum, $ploidy, $cval; 
 	    } else {
-		print $Kew_results join("\t",($kewfam, "", "", $genus, $species, $chrnum, $ploidy, $cval)),"\n";
+		say $Kew_results join "\t", $kewfam, "", "", $genus, $species, $chrnum, $ploidy, $cval;
 	    }
 	} else {
-	    print $Kew_results join("\t",($kewfam, $genus, $species, $chrnum, $ploidy, $cval)),"\n";
+	    say $Kew_results join "\t", $kewfam, $genus, $species, $chrnum, $ploidy, $cval;
 	}
     }
 }
 
-close($XHTML);
-close($Kew_results);
-unlink($Kew_response);
+close $xhtml;
+close $Kew_results;
+unlink $Kew_response;
 
 my $t1 = gettimeofday();
 my $elapsed = $t1 - $t0;
 my $time = sprintf("%.2f",$elapsed/60);
 
-print "Fetched $records records in $time m:s.\n";
+say "Fetched $records records in $time m:s.";
 
 exit;
-
 #
 # Subroutines
 #
