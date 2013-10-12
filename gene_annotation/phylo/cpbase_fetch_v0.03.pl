@@ -118,6 +118,7 @@ my $id_map = get_species_id($urlbase);
 
 my $te = HTML::TableExtract->new( attribs => { border => 1 } );
 $te->parse_file($cpbase_response);
+
 for my $ts ($te->tables) {
     for my $row ($ts->rows) {
 	my @elem = grep { defined } @$row;
@@ -193,7 +194,6 @@ sub get_cp_data {
     my $te = HTML::TableExtract->new( attribs => { border => 1 } );
     $te->parse_file($cpbase_response);
     
-    $te->parse_file($cpbase_response);
     for my $ts ($te->tables) {
 	for my $row ($ts->rows) {
 	    my @elem = grep { defined } @$row;
