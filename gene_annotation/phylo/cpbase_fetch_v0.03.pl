@@ -11,6 +11,7 @@ use warnings;
 use Getopt::Long;
 use File::Basename;
 use Time::HiRes qw(gettimeofday);
+use IPC::System::Simple qw(system);
 use Try::Tiny;
 use Pod::Usage;
 use WWW::Mechanize;
@@ -26,6 +27,7 @@ no if $] >= 5.018, 'warnings', "experimental::switch";
 #
 my $db;
 my $all;
+my $type;
 my $genus;
 my $species;
 my $outfile; ## log
@@ -42,7 +44,8 @@ my $cpbase_response = "CpBase_database_response.html"; # HTML
 GetOptions(
            'all'              => \$all,
            'd|db=s'           => \$db,
-	   'g|genus=s'        => \$genus,
+           't|type=s'         => \$type,
+           'g|genus=s'        => \$genus,
 	   's|species=s'      => \$species,
 	   'o|outfile=s'      => \$outfile,
            'stats|statistics' => \$statistics,
@@ -58,14 +61,22 @@ GetOptions(
 #
 # check @ARGV
 #
-if (!$genus && !$species && !$db) {
-   say "\nERROR: Command line not parsed correctly. Exiting.";
+if (!$db) {
+   say "\nERROR: A database to query must be given. Exiting.";
    usage();
    exit(1);
 }
 
+if (!$genus && $species) {
+    say "\nERROR: Can not query a species without a genus. Exiting.";
+    usage();
+    exit(1);
+}
+
 # make epithet
-my $epithet = $genus."_".$species;
+my $epithet;
+$epithet = $genus."_".$species if $genus && $species;
+my %stats;
 
 #
 # counters
@@ -75,7 +86,7 @@ my $records = 0;
 my $genomes;
 
 #
-# Set the CpBase database to search
+# Set the CpBase database to search and type
 #
 given ($db) {
     when (/algae/i) {             $db = "Algae"; }
@@ -87,11 +98,12 @@ given ($db) {
     default {                     die "Invalid name for option db."; }
 }
 
+$type //= 'fasta';
+
 #
 # create the UserAgent
 # 
 my $ua = LWP::UserAgent->new;
-my $tree = HTML::TreeBuilder->new;
 
 #
 # perform the request
@@ -101,7 +113,6 @@ my $response = $ua->get($urlbase);
 
 #
 # check for a response
-#
 unless ($response->is_success) {
     die "Can't get url $urlbase -- ", $response->status_line;
 }
@@ -123,28 +134,36 @@ for my $ts ($te->tables) {
 	my @elem = grep { defined } @$row;
 	if ($elem[0] =~ /(\d+) Genomes/i) {
 	    $genomes = $1;
-	    say "$genomes genomes available in $db." and exit if $available;
+	    say "$genomes $db genomes available in CpBase." and exit if $available;
 	}
 	else {
 	    my ($organism,$locus,$sequence_length,$assembled,$annotated,$added) = @elem;
-	    $organism =~ s/\s+/_/;
-	    my $file = "http://chloroplast.ocean.washington.edu/CpBase_data/$locus/files/$organism"."_".$locus;
-	    my $gb = $file.".gb";
-	    my $fas = $file.".fas";
+	    $organism =~ s/\s+/_/g;
 	    
-	    if (exists $id_map->{$organism} && $organism =~ /$epithet/i) {
-		my $id = $id_map->{$organism};
-		my $assem_stats = get_cp_data($id);
-		dd $assem_stats;
-		# annotations
-		# http://chloroplast.ocean.washington.edu/tools/cpbase/run?genome_id=750&view=genome
+	    if (exists $id_map->{$organism}) {
+		if ($genus && $species && $organism =~ /\Q$epithet\E/i) {
+		    my $id = $id_map->{$organism};
+		    my $assem_stats = get_cp_data($id);
+		    $stats{$organism} = $assem_stats;
+		    #dd \%stats;
+		    # annotations
+		    # http://chloroplast.ocean.washington.edu/tools/cpbase/run?genome_id=750&view=genome
+		    ## write code to fetch assemblies here
+		    #say join "\t", $type, $locus, $organism;
+		    fetch_files($type, $locus, $organism) if $assemblies;
+		}
+		elsif ($genus && $organism =~ /\Q$genus\E/i) {
+		    #say $organism;
+		    my $id = $id_map->{$organism};
+		    my $assem_stats = get_cp_data($id);
+		    $stats{$organism} = $assem_stats;
+		}
 	    }
 	}
     }
 }
-exit;
-
-#unlink $cpbase_response;
+dd \%stats;
+unlink $cpbase_response;
 
 #
 # subroutines
@@ -164,7 +183,6 @@ sub get_species_id {
 	my $ep = $g."_".$sp;
 	if ($link->url =~ /id=(\d+)/) {
 	    #printf "%s %s, %d\n", $g, $sp, $1;
-	    # http://chloroplast.ocean.washington.edu/CpBase_data/NC_007797/files/Helianthus_annuus_NC_007977.fasta
 	    $id_map{$ep} = $1;
 	}
     }
@@ -176,7 +194,6 @@ sub get_cp_data {
     
     my %assem_stats;
     my $ua = LWP::UserAgent->new;
-    my $tree = HTML::TreeBuilder->new;
     my $cpbase_response = "CpBase_database_response_$id".".html";
 
     my $urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run?genome_id=$id&view=genome";
@@ -235,6 +252,30 @@ sub get_cp_data {
 	}
     }
     return \%assem_stats;
+}
+
+sub fetch_files {
+    my ($type, $locus, $organism) = @_;
+
+    my $file = $organism."_".$locus;
+    my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/$locus/files/$file";
+
+    if ($type eq 'genbank') {
+	$file = $file.".gb";
+	$endpoint = $endpoint.".gb";
+    }
+    elsif ($type eq 'fasta') {
+	$file = $file.".fasta";
+	$endpoint = $endpoint.".fasta";
+    }
+
+    my $exit_code;
+    try {
+	$exit_code = system([0..5], "wget -O $file $endpoint");
+    }
+    catch {
+	say "\nERROR: wget exited abnormally with exit code $exit_code. Here is the exception: $_\n";
+    };
 }
 
 sub usage { 
