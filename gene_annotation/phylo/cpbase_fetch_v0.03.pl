@@ -14,7 +14,6 @@ use Time::HiRes qw(gettimeofday);
 use Try::Tiny;
 use Pod::Usage;
 use WWW::Mechanize;
-use HTML::TreeBuilder;
 use HTML::TableExtract;
 use LWP::UserAgent;
 use Data::Dump qw(dd);
@@ -30,10 +29,10 @@ my $all;
 my $genus;
 my $species;
 my $outfile; ## log
+my $statistics;
+my $available;
 my $help;
 my $man;
-my $sequences;
-my $alignments;
 my $assemblies;
 my $cpbase_response = "CpBase_database_response.html"; # HTML
 
@@ -46,8 +45,8 @@ GetOptions(
 	   'g|genus=s'        => \$genus,
 	   's|species=s'      => \$species,
 	   'o|outfile=s'      => \$outfile,
-	   'seq|sequences'    => \$sequences,
-           'aln|alignments'   => \$alignments,
+           'stats|statistics' => \$statistics,
+           'available'        => \$available,
            'asm|assemblies'   => \$assemblies,
 	   'h|help'           => \$help,
 	   'm|man'            => \$man,
@@ -65,7 +64,7 @@ if (!$genus && !$species && !$db) {
    exit(1);
 }
 
-#die "USAGE: perl $0 dbname\n" if !$db;
+# make epithet
 my $epithet = $genus."_".$species;
 
 #
@@ -123,8 +122,8 @@ for my $ts ($te->tables) {
     for my $row ($ts->rows) {
 	my @elem = grep { defined } @$row;
 	if ($elem[0] =~ /(\d+) Genomes/i) {
-	    #print $1, " genomes\n";
 	    $genomes = $1;
+	    say "$genomes genomes available in $db." and exit if $available;
 	}
 	else {
 	    my ($organism,$locus,$sequence_length,$assembled,$annotated,$added) = @elem;
