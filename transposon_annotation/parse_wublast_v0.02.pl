@@ -8,24 +8,31 @@ use List::MoreUtils qw(uniq);
 use Statistics::Descriptive;
 use Getopt::Long;
 
-my $usage = "perl $0 -i infile -q query -t target -ml mer_len -fl filter_len";
+my $usage = "perl $0 -i infile -q query -t target -ml mer_len -fl filter_len [-e] [-pid]\n";
 my $infile;
 my $query; 
 my $target;
 my $mer_len;
 my $filter_len;
+my $evalue;
+my $pid;
 
 GetOptions(
-	   'i|infile=s'      => \$infile,
-	   'q|query=s'       => \$query,
-	   't|target=s'      => \$target,
-	   'ml|merlen=i'     => \$mer_len,
-	   'fl|filter_len=i' => \$filter_len,
-	   );
+	   'i|infile=s'       => \$infile,
+	   'q|query=s'        => \$query,
+	   't|target=s'       => \$target,
+	   'ml|merlen=i'      => \$mer_len,
+	   'fl|filter_len=i'  => \$filter_len,
+	   'e|evalue=f'       => \$evalue,
+	   'pid|perc_ident=i' => \$pid,
+   );
 
 die $usage if !$infile or !$query or !$target or !$mer_len;
 
 $filter_len //= 50;
+$evalue //= 10;
+$pid //= 80;
+
 my ($store, $seq_ct) = store_seq_len($query);
 say STDERR "Finished storing $seq_ct sequences in $query.";
 my ($tstore, $tseq_ct) = store_seq_len($target);
@@ -62,7 +69,7 @@ while (<$in>) {
     # sframe   | the reading frame in the subject sequence (+0 for protein sequences in BLASTP and BLASTX searches)
     # sstart   | the starting coordinate of the alignment in the subject sequence
     # send     | the ending coordinate of the alignment in the subject sequence
-    if ($alignlen >= $filter_len) {
+    if ($alignlen >= $filter_len && $pcident >= $pid) {
 	if (exists $matches{$qid}) {
 	    push @{$matches{$qid}}, $sid;
 	}
@@ -103,18 +110,20 @@ for my $trans (reverse sort { $trans_cov{$a} <=> $trans_cov{$b} } keys %trans_co
 }
 
 my $count = $stat->count;
-my $mean = $stat->mean;
-my $medi = $stat->median;
-my $var = $stat->variance;
-my $min= $stat->min;
-my $max= $stat->max;
-my $sd = $stat->standard_deviation;
+my $mean  = $stat->mean;
+my $medi  = $stat->median;
+my $var   = $stat->variance;
+my $min   = $stat->min;
+my $max   = $stat->max;
+my $sd    = $stat->standard_deviation;
 
 say STDERR join "\t", "Count", "Mean", "Median", "Variance", "SD", "Min", "Max";
 say STDERR join "\t", $count, $mean, $medi, $var, $sd, $min, $max;
-say STDERR join "\t", "cval_by_mean", "cval_by_median";
-say STDERR join "\t", ($bases/$mean), ($bases/$medi);
+say STDERR join "\t", "cval_by_mean", "cval_by_median", "cval_by_min", "cval_by_max";
+say STDERR join "\t", ($bases/$mean), ($bases/$medi), ($bases/$min), ($bases/$max);
 
+undef $stat;
+exit;
 #
 # subs
 #
