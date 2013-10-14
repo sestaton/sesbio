@@ -29,7 +29,8 @@ $filter_len //= 50;
 my ($store, $seq_ct) = store_seq_len($query);
 say STDERR "Finished storing $seq_ct sequences in $query.";
 my ($tstore, $tseq_ct) = store_seq_len($target);
-say STDERR "Finished storing $tseq_ct sequences in $target.";
+my $bases = $mer_len * $tseq_ct;
+say STDERR "Finished storing $tseq_ct sequences in $target ($bases bases).";
 
 my %matches;
 
@@ -101,8 +102,6 @@ for my $trans (reverse sort { $trans_cov{$a} <=> $trans_cov{$b} } keys %trans_co
     $stat->add_data($trans_cov{$trans});
 }
 
-my $bases = $mer_len * $tseq_ct;
-
 my $count = $stat->count;
 my $mean = $stat->mean;
 my $medi = $stat->median;
@@ -114,7 +113,8 @@ my $sd = $stat->standard_deviation;
 say STDERR join "\t", "Count", "Mean", "Median", "Variance", "SD", "Min", "Max";
 say STDERR join "\t", $count, $mean, $medi, $var, $sd, $min, $max;
 say STDERR join "\t", "cval_by_mean", "cval_by_median";
-say STDERR join "\t", ($bases * $mean), ($bases * $medi);
+say STDERR join "\t", ($bases/$mean), ($bases/$medi);
+
 #
 # subs
 #
