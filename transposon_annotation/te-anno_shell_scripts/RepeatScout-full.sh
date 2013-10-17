@@ -41,7 +41,8 @@ cd /scratch/statonse/for_RepeatScout/
 # IMPORTANT: v1.0.5 will read a multifasta but X's are not allowed in the sequence
 time build_lmer_table -sequence CGP_JMBLAB_MCU_sunflowerBACs_11-09_noX.fasta -freq CGP_JMBLAB_MCU_sunflowerBACs_11-09_noX.freq
 
-# run RepeatScout in verbose mode for debug, -stopafter sets the number of columns to search after no good alignment is found. Default is 100 to decrease running time, but 500 was used in the paper and may give a better result
+# run RepeatScout in verbose mode for debug, -stopafter sets the number of columns to search after no good alignment is found. 
+# Default is 100 to decrease running time, but 500 was used in the paper and may give a better result
 time RepeatScout -sequence CGP_JMBLAB_MCU_sunflowerBACs_11-09_noX.fasta -output CGP_JMBLAB_MCU_sunflowerBACs_11-09_noX.rs -freq CGP_JMBLAB_MCU_sunflowerBACs_11-09_noX.freq -stopafter 500 -vvvv
 
 # filter-stage-1 removes tandem and low-complexity repeats that are unlikely to be mobile elements
