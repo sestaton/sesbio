@@ -1,4 +1,5 @@
 #!/bin/bash
+
 cd /scratch/statonse/for_RepeatScout/RM_20404.TueNov300822312010
 
 # ncbi-latest
