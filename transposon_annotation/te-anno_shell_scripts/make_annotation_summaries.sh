@@ -1,5 +1,10 @@
 #!/bin/bash
 
+## NB: This script deprecated; it preceeded the existence of Transposome (https://github.com/sestaton/Transposome),
+##     which will generate genome coverage summaries from clustering reports automatically. Use Transposome,
+##     it's far more convenient and accurate. 10/19/13 SES
+
+
 ## Ageratina
 perl annotation_summary_to_gcov.pl -i \
 Ageratina_CAGATC_prinseq_trimmed_clean_desc_paired_scr_500k_interl_mgblast_90PID_55PCOV_merged_cluster_report_4-1_annotations_summary.tsv \
