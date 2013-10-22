@@ -26,7 +26,7 @@ GetOptions(
 	   'fl|filter_len=i'  => \$filter_len,
 	   'e|evalue=f'       => \$evalue,
 	   'pid|perc_ident=i' => \$pid,
-   );
+	   );
 
 die $usage if !$infile or !$query or !$target or !$mer_len;
 
@@ -136,76 +136,26 @@ sub store_seq_len {
     my $kseq = Bio::Kseq->new($query);
     my $it = $kseq->iterator;
 
-    #my @aux = undef;
-    #my ($name, $comm, $seq, $qual);
     my ($n, $slen, $qlen, $seq_ct) = (0, 0, 0, 0);
-    #while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
     while( my $seq = $it->next_seq) {
 	$seq_ct++;
 	$store{ $seq->{name} } = length($seq->{seq});
     }
-    #close $in;
+
     return \%store, $seq_ct;
 }
 
 sub get_seq_ct {
     my ($target) = @_;
 
-    #open my $in, '<', $target;
     my $kseq = Bio::Kseq->new($target);
     my $it = $kseq->iterator;
 
-    #my @aux = undef;
-    #my ($name, $comm, $seq, $qual);
     my ($n, $slen, $qlen, $seq_ct) = (0, 0, 0, 0);
-    #while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
     while (my $seq = $it->next_seq) {
         $seq_ct++;
     }
-    #close $in;
+
     return \$seq_ct;
 }
 
-sub readfq {
-    my ($fh, $aux) = @_;
-    @$aux = [undef, 0] if (!@$aux);
-    return if ($aux->[1]);
-    if (!defined($aux->[0])) {
-	while (<$fh>) {
-	    chomp;
-	    if (substr($_, 0, 1) eq '>' || substr($_, 0, 1) eq '@') {
-		$aux->[0] = $_;
-		last;
-	    }
-	}
-	if (!defined($aux->[0])) {
-	    $aux->[1] = 1;
-	    return;
-	}
-    }
-    my ($name, $comm) = /^.(\S+)(?:\s+)(\S+)/ ? ($1, $2) : 
-	                /^.(\S+)/ ? ($1, '') : ('', '');
-    my $seq = '';
-    my $c;
-    $aux->[0] = undef;
-    while (<$fh>) {
-	chomp;
-	$c = substr($_, 0, 1);
-	last if ($c eq '>' || $c eq '@' || $c eq '+');
-	$seq .= $_;
-    }
-    $aux->[0] = $_;
-    $aux->[1] = 1 if (!defined($aux->[0]));
-    return ($name, $comm, $seq) if ($c ne '+');
-    my $qual = '';
-    while (<$fh>) {
-	chomp;
-	$qual .= $_;
-	if (length($qual) >= length($seq)) {
-	    $aux->[0] = undef;
-	    return ($name, $comm, $seq, $qual);
-	}
-    }
-    $aux->[1] = 1;
-    return ($name, $seq);
-}
