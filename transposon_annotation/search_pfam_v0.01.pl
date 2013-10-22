@@ -50,7 +50,9 @@ for my $ts ($te->tables) {
     for my $row ($ts->rows) {
         my @elem = grep { defined } @$row;
 	next if $elem[0] =~ /^\QOriginal\E/;
-	$results{$elem[1]} = { $elem[2] => $elem[3] };
+	if ($elem[3] =~ /\Q$term\E/) {
+	    $results{$elem[1]} = { $elem[2] => $elem[3] };
+	}
     }
 }
 
