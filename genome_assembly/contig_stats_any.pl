@@ -1,4 +1,5 @@
-#! /usr/bin/perl -w
+#! /usr/bin/env perl
+
 # chienchi@lanl.gov
 # generate some stats for Newbler or Velvet (>0.7.6) contigs.
 # Assume contigs fasta file is in the assembly output folder
@@ -7,8 +8,11 @@
 # 20100423
 # no flag -t can generate some statistics with contig file only.
 # 20100708
+#
+# modified by S. Evan Staton <statonse at gmail dot com>
 
 use strict;
+use warnings;
 use File::Basename;
 use Getopt::Long;
 
@@ -39,36 +43,36 @@ while(<>) {
 	$seq_num++;
 	if ($len > 0) {
 	    stats($len);
-	    push @x,$len;
+	    push @x, $len;
 	    $GC_num = $seq =~ tr/GCgc/GCgc/;
 	    $GC_content = $GC_num/$len;
 	}
-	$len=0;
-	$seq="";
+	$len = 0;
+	$seq = "";
     }
     else {
 	s/\s//g;
-	$len+=length($_);
-	$seq.=$_;
+	$len += length($_);
+	$seq .= $_;
     }
 }
 
 if ($len > 0) {
     stats($len);
-    push @x,$len;
+    push @x, $len;
     $GC_num = $seq =~ tr/GCgc/GCgc/;
     $GC_content = $GC_num/$len;
 }
-@x=sort{$b<=>$a} @x;
+@x= sort { $b <=> $a } @x;
 my $N50;
 my $N90;
 my ($count,$half)=(0,0);
-for (my $j=0;$j<@x;$j++) {
+for (my $j = 0; $j < @x; $j++) {
     $count+=$x[$j];
-    if (($count>=$total/2)&&($half==0)){
+    if (($count >= $total / 2) && ($half == 0)){
 	$N50=$x[$j];
 	$half=$x[$j]
-    } elsif ($count>=$total*0.9){
+    } elsif ($count >= $total * 0.9){
 	$N90=$x[$j];
 	last;
     }
@@ -76,10 +80,10 @@ for (my $j=0;$j<@x;$j++) {
 
 my ($top10, $top20, $top40, $top100);
 for (0..99) {
-    $top10+= $x[$_] if ($_<9 and $x[$_]);
-    $top20+= $x[$_] if ($_<19 and $x[$_]);
-    $top40+= $x[$_] if ($_<39 and $x[$_]);
-    $top100+= $x[$_] if ($_<99 and $x[$_]);
+    $top10 += $x[$_] if ($_ < 9 and $x[$_]);
+    $top20 += $x[$_] if ($_ < 19 and $x[$_]);
+    $top40 += $x[$_] if ($_ < 39 and $x[$_]);
+    $top100 += $x[$_] if ($_ < 99 and $x[$_]);
 }
 
 print "Contigs_number:\t$seq_num\n";
@@ -104,7 +108,6 @@ print ">1kb_bases:\t$over1k_bases\n";
 #
 # Subs
 #
-
 sub Usage {
     print STDERR "perl $0 <contigs.fasta>\n";
     print STDERR "     -help       print usage\n";
@@ -113,13 +116,13 @@ sub Usage {
 
 sub stats {
     my $len = shift;
-    $total+=$len;
-    $over100k_bases+=$len if ($len>100000);
-    $over50k_bases+=$len if ($len>50000);
-    $over25k_bases+=$len if ($len>25000);
-    $over10k_bases+=$len if ($len>10000);
-    $over5k_bases+=$len if ($len>5000);
-    $over3k_bases+=$len if ($len>3000);
-    $over2k_bases+=$len if ($len>2000);
-    $over1k_bases+=$len if ($len>1000);
+    $total += $len;
+    $over100k_bases += $len if ($len > 100000);
+    $over50k_bases += $len if ($len > 50000);
+    $over25k_bases += $len if ($len > 25000);
+    $over10k_bases += $len if ($len > 10000);
+    $over5k_bases += $len if ($len > 5000);
+    $over3k_bases += $len if ($len > 3000);
+    $over2k_bases += $len if ($len > 2000);
+    $over1k_bases += $len if ($len > 1000);
 }
