@@ -61,6 +61,8 @@ if ($fetch_results) {
 }
 
 if ($fetch_hmms) {
+    my $to_get = scalar(keys %results);
+    say "========== Will attempt to get $to_get HMMs from the Pfam Database at the Sanger Institute.";
     for my $family (keys %results) {
 	fetch_hmm_files($family);
     }
@@ -86,6 +88,7 @@ sub fetch_hmm_files {
         die "Can't get url $urlbase -- ", $response->status_line;
     }
 
+    say "========== Fetching HMM for $family.";
     open my $out, '>', $fam_hmm or die "\nERROR: Could not open file: $!\n";
     say $out $response->content;
     close $out;
