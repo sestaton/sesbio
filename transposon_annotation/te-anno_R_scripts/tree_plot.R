@@ -1,4 +1,5 @@
 ## commands for producing a nice looking plot
+## NB: the collapse.singles function may not be necessary, depending on the tree
 
 library(ape)
 aster.tr <- read.tree("asteraceae_rooted_phylo_nobrlen_latest.newick")
