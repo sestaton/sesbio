@@ -10,23 +10,25 @@ use XML::LibXML;
 use Getopt::Long;
 use Data::Dump qw(dd dump);
 
-my $usage = "perl $0 -t search_term [-r] [-hmms]\n";
+my $usage = "perl $0 -st search_term [-ft] [fs] [-r] [-hmms]\n";
 my $search_term;
 my $fetch_results;
 my $fetch_hmms;
 my $family_term;
+my $filter_search;
 
 GetOptions(
-	   't|term=s'   => \$search_term,
-	   'r|results'  => \$fetch_results,
-	   'hmms'       => \$fetch_hmms,
-           'f|family=s' => \$family_term,
+	   'st|term=s'        => \$search_term,
+	   'r|results'        => \$fetch_results,
+	   'hmms'             => \$fetch_hmms,
+           'ft|family=s'      => \$family_term,
+	   'fs|filter_search' => \$filter_search,
 	   );
 
-say $usage and exit(1) if !$term;
+say $usage and exit(1) if !$search_term && !$family_term;
 say "\nERROR: Can only choose a search term or a family term, not both." and exit(1) if $search_term and $family_term;
 
-$term = ucfirst($term);
+$family_term = ucfirst($family_term) if $family_term;
 my $pfam_response = qq{pfam_sanger_search_res.html};
 my $ua = LWP::UserAgent->new;
 my $tree = HTML::TreeBuilder->new;
@@ -47,7 +49,7 @@ die "error: failed to retrieve XML: " . $response->status_line . "\n"
 # parse the results
 #
 if ($search_term) {
-    $results = parse_search_term($response, $pfam_response);
+    $results = parse_search_term($search_term, $response, $pfam_response);
 }
 elsif ($family_term) {
     $results = parse_family_term($response);
@@ -63,19 +65,19 @@ if ($fetch_results) {
 if ($fetch_hmms) {
     my $to_get = scalar(keys %$results);
     say "========== Will attempt to get $to_get HMMs from the Pfam Database at the Sanger Institute.";
-    for my $family (keys %results) {
+    for my $family (keys %$results) {
 	fetch_hmm_files($family);
     }
 }
 
-unlink $pfam_response;
+#unlink $pfam_response;
 exit;
 
 #
 # subroutines
 #
 sub parse_search_term {
-    my ($response, $pfam_response) = @_;
+    my ($search_term, $response, $pfam_response) = @_;
 
     my %results;
     open my $out, '>', $pfam_response or die "\nERROR: Could not open file: $!\n";
@@ -89,8 +91,13 @@ sub parse_search_term {
     for my $ts ($te->tables) {
 	for my $row ($ts->rows) {
 	    my @elem = grep { defined } @$row;
-	    next if $elem[0] =~ /^\QOriginal\E/;
-	    if ($elem[3] =~ /\Q$term\E/) {
+	    next if $elem[0] =~ /^Original/;
+	    if ($filter_search) {
+		if ($elem[3] =~ /\Q$search_term\E/) {
+		    $results{$elem[1]} = { $elem[2] => $elem[3] };
+		}
+	    }
+	    else {
 		$results{$elem[1]} = { $elem[2] => $elem[3] };
 	    }
 	}
@@ -114,7 +121,7 @@ sub parse_family_term {
     my $id   = $entry->getAttribute('id');
     my $desc = $entry->getAttribute('description');
     #print 'accession: ' . $entry->getAttribute( 'accession' ) . "\n";
-    say join $acc, $id, $desc; # for debug
+    say join "\t", $acc, $id, $desc; # for debug
     #$results{$acc} = { $id => $desc };
     #return \%results;
 }
