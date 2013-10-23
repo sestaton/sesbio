@@ -1,5 +1,84 @@
 #!/usr/bin/env perl
 
+=head1 NAME 
+                                                                       
+kewfetch_plantCvalues.pl - Fetch C-values for a plant family  
+
+=head1 SYNOPSIS    
+ 
+kewfetch_plantCvalues.pl -f familyname -e email -o resultsfile
+
+=head1 DESCRIPTION
+                                                                   
+
+(...)
+
+=head1 DEPENDENCIES
+
+This client uses URI to format data for a request, and LWP::UserAgent 
+and HTTP GET to perform a request.
+
+Tested with:
+
+(to be added later)
+
+=head1 LICENSE
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=head1 AUTHOR 
+
+S. Evan Staton                                                
+
+=head1 CONTACT
+ 
+statonse at gmail dot com
+
+=head1 REQUIRED ARGUMENTS
+
+=over 2
+
+=item -d, --db
+
+The database to search. Can be one of Angiosperm, Gymnosperm,
+Pteridophyte, Bryophyte, Algae. Case is not important but the 
+database MUST be spelled correctly.
+
+=item -f, --family
+
+The name of the plant family to search for.
+
+=item -e, --email
+
+An email must be used to fill out the query form online.
+
+=back
+
+=head1 OPTIONS
+
+=over 2
+
+=item -h, --help
+
+Print a usage statement. 
+
+=item -m, --man
+
+Print the full documentation.
+
+=cut      
+
 use 5.014;
 use strict;
 use warnings;
@@ -8,6 +87,7 @@ use HTML::TreeBuilder;
 use HTML::TableExtract;
 use XML::LibXML;
 use Getopt::Long;
+use Pod::Usage;
 use Data::Dump qw(dd dump);
 
 my $usage = "perl $0 -st search_term [-ft] [fs] [-r] [-hmms]\n";
@@ -16,6 +96,8 @@ my $fetch_results;
 my $fetch_hmms;
 my $family_term;
 my $filter_search;
+my $help;
+my $man;
 
 GetOptions(
 	   'st|term=s'        => \$search_term,
@@ -23,7 +105,12 @@ GetOptions(
 	   'hmms'             => \$fetch_hmms,
            'ft|family=s'      => \$family_term,
 	   'fs|filter_search' => \$filter_search,
+	   'h|help'           => \$help,
+	   'm|man'            => \$man,
 	   );
+
+pod2usage( -verbose => 1 ) if $help;
+pod2usage( -verbose => 2 ) if $man;
 
 say $usage and exit(1) if !$search_term && !$family_term;
 say "\nERROR: Can only choose a search term or a family term, not both." and exit(1) if $search_term and $family_term;
