@@ -110,7 +110,13 @@ sub parse_family_term {
     my $root = $dom->documentElement();
     my ( $entry ) = $root->getChildrenByTagName( 'entry' );
 
-    print 'accession: ' . $entry->getAttribute( 'accession' ) . "\n";
+    my $acc  = $entry->getAttribute('accession');
+    my $id   = $entry->getAttribute('id');
+    my $desc = $entry->getAttribute('description');
+    #print 'accession: ' . $entry->getAttribute( 'accession' ) . "\n";
+    say join $acc, $id, $desc; # for debug
+    #$results{$acc} = { $id => $desc };
+    #return \%results;
 }
 
 sub fetch_hmm_files {
