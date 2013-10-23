@@ -2,11 +2,11 @@
 
 =head1 NAME 
                                                                        
-kewfetch_plantCvalues.pl - Fetch C-values for a plant family  
+pfam_fetch.pl - Fetch data or HMMs for any search term 
 
 =head1 SYNOPSIS    
  
-kewfetch_plantCvalues.pl -f familyname -e email -o resultsfile
+pfam_fetch.pl -st transposase -r -fs
 
 =head1 DESCRIPTION
                                                                    
@@ -15,8 +15,8 @@ kewfetch_plantCvalues.pl -f familyname -e email -o resultsfile
 
 =head1 DEPENDENCIES
 
-This client uses URI to format data for a request, and LWP::UserAgent 
-and HTTP GET to perform a request.
+This client uses LWP::UserAgent to perform a request, XML::LibXML, 
+HTML::TreeBuilder, and HTML::TableExtract to parse the response.
 
 Tested with:
 
@@ -49,19 +49,9 @@ statonse at gmail dot com
 
 =over 2
 
-=item -d, --db
+=item -st, --search_term
 
-The database to search. Can be one of Angiosperm, Gymnosperm,
-Pteridophyte, Bryophyte, Algae. Case is not important but the 
-database MUST be spelled correctly.
-
-=item -f, --family
-
-The name of the plant family to search for.
-
-=item -e, --email
-
-An email must be used to fill out the query form online.
+=item -ft, --family_term
 
 =back
 
