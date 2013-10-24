@@ -259,8 +259,13 @@ sub parse_family_term {
     my $acc  = $entry->getAttribute('accession');
     my $id   = $entry->getAttribute('id');
     my $desc = $entry->getAttribute('description');
-    $results{$acc} = $id;
-    #$results{$acc} = { $id => $desc }; # can't get description from family search form
+    # According to the documentation (http://pfam.sanger.ac.uk/help#tabview=tab10)
+    # all families should have an associated accession, id, and description. Need to find
+    # out why some have not description.
+    #
+    #$results{$acc} = { $id => $desc }; # can't get description from family search form 
+
+    $results{$acc} = $id; # temp work around
     return \%results;
 }
 
