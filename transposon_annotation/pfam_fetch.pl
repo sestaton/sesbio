@@ -6,12 +6,38 @@ pfam_fetch.pl - Fetch data or HMMs for any search term
 
 =head1 SYNOPSIS    
  
-pfam_fetch.pl -st transposase -r -fs
+ perl pfam_fetch.pl -st transposase -r -fs
 
 =head1 DESCRIPTION
                                                                    
+This is a web client for fetching information, or HMMs, about certain terms 
+from the Pfam database at the Sanger Institute. The typical usage would be to
+search a general term and print the results. E.g., let's say you wanted to download
+the HMM for RVP but did not know the Pfam family name. First, search that term:
 
-(...)
+    $ perl pfam_fetch.pl -st RVP -r 
+    {
+      PF00072 => { Response_reg => "Response regulator receiver domain" },
+      PF00077 => { RVP => "Retroviral aspartyl protease" },
+      PF00478 => { IMPDH => "IMP dehydrogenase / GMP reductase domain" },
+      PF03505 => { Clenterotox => "Clostridium enterotoxin" },
+      PF08284 => { RVP_2 => "Retroviral aspartyl protease" },
+      PF09668 => { Asp_protease => "Aspartyl protease" },
+      PF13650 => { Asp_protease_2 => "Aspartyl protease" },
+    }
+
+At this point, it is clear that not all of the results are exactly what you want. So, you can
+narrow the results by specifying the family you want.
+
+    $ perl pfam_fetch.pl -ft RVP -r
+    { PF00077 => "RVP" }
+
+If desired, you can use this information to get the HMM for that model.
+    
+    $ perl pfam_fetch.pl -ft RVP --hmms
+    ========== Will attempt to get 1 HMMs from the Pfam Database at the Sanger Institute.
+    ========== Fetching HMM for PF00077.
+    ========== Done. Downloaded 1/1 models.
 
 =head1 DEPENDENCIES
 
@@ -20,22 +46,23 @@ HTML::TreeBuilder, and HTML::TableExtract to parse the response.
 
 Tested with:
 
-(to be added later)
+=over 2
+
+=item 
+
+Perl 5.18.0 (on Red Hat Enterprise Linux Server release 5.9 (Tikanga))
+
+=back
 
 =head1 LICENSE
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Copyright (C) 2013 S. Evan Staton
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+This program is distributed under the MIT (X11) License: http://www.opensource.org/licenses/mit-license.php
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 =head1 AUTHOR 
 
@@ -167,12 +194,15 @@ if ($fetch_results) {
     dd $results;
 }
 
+my $got_ct = 0;
 if ($fetch_hmms) {
     my $to_get = scalar(keys %$results);
     say "========== Will attempt to get $to_get HMMs from the Pfam Database at the Sanger Institute.";
     for my $family (keys %$results) {
 	fetch_hmm_files($family);
+	$got_ct++
     }
+    say "========== Done. Downloaded $got_ct/$to_get models.";
 }
 
 unlink $pfam_response;
