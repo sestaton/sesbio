@@ -14,8 +14,7 @@ meryl.pl - Compute k-mer frequencies for a set of DNA sequences
 
 =head1 DEPENDENCIES
 
-This client uses LWP::UserAgent to perform a request, XML::LibXML, 
-HTML::TreeBuilder, and HTML::TableExtract to parse the response.
+Non-core Perl modules used are IPC::System::Simple and Try::Tiny.
 
 Tested with:
 
@@ -37,9 +36,14 @@ Copyright (C) 2013 S. Evan Staton
 
 This program is distributed under the MIT (X11) License: http://www.opensource.org/licenses/mit-license.php
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
+associated documentation files (the "Software"), to deal in the Software without restriction, 
+including without limitation the rights to use, copy, modify, merge, publish, distribute, 
+sublicense, and/or sell copies of the Software, and to permit persons to whom the Software 
+is furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+The above copyright notice and this permission notice shall be included in all copies 
+or substantial portions of the Software.
 
 =head1 AUTHOR 
 
@@ -53,13 +57,13 @@ statonse at gmail dot com
 
 =over 2
 
-=item -st, --search_term
+=item -i, --infile
 
-A term to search Pfam for related entries.
+A Fasta file (contig or chromosome) to search.
 
-=item -ft, --family_term
+=item -o, --outfile
 
-A Pfam family term to search for a specific entry.
+The name a GFF3 file that will be created with the search results.
 
 =back
 
@@ -67,20 +71,28 @@ A Pfam family term to search for a specific entry.
 
 =over 2
 
-=item -r, --results
+=item -t, --target
 
-Print a table of search results for introspection.
+A file of WGS reads to index and search against the input Fasta.
 
-=item --hmms
+=item -k, --kmerlen
 
-Download HMMs for each search result. It is advisable to print the results
-first and make sure there are no spurrious results. Also, it may be helpful
-to filter the search results (see below).
+The k-mer length to use for building the index. Integer (Default: 20).
 
-=item -f, --filter_search
+=item -s, --search
 
-Use the search term to filter the descriptions in the results. This is not always
-necessary, but some terms may return dozens of results that are are unannotated.
+Search the input Fasta file against an existing index. The index must be
+specified with this option.
+
+=item -idx, --index
+
+The name of the index to search against the input Fasta. Leave this option off if you want 
+to build an index to search.
+
+=item --log
+
+Report the log number of counts instead of raw counts. This is often a good option with WGS
+data because many regions have very, very high coverage.
 
 =item -h, --help
 
@@ -141,6 +153,8 @@ if (!$infile || !$outfile || !$index) {
     usage();
     exit(1);
 }
+
+$k //= 20;
 
 my $meryl = findprog('meryl');
 my $mapMers = findprog('mapMers-depth');
