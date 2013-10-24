@@ -1,9 +1,107 @@
 #!/usr/bin/env perl
 
+=head1 NAME 
+                                                                       
+meryl.pl - Compute k-mer frequencies for a set of DNA sequences
+
+=head1 SYNOPSIS    
+ 
+ perl meryl.pl -i contig.fas -t target.fas -k 20 -o contig_target.gff
+
+=head1 DESCRIPTION
+
+ (...)
+
+=head1 DEPENDENCIES
+
+This client uses LWP::UserAgent to perform a request, XML::LibXML, 
+HTML::TreeBuilder, and HTML::TableExtract to parse the response.
+
+Tested with:
+
+=over 2
+
+=item *
+
+Perl 5.18.0 (on Red Hat Enterprise Linux Server release 5.9 (Tikanga))
+
+=item *
+
+Perl 5.16.0 (on Mac OS X 10.6.8 (Snow Leopard))
+
+=back
+
+=head1 LICENSE
+
+Copyright (C) 2013 S. Evan Staton
+
+This program is distributed under the MIT (X11) License: http://www.opensource.org/licenses/mit-license.php
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+=head1 AUTHOR 
+
+S. Evan Staton                                                
+
+=head1 CONTACT
+ 
+statonse at gmail dot com
+
+=head1 REQUIRED ARGUMENTS
+
+=over 2
+
+=item -st, --search_term
+
+A term to search Pfam for related entries.
+
+=item -ft, --family_term
+
+A Pfam family term to search for a specific entry.
+
+=back
+
+=head1 OPTIONS
+
+=over 2
+
+=item -r, --results
+
+Print a table of search results for introspection.
+
+=item --hmms
+
+Download HMMs for each search result. It is advisable to print the results
+first and make sure there are no spurrious results. Also, it may be helpful
+to filter the search results (see below).
+
+=item -f, --filter_search
+
+Use the search term to filter the descriptions in the results. This is not always
+necessary, but some terms may return dozens of results that are are unannotated.
+
+=item -h, --help
+
+Print a usage statement. 
+
+=item -m, --man
+
+Print the full documentation.
+
+=cut 
+##TODO: 1) Clean up POD
+##      2) Add readfq sub and remove bioperl dep   DONE
+##      3) add IPCSS and TryTiny                   DONE
+##      4) test all of the changes to the code
+
 use 5.010;
 use strict;
 use warnings;
-use Bio::SeqIO;
+use IPC::System::Simple qw(system);
+use Try::Tiny;
+use autodie qw(open);
 use Getopt::Long;
 use File::Basename;
 
@@ -54,7 +152,7 @@ if ($search) {
     $matches = meryl_search($infile, $idxname, $k);
 }
 
-my ($seqid,$seqlen) = return_seq($infile);
+my ($seqid, $seqlen) = return_seq($infile);
  
 open my $mers,'<',$matches or die "\nERROR: Could not open file: $matches\n";
 open my $gff,'>',$outfile or die "\nERROR: Could not open file: $outfile\n";
@@ -95,15 +193,20 @@ sub findprog {
 
 sub return_seq {
     my $infile = shift;
-    my $seq_in  = Bio::SeqIO->new( -format => 'fasta', -file => $infile);
 
+    my $in, '<', $infile;
     my %seq;  
     my $seqct = 0;
-    while (my $fas = $seq_in->next_seq) {
+
+    my @aux = undef;
+    my ($name, $comm, $seq, $qual);
+    my ($n, $slen, $qlen) = (0, 0, 0);
+    while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
 	$seqct++;
-	$seq{$fas->id} = $fas;
-	return ($fas->id, $fas->length);
+	$seq{$name} = $seq;
+	return ($name, length($seq));
     }
+    close $in;
 
     if ($seqct > 1) {
 	die "\nERROR: $seqct sequences present in $infile when only 1 sequence is expected. Exiting.\n";
@@ -118,7 +221,7 @@ sub return_seq {
 sub build_index {
     my ($db, $indexname, $k) = @_;
 
-    my $index = "$meryl ".
+    my @index = "$meryl ".
 	        "-v -B ".
                 "-m $k ".
 		"-s $db ".
@@ -126,7 +229,13 @@ sub build_index {
 		$index .= $index." 2>&1 > /dev/null" if $quiet;
 
     say "\n========> Creating meryl index for mersize $k for sequence: $db";
-    system($index);
+    my $exit_code;
+    try {
+	$exit_code = system([0..5], @index);
+    }
+    catch {
+	say "ERROR: meryl failed with exit code $exit_code. Here is the exception: $_.\n";
+    };
 }
 
 sub meryl_search {
@@ -135,14 +244,65 @@ sub meryl_search {
     my ($indfile,$inddir,$indext) = fileparse($indexname, qr/\.[^.]*/);
     my $searchout = $seqfile."_".$indfile.".meryl_mapMers-depth.out";
 
-    my $search = "$mapMers ".
+    my @search = "$mapMers ".
 	         "-m $k ".
 		 "-mers $indexname ".
 		 "-seq $infile ".
                  "> $searchout";
     say "\n========> Searching $infile with $indexname" unless $quiet;
-    system($search);
+    my $exit_code;
+    try {
+	$exit_code = system([0..5], @search);
+    }
+    catch {
+	say "ERROR: meryl mapMers failed with exit code $exit_code. Here is the exception: $_.\n";
+    }
+
     return $searchout;
+}
+
+sub readfq {
+    my ($fh, $aux) = @_;
+    @$aux = [undef, 0] if (!@$aux);
+    return if ($aux->[1]);
+    if (!defined($aux->[0])) {
+	while (<$fh>) {
+	    chomp;
+	    if (substr($_, 0, 1) eq '>' || substr($_, 0, 1) eq '@') {
+		$aux->[0] = $_;
+		last;
+	    }
+	}
+	if (!defined($aux->[0])) {
+	    $aux->[1] = 1;
+	    return;
+	}
+    }
+    my ($name, $comm) = /^.(\S+)(?:\s+)(\S+)/ ? ($1, $2) : 
+	                /^.(\S+)/ ? ($1, '') : ('', '');
+    my $seq = '';
+    my $c;
+    $aux->[0] = undef;
+    while (<$fh>) {
+	chomp;
+	$c = substr($_, 0, 1);
+	last if ($c eq '>' || $c eq '@' || $c eq '+');
+	$seq .= $_;
+    }
+    $aux->[0] = $_;
+    $aux->[1] = 1 if (!defined($aux->[0]));
+    return ($name, $comm, $seq) if ($c ne '+');
+    my $qual = '';
+    while (<$fh>) {
+	chomp;
+	$qual .= $_;
+	if (length($qual) >= length($seq)) {
+	    $aux->[0] = undef;
+	    return ($name, $comm, $seq, $qual);
+	}
+    }
+    $aux->[1] = 1;
+    return ($name, $seq);
 }
 
 sub usage {
