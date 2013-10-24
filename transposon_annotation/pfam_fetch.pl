@@ -30,7 +30,7 @@ the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
+but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
@@ -91,6 +91,7 @@ Print the full documentation.
 use 5.014;
 use strict;
 use warnings;
+use File::Basename;
 use LWP::UserAgent;
 use HTML::TreeBuilder;
 use HTML::TableExtract;
@@ -99,7 +100,6 @@ use Getopt::Long;
 use Pod::Usage;
 use Data::Dump qw(dd dump);
 
-my $usage = "perl $0 -st search_term [-ft] [fs] [-r] [-hmms]\n";
 my $search_term;
 my $fetch_results;
 my $fetch_hmms;
@@ -121,8 +121,17 @@ GetOptions(
 pod2usage( -verbose => 1 ) if $help;
 pod2usage( -verbose => 2 ) if $man;
 
-say $usage and exit(1) if !$search_term && !$family_term;
-say "\nERROR: Can only choose a search term or a family term, not both." and exit(1) if $search_term and $family_term;
+if (!$search_term && !$family_term) {
+    say "\nERROR: A search term or Pfam family must be given. Exiting.\n";
+    usage();
+    exit(1);
+}
+
+if ($search_term && $family_term) {
+    say "\nERROR: Can only choose a search term or a family term, not both. Exiting.\n";
+    usage();
+    exit(1);
+}
 
 $family_term = ucfirst($family_term) if $family_term;
 my $pfam_response = qq{pfam_sanger_search_res.html};
@@ -240,5 +249,25 @@ sub fetch_hmm_files {
     open my $out, '>', $fam_hmm or die "\nERROR: Could not open file: $!\n";
     say $out $response->content;
     close $out;
+}
+
+sub usage {
+    my $script = basename($0);
+  print STDERR <<END
+
+USAGE: $script -st term -r [-ft] [-fs] [--hmms] [-h] [-m]
+
+Required:
+    -st|term           :    The name of a domain or protein to search Pfam for similar entries.    
+
+Options:
+    -ft|family         :    A specific Pfam family to search for in the Pfam database.
+    -fs|filter_search  :    Filter the descriptions of individual results to remove non-specific results.
+    -r|results         :    Print a table of results for inspecting different search terms.
+    --hmms             :    Download the HMMs for each Pfam family returned by the search.
+    -h|help            :    Print a usage message and exit.
+    -m|man             :    Print the full documation.
+
+END
 }
 
