@@ -51,13 +51,32 @@ statonse at gmail dot com
 
 =item -st, --search_term
 
+A term to search Pfam for related entries.
+
 =item -ft, --family_term
+
+A Pfam family term to search for a specific entry.
 
 =back
 
 =head1 OPTIONS
 
 =over 2
+
+=item -r, --results
+
+Print a table of search results for introspection.
+
+=item --hmms
+
+Download HMMs for each search result. It is advisable to print the results
+first and make sure there are no spurrious results. Also, it may be helpful
+to filter the search results (see below).
+
+=item -f, --filter_search
+
+Use the search term to filter the descriptions in the results. This is not always
+necessary, but some terms may return dozens of results that are are unannotated.
 
 =item -h, --help
 
@@ -147,7 +166,7 @@ if ($fetch_hmms) {
     }
 }
 
-#unlink $pfam_response;
+unlink $pfam_response;
 exit;
 
 #
