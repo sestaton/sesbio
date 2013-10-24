@@ -10,7 +10,13 @@ meryl.pl - Compute k-mer frequencies for a set of DNA sequences
 
 =head1 DESCRIPTION
 
- (...)
+Use the sequence comparison functions from the kmer package 
+(http://sourceforge.net/apps/mediawiki/kmer/index.php?title=Main_Page). Currently, the
+only option is to index a set of sequences at some k-mer length, and find
+the depth of coverage of those mers in another sequence (contig or chromosome).
+
+There are a lot of mathematical functions that can be computed in this kmer package,
+and more of those functions will be added.
 
 =head1 DEPENDENCIES
 
@@ -94,6 +100,10 @@ to build an index to search.
 Report the log number of counts instead of raw counts. This is often a good option with WGS
 data because many regions have very, very high coverage.
 
+=item --quiet
+
+Do not print progress of the program to the screen.
+
 =item -h, --help
 
 Print a usage statement. 
@@ -103,7 +113,7 @@ Print a usage statement.
 Print the full documentation.
 
 =cut 
-##TODO: 1) Clean up POD
+##TODO: 1) Clean up POD                            DONE
 ##      2) Add readfq sub and remove bioperl dep   DONE
 ##      3) add IPCSS and TryTiny                   DONE
 ##      4) test all of the changes to the code
@@ -116,11 +126,6 @@ use Try::Tiny;
 use autodie qw(open);
 use Getopt::Long;
 use File::Basename;
-
-# input sequence to search
-# input sequence to index 
-#
-# output gff
 
 my $infile;
 my $outfile;
@@ -155,7 +160,6 @@ if (!$infile || !$outfile || !$index) {
 }
 
 $k //= 20;
-
 my $meryl = findprog('meryl');
 my $mapMers = findprog('mapMers-depth');
 
