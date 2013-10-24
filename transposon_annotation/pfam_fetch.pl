@@ -225,10 +225,9 @@ sub parse_family_term {
     my $acc  = $entry->getAttribute('accession');
     my $id   = $entry->getAttribute('id');
     my $desc = $entry->getAttribute('description');
-    #print 'accession: ' . $entry->getAttribute( 'accession' ) . "\n";
-    say join "\t", $acc, $id, $desc; # for debug
-    #$results{$acc} = { $id => $desc };
-    #return \%results;
+    $results{$acc} = $id;
+    #$results{$acc} = { $id => $desc }; # can't get description from family search form
+    return \%results;
 }
 
 sub fetch_hmm_files {
