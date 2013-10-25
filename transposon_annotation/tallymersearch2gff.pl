@@ -116,7 +116,7 @@ Print the full documentation.
 use 5.010;
 use strict;
 use warnings;
-use IPC::System::Simple qw(system);
+use IPC::System::Simple qw(capture system);
 use Try::Tiny;
 use Bio::SeqIO;
 use Getopt::Long;
@@ -247,7 +247,7 @@ exit;
 #
 sub findprog {
     my $prog = shift;
-    my $path = `which $prog 2> /dev/null`;
+    my $path = capture("which $prog 2> /dev/null");
     chomp $path;
     if ( (! -e $path) && (! -x $path) ) {
         die "\nERROR: Cannot find $prog binary. Exiting.\n\n";
@@ -303,7 +303,13 @@ sub build_suffixarray {
                  "-db $db ".
                  "-indexname $db";
     $suffix .= $suffix." 2>&1 > /dev/null" if $quiet;
-    system($suffix);
+    my $exit_code;
+    try {
+	$exit_code = system([0..5], $suffix);
+    }
+    catch {
+	say "ERROR: gt suffixerator failed with exit code: $exit_code. Here is the exception: $_.\n";
+    };
 }
 
 sub build_index {
@@ -320,7 +326,13 @@ sub build_index {
     $index .= $index." 2>&1 > /dev/null" if $quiet;
 
     say "\n========> Creating Tallymer index for mersize $k for sequence: $db";
-    system($index);
+    my $exit_code;
+    try {
+	$exit_code = system([0..5], $index);
+    }
+    catch {
+	say "ERROR: gt tallymer failed with exit code: $exit_code. Here is the exception: $_.\n";
+    };
 }
 
 sub tallymer_search {
@@ -340,7 +352,13 @@ sub tallymer_search {
                  "> $searchout";
     say "\n========> Searching $infile with $indexname" unless $quiet;
     #say "\n========> Outfile is $searchout" unless $quiet;    # The Tallymer search output. 
-    system($search);
+    my $exit_code;
+    try{
+        $exit_code = system([0..5], $index);
+    }
+    catch {
+	say "ERROR: gt tallymer failed with exit code: $exit_code. Here is the exception: $_.\n";
+    };
     return $searchout;
 
 }
@@ -441,7 +459,7 @@ sub usage {
     my $script = basename($0);
   print STDERR <<END
 
-USAGE: $script -i contig.fas -t target.fas -k 20 -o contig_target.gff 
+USAGE: $script -i contig.fas -t target.fas -k 20 -o contig_target.gff [--gff] [--log] [--filter] [--clean] [-r] [-s] [-e] [-idx]
 
 Required:
     -i|infile       :    Fasta file to search (contig or chromosome).
