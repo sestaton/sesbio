@@ -121,7 +121,7 @@ Print the full documentation.
 use 5.010;
 use strict;
 use warnings;
-use IPC::System::Simple qw(system);
+use IPC::System::Simple qw(capture system);
 use Try::Tiny;
 use autodie qw(open);
 use Getopt::Long;
@@ -200,7 +200,7 @@ exit;
 #
 sub findprog {
     my $prog = shift;
-    my $path = `which $prog 2> /dev/null`;
+    my $path = capture("which $prog 2> /dev/null");
     chomp $path;
     if ( (! -e $path) && (! -x $path) ) {
 	die "\nERROR: Cannot find $prog binary. Exiting.\n";
@@ -274,8 +274,7 @@ sub meryl_search {
     }
     catch {
 	say "ERROR: meryl mapMers failed with exit code $exit_code. Here is the exception: $_.\n";
-    }
-
+    };
     return $searchout;
 }
 
