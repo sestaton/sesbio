@@ -10,7 +10,9 @@ tallymersearch2gff.pl - Compute k-mer frequencies in a genome
 
 =head1 DESCRIPTION
 
-(...)
+This script will generate a GFF3 file for a query sequence (typically a contig or chromosome)
+that can be used with GBrowse or other genome browsers (it's also possible to generate quick
+plots with the results with, e.g. R).
 
 =head1 DEPENDENCIES
 
@@ -175,23 +177,23 @@ my $clean;
 my $debug;
 
 GetOptions(# Required
-	   'i|infile=s'        => \$infile,
-	   'o|outfile=s'       => \$outfile,
-	   'e|esa'             => \$esa,
+	   'i|infile=s'           => \$infile,
+	   'o|outfile=s'          => \$outfile,
+	   'e|esa'                => \$esa,
 	   # Options
-	   't|target=s'        => \$db,
-	   'k|kmerlen=i'       => \$k,
-	   'idx|index=s'       => \$index,
-	   's|search'          => \$search,
-	   'r|repeat-ratio=f'  => \$ratio,
-	   'filter'            => \$filter,
-	   'log'               => \$log,
-	   'gff'               => \$gff,
-	   'quiet'             => \$quiet,
-	   'clean'             => \$clean,
-	   'debug'             => \$debug,
-	   'h|help'            => \$help,
-	   'm|man'             => \$man,
+	   't|target=s'           => \$db,
+	   'k|kmerlen=i'          => \$k,
+	   'idx|index=s'          => \$index,
+	   's|search'             => \$search,
+	   'r|repeat-ratio=f'     => \$ratio,
+	   'filter'               => \$filter,
+	   'log'                  => \$log,
+	   'gff'                  => \$gff,
+	   'quiet'                => \$quiet,
+	   'clean'                => \$clean,
+	   'debug'                => \$debug,
+	   'h|help'               => \$help,
+	   'm|man'                => \$man,
 	   );
 
 if ($esa && !$db) {
@@ -300,7 +302,8 @@ sub split_mfasta {
 sub getFh {
     my ($key) = shift;
     my $singleseq = $key.".fasta";           # fixed bug adding extra underscore 2/10/12
-    $seqhash->{$key} =~ s/(.{60})/$1\n/gs;   # may speed things up marginally to not format the sequence
+    #$seqhash->{$key} =~ s/(.{60})/$1\n/gs;   # may speed things up marginally to not format the sequence
+    $seqhash->{$key} =~ s/.{60}\K/\n/g;      # v5.10 is required to use \K
     open my $tmpseq, '>', $singleseq or die "\nERROR: Could not open file: $singleseq\n";
     say $tmpseq ">".$key;
     say $tmpseq $seqhash->{$key};
@@ -450,15 +453,15 @@ sub filter_simple {
     for my $dinuc (keys %di) {
 	while ($seq =~ /$dinuc/ig) { $dict++ };
 	$diratio = sprintf("%.2f",$dict*2/$len);
-	#print "Mer: $dinuc\tMer: $seq\nDinuc count: $dict\n"; # for debug, if these simple repeats are of interest they
-	#print "Mer: $dinuc\tMer: $seq\nDinuc ratio: $diratio\n"; # are stored, along with their repeat ratio, in the hash below
+	#say "Mer: $dinuc\tMer: $seq\nDinuc count: $dict";    # for debug, if these simple repeats are of interest they
+	#say "Mer: $dinuc\tMer: $seq\nDinuc ratio: $diratio"; # are stored, along with their repeat ratio, in the hash below
 	if ($diratio >= $repeat_ratio) {
 	    $simpleseqs{$seq} = $diratio;
 	}
 	$dict = 0;
     }
 
-    return(\%simpleseqs);
+    return \%simpleseqs;
 	    
 }
 
@@ -466,7 +469,7 @@ sub printgff {
     my ($count, $seqid, $offset, $merlen, $seq, $gff) = @_;
 
     if ($log) {
-	# may want to consider a higher level of resolution that 2 sig digs
+	# may want to consider a higher level of resolution than 2 sig digs
 	eval { $count = sprintf("%.2f",log($count)) }; warn $@ if $@; 
     }
     
@@ -487,7 +490,7 @@ Required:
 Options:
     -t|target       :    Fasta file of WGS reads to index.
     -k|kmerlen      :    Kmer length to use for building the index.
-    -e|esa          :    Build the suffix array from the WGS reads (--target).
+    -e|esa          :    Build the suffix array from the WGS reads (--target) and exit.
     -s|search       :    Just search the (--infile). Must specify an existing index.
     -r|ratio        :    Repeat ratio to use for filtering simple repeats (must be used with --filter).
     -idx|index      :    Name of the index (if used with --search option, otherwise leave ignore this option).
