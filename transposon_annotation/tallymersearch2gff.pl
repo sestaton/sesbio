@@ -442,8 +442,8 @@ sub filter_simple {
         #my $monoct = (uc($seq) =~ tr/$mononuc//);
 	while ($seq =~ /$mononuc/ig) { $monoct++ };
         $monoratio = sprintf("%.2f",$monoct/$len);
-        #print "Mer: $mononuc\tMer: $seq\nMononuc count: $monoct\n"; # for debug, if these simple repeats are of interest they
-	#print "Mer: $mononuc\tMer: $seq\nMononuc ratio: $monoratio\n"; # are stored, along with their repeat ratio, in the hash below
+        #say "Mer: $mononuc\tMer: $seq\nMononuc count: $monoct";    # for debug, if these simple repeats are of interest they
+	#say "Mer: $mononuc\tMer: $seq\nMononuc ratio: $monoratio"; # are stored, along with their repeat ratio, in the hash below
 	if ($monoratio >= $repeat_ratio) {
 	    $simpleseqs{$seq} = $monoratio;
 	}
