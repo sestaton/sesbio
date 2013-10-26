@@ -89,6 +89,12 @@ specified with this option.
 The name of the index to search against the input Fasta. Leave this option off if you want
 to build an index to search.
 
+=item -e, --esa
+
+Build the suffix array from the WGS reads (--target) and exit. The name of the index can then
+be used to search a query sequence. This makes it possible to avoid repeatedly building
+the index files. 
+
 =item --log
 
 Report the log number of counts instead of raw counts. This is often a good option with WGS
@@ -188,8 +194,21 @@ GetOptions(# Required
 	   'm|man'             => \$man,
 	   );
 
+if ($esa && !$db) {
+    say "\nERROR: A target sequence set must be specified for building the index. Exiting.";
+    usage();
+    exit(1);
+}
+
+if ($esa && $db) {
+    say "\n========> Building Tallymer index for: $db" unless $quiet;
+    build_suffixarry($db);
+    say "\n========> Done." unless $quiet;
+    exit(0);
+}
+
 if (!$infile || !$outfile || !$index) {
-    print "\nERROR: No input was given.\n";
+    say"\nERROR: No input was given.";
     usage();
     exit(1);
 }
@@ -376,7 +395,7 @@ sub tallymersearch2gff {
     say $gff "##gff-version 3";
     say $gff "##sequence-region ",$seqid," 1 ",$end;
     
-    while(my $match = <$mers>) {
+    while (my $match = <$mers>) {
 	chomp $match;
 	my ($seqnum, $offset, $count, $seq) = split /\t/, $match;
 	$offset =~ s/^\+//;
