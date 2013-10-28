@@ -153,13 +153,13 @@ pod2usage( -verbose => 1 ) if $help;
 pod2usage( -verbose => 2 ) if $man;
 
 if (!$search_term && !$family_term) {
-    say "\nERROR: A search term or Pfam family must be given. Exiting.\n";
+    say "\nERROR: A search term or Pfam family must be given. Exiting.";
     usage();
     exit(1);
 }
 
 if ($search_term && $family_term) {
-    say "\nERROR: Can only choose a search term or a family term, not both. Exiting.\n";
+    say "\nERROR: Choose a search term or a family term, not both. Exiting.";
     usage();
     exit(1);
 }
@@ -176,6 +176,7 @@ if ($search_term) {
 }
 elsif ($family_term) {
     $response = $ua->get( "http://pfam.sanger.ac.uk/family/$family_term?output=xml" );
+    say $response->content;
 }
 
 die "error: failed to retrieve XML: " . $response->status_line . "\n"
@@ -258,14 +259,21 @@ sub parse_family_term {
 
     my $acc  = $entry->getAttribute('accession');
     my $id   = $entry->getAttribute('id');
-    my $desc = $entry->getAttribute('description');
-    # According to the documentation (http://pfam.sanger.ac.uk/help#tabview=tab10)
-    # all families should have an associated accession, id, and description. Need to find
-    # out why some have not description.
-    #
-    #$results{$acc} = { $id => $desc }; # can't get description from family search form 
 
-    $results{$acc} = $id; # temp work around
+    my @desc_entry = $root->getElementsByTagName( 'description' );
+    my $desc = ($desc_entry[0]->childNodes)[1]->nodeValue;
+    $desc =~ tr/\n//d;
+
+    ##TODO: Get other information, e.g., go terms
+    #my @go_entry = $root->getElementsByTagName( 'go_terms' );
+    #my $go1 = $go_entry[0]->nodeType;
+    #my $go2 = $go_entry[0]->firstChild->nodeValue;
+    #my $go3 = ($go_entry[0]->childNodes)[1]->nodeType;
+    #my $go4 = ($go_entry[0]->childNodes)[1]->nodeValue;
+    #say join "\n", $go1, $go2, $go3, $go4;
+
+    $results{$acc} = { $id => $desc };
+
     return \%results;
 }
 
@@ -275,7 +283,6 @@ sub fetch_hmm_files {
     my $ua = LWP::UserAgent->new;
     my $fam_hmm = $family.".hmm";
 
-    # HMM: http://pfam.sanger.ac.uk/family/PF01498/hmm
     my $urlbase = "http://pfam.sanger.ac.uk/family/$family/hmm";
     my $response = $ua->get($urlbase);
 
