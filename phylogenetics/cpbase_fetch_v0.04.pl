@@ -254,6 +254,35 @@ sub get_cp_data {
 sub fetch_gene_clusters {
 
     # $gc_urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run?view=u_feature_index";
+    # table: http://chloroplast.ocean.washington.edu/CpBase_data/tmp/gene_matrix_8307.xls
+
+    my %gene_stats;
+    my $ua = LWP::UserAgent->new;
+    my $cpbase_response = "CpBase_database_response_gene_clusters_$id".".html";
+
+    my $urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run?view=u_feature_index"; 
+    my $response = $ua->get($urlbase);
+
+    unless ($response->is_success) {
+        die "Can't get url $urlbase -- ", $response->status_line;
+    }
+
+    open my $out, '>', $cpbase_response or die "\nERROR: Could not open file: $!\n";
+    say $out $response->content;
+    close $out;
+
+    #my $te = HTML::TableExtract->new( attribs => { border => 1 } );
+    #$te->parse_file($cpbase_response);
+
+
+}
+
+sub fetch_feature_seqs {
+
+    # http://chloroplast.ocean.washington.edu/tools/cpbase/run?u_feature_id=35549&view=universal_feature
+    # nuc or prot
+    # 
+    # TODO: get alignments also
 
 }
 
