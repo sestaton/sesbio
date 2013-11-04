@@ -68,7 +68,7 @@ GetOptions(
 
 if ($gene_clusters) {
     #my $gene_stats = fetch_gene_clusters();
-    my $gene_stats = fetch_gene_cluster_stats();
+    my $gene_stats = fetch_ortholog_sets();
     dd $gene_stats;
     exit;
 }
@@ -287,7 +287,7 @@ sub fetch_gene_clusters {
 }
 
 sub fetch_ortholog_sets {
-    my ($alignments) = @_;
+    my ($alignments, $alphabet, $type) = @_;
     my %gene_stats;
     my $mech = WWW::Mechanize->new;
     my $urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run?view=u_feature_index"; 
@@ -296,6 +296,7 @@ sub fetch_ortholog_sets {
 
     for my $link ( @links ) {
         next unless defined $link && $link->url =~ /tools/;
+	#if ($all) { 
         if ($link->text =~ /accA/ && $link->url =~ /u_feature_id=(\d+)/) {
             my $id = $1;
 	    my $ua = LWP::UserAgent->new;
@@ -325,11 +326,11 @@ sub fetch_ortholog_sets {
 
 			if ($alignments) {
 			    # prot fasta : http://chloroplast.ocean.washington.edu/CpBase_data/tmp/accA_orthologs.aa.aln.fa
-			    # prot clustal : # prot fasta : http://chloroplast.ocean.washington.edu/CpBase_data/tmp/accA_orthologs.aa.aln.clw
+			    # prot clustal : http://chloroplast.ocean.washington.edu/CpBase_data/tmp/accA_orthologs.aa.aln.clw
 			    #
 			    # nuc fasta : http://chloroplast.ocean.washington.edu/CpBase_data/tmp/accA_orthologs.nt.aln.fa
 			    # nuc clustal : http://chloroplast.ocean.washington.edu/CpBase_data/tmp/accA_orthologs.nt.aln.clw
-			    fetch_ortholog_alignments($link->text);
+			    fetch_ortholog_alignments($link->text, $alphabet, $type);
 		    }
 		}
 	    }
@@ -341,8 +342,37 @@ sub fetch_ortholog_sets {
 }
 
 sub fetch_ortholog_alignments {
-    my ($id) = @_;
+    my ($gene, $alphabet, $type) = @_;
 
+    my $file = $gene."_orthologs";
+    my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/tmp/$gene"
+    if ($alphabet =~ /dna/i && $type =~ /fa/i) {
+	$endpoint .= "_orthologs.nt.aln.fa";
+	$file .= ".nt.aln.fa";
+    }
+    elsif ($alphabet =~ /prot/i && $type =~ /fa/i) {
+	$endpoint .= "_orthologs.aa.aln.fa";
+	$file .= ".aa.aln.fa";
+    }
+    elsif ($alphabet =~ /dna/i && $type =~ /cl/i) {
+	$endpoint .= "_orthologs.nt.aln.clw";
+	$file .= ".nt.aln.clw";
+    }
+    elsif ($alphabet =~ /prot/i && $type =~ /cl/i) {
+	$endpoint .= "_orthologs.aa.aln.clw";
+	$file .= ".aa.aln.clw";
+    }
+    else {
+	die "\nERROR: Could not determine parameter options for fetching ortholog clusters.";
+    }
+
+    my $exit_code;
+    try {
+        $exit_code = system([0..5], "wget -O $file $endpoint");
+    }
+    catch {
+        say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
+    };
  
 }
 
@@ -372,7 +402,7 @@ sub fetch_sequence_files {
 	$exit_code = system([0..5], "wget -O $file $endpoint");
     }
     catch {
-	say "\nERROR: wget exited abnormally with exit code $exit_code. Here is the exception: $_\n";
+	say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
     };
 }
 
@@ -380,7 +410,7 @@ sub usage {
     my $script = basename( $0, () );
     print STDERR <<END
 
-USAGE: perl $script [-g] [-s] [-d] [-asm] [-gc] [-rc] [-t] [-stats] [--available] [-h] [-m]
+USAGE: perl $script [-g] [-s] [-d] [-asm] [-aln] [-gc] [-rc] [-t] [-mol] [-stats] [--available] [-h] [-m]
 
 Required Arguments:
   d|db              :      The database to search. Must be one of: Viridiplantae, non_viridiplanate, 
@@ -390,9 +420,13 @@ Options:
   g|genus           :      The name of a genus query.
   s|species         :      The name of a species to query.
   asm|assemblies    :      Specifies that the chlorplast genome assemblies should be fetched.
-  gc|gene_clusters  :      Download gene clusters for the specified genes (NOT IMPLEMENTED).
+  aln|alignments    :      Download ortholog alignments for a gene, or all genes.
+  gc|gene_clusters  :      Fetch gene cluster information.
   rc|rna_clusters   :      Download rna clusters for the specified genes (NOT IMPLEMENTED).
-  t|type            :      Type of sequence file to fetch (genbank or fasta, Default: fasta).
+  t|type            :      Type of sequence file to fetch.
+                              - For assemblies, options are: genbank or fasta. Default: fasta.
+                              - For alignments, options are: clustalw or fasta. Default: fasta.
+  mol|alphabet      :      The type of alignments to return. Options are: DNA or protein. Default: DNA.
   stats|statistics  :      Get statistics for the specified species.
   available         :      Print the number of species available in the database and exit. 
   h|help            :      Print a help statement.
