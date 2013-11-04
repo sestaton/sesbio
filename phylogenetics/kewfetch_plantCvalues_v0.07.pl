@@ -117,10 +117,9 @@ use LWP::UserAgent;
 use HTTP::Request::Common qw(GET);
 use Pod::Usage;
 use Time::HiRes qw(gettimeofday);
-#use Term::ProgressBar::Simple;
 
 # given/when emits warnings in v5.18+
-no if $] >= 5.018, 'warnings', "experimental::switch";
+no if $] >= 5.018, 'warnings', "experimental::smartmatch";
 
 #
 # VARIABLE SCOPE
