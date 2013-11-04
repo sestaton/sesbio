@@ -20,7 +20,7 @@ use LWP::UserAgent;
 use Data::Dump qw(dd);
 
 # given/when emits warnings in v5.18+
-no if $] >= 5.018, 'warnings', "experimental::switch";
+no if $] >= 5.018, 'warnings', "experimental::smartmatch";
 
 #
 # lexical vars
@@ -61,6 +61,13 @@ GetOptions(
 
 #pod2usage( -verbose => 1 ) if $help;
 #pod2usage( -verbose => 2 ) if $man;
+
+if ($gene_clusters) {
+    #my $gene_stats = fetch_gene_clusters();
+    my $gene_stats = fetch_feature_seqs();
+    dd $gene_stats;
+    exit;
+}
 
 #
 # check @ARGV
@@ -257,7 +264,7 @@ sub fetch_gene_clusters {
 
     my %gene_stats;
     my $ua = LWP::UserAgent->new;
-    my $cpbase_response = "CpBase_database_response_gene_clusters_$id".".html";
+    my $cpbase_response = "CpBase_database_response_gene_clusters.html";
 
     my $urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run?view=u_feature_index"; 
     my $response = $ua->get($urlbase);
@@ -270,10 +277,18 @@ sub fetch_gene_clusters {
     say $out $response->content;
     close $out;
 
-    #my $te = HTML::TableExtract->new( attribs => { border => 1 } );
-    #$te->parse_file($cpbase_response);
+    my $te = HTML::TableExtract->new( attribs => { border => 1 } );
+    $te->parse_file($cpbase_response);
 
+    for my $ts ($te->tables) {
+        for my $row ($ts->rows) {
+	    my @elem = grep { defined } @$row;
+	    #           gene_id   => gene_fucntion => gene_product
+	    $gene_stats{$elem[0]} = { $elem[1] => $elem[2] };
+	}
+    }
 
+    return \%gene_stats;
 }
 
 sub fetch_feature_seqs {
@@ -283,7 +298,57 @@ sub fetch_feature_seqs {
     # 
     # TODO: get alignments also
 
+    my %gene_stats;
+    my $mech = WWW::Mechanize->new;
+    my $urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run?view=u_feature_index"; 
+    $mech->get($urlbase);
+    my @links = $mech->links();
+
+    #my $ua = LWP::UserAgent->new;
+    #my $cpbase_response = "CpBase_database_response_gene_clusters.html";
+
+    for my $link ( @links ) {
+        next unless defined $link && $link->url =~ /tools/;
+        if ($link->text =~ /accA/ && $link->url =~ /u_feature_id=(\d+)/) {
+            my $id = $1;
+            say $link->text, ' -> ', "http://chloroplast.ocean.washington.edu/tools/cpbase/run?u_feature_id=$id&view=universal_feature";
+
+	    my $ua = LWP::UserAgent->new;
+	    my $cpbase_response = "CpBase_database_response_gene_clusters_$id".".html";
+
+	    my $urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run?u_feature_id=$id&view=universal_feature"; 
+	    my $response = $ua->get($urlbase);
+
+	    unless ($response->is_success) {
+                die "Can't get url $urlbase -- ", $response->status_line;
+            }
+
+            open my $out, '>', $cpbase_response or die "\nERROR: Could not open file: $!\n";
+            say $out $response->content;
+            close $out;
+
+	    my $te = HTML::TableExtract->new( attribs => { border => 1 } );
+	    $te->parse_file($cpbase_response);
+
+	    for my $ts ($te->tables) {
+		for my $row ($ts->rows) {
+		    my @elem = grep { defined } @$row;
+		    if (defined $elem[1] && $elem[1] eq $link->text) {
+			#           gene_id   => gene_fucntion => gene_product                                                                                                    
+			#say join q{, }, @elem;
+			# Locus Name, Gene, Product, Genome
+			next if $elem[0] =~ /Gene/i;
+			$gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
+		    }
+		}
+	    }
+	}
+    }
+
+    return \%gene_stats;
+
 }
+
 
 sub fetch_rna_clusters {
     
