@@ -210,7 +210,6 @@ sub get_cp_data {
     for my $ts ($te->tables) {
 	for my $row ($ts->rows) {
 	    my @elem = grep { defined } @$row;
-	    #say join q{,}, @elem;
 	    if ($elem[0] =~ /GC Content/) {
 		$elem[1] =~ s/%$//;
 		$assem_stats{gc_content} = $elem[1];
