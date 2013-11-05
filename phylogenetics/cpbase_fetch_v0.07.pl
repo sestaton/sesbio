@@ -35,7 +35,10 @@ my $statistics;
 my $available;
 my $help;
 my $man;
+my $alphabet;
 my $assemblies;
+my $alignments;
+my $gene_name;
 my $gene_clusters;
 my $rna_clusters;
 my $cpbase_response = "CpBase_database_response.html"; # HTML
@@ -44,28 +47,43 @@ my $cpbase_response = "CpBase_database_response.html"; # HTML
 # set opts
 #
 GetOptions(
-           'all'              => \$all,
-           'd|db=s'           => \$db,
-           't|type=s'         => \$type,
-           'g|genus=s'        => \$genus,
-	   's|species=s'      => \$species,
-	   'o|outfile=s'      => \$outfile,
-           'stats|statistics' => \$statistics,
-           'available'        => \$available,
-           'asm|assemblies'   => \$assemblies,
-           'gc|gene_clusters' => \$gene_clusters,
-           'rc|rna_clusters'  => \$rna_clusters,
-	   'h|help'           => \$help,
-	   'm|man'            => \$man,
-	  );
+	   'all'                     => \$all,
+	   'd|db=s'                  => \$db,
+	   't|type=s'                => \$type,
+	   'g|genus=s'               => \$genus,
+	   's|species=s'             => \$species,
+	   'o|outfile=s'             => \$outfile,
+	   'stats|statistics'        => \$statistics,
+	   'available'               => \$available,
+	   'mol|alphabet=s'          => \$alphabet,
+	   'asm|assemblies'          => \$assemblies,
+	   'aln|alignments'          => \$alignments,
+	   'gn|gene_name=s'          => \$gene_name,
+	   'gc|gene_clusters'        => \$gene_clusters,
+	   'rc|rna_clusters'         => \$rna_clusters,
+	   'h|help'                  => \$help,
+	   'm|man'                   => \$man,
+	   );
 
 #pod2usage( -verbose => 1 ) if $help;
 #pod2usage( -verbose => 2 ) if $man;
 
-if ($gene_clusters) {
-    #my $gene_stats = fetch_gene_clusters();
-    my $gene_stats = fetch_feature_seqs();
-    dd $gene_stats;
+usage() and exit(0) if $help;
+
+## set defaults for search
+$type //= 'fasta';
+$alphabet //= 'dna';
+
+if ($gene_clusters && $gene_name && $alignments) {
+    my $gene_stats = fetch_ortholog_sets($gene_name, $alignments, $alphabet, $type);
+    say join "\t", "Gene","Genome","Locus","Product";
+    for my $gene (keys %$gene_stats) {
+	for my $genome (keys %{$gene_stats->{$gene}}) {
+	    for my $locus (keys %{$gene_stats->{$gene}{$genome}}) {
+		say join "\t", $gene, $genome, $locus, $gene_stats->{$gene}{$genome}{$locus};
+	    }
+	}
+    }
     exit;
 }
 
@@ -109,28 +127,15 @@ given ($db) {
     default {                     die "Invalid name for option db."; }
 }
 
-$type //= 'fasta';
-
-#
-# create the UserAgent
-# 
 my $ua = LWP::UserAgent->new;
-
-#
-# perform the request
-#
 my $urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run&genome_taxonomy=$db";
 my $response = $ua->get($urlbase);
 
-#
 # check for a response
 unless ($response->is_success) {
     die "Can't get url $urlbase -- ", $response->status_line;
 }
 
-#
-# open and parse the results
-#
 open my $out, '>', $cpbase_response or die "\nERROR: Could not open file: $!\n";
 say $out $response->content;
 close $out;
@@ -167,7 +172,15 @@ for my $ts ($te->tables) {
 	}
     }
 }
-dd \%stats;
+
+if ($statistics) {
+    for my $genome (keys %stats) {
+	say "====> Showing chloroplast genome statistics for: $genome";
+	for my $stat (keys %{$stats{$genome}}) {
+	    say join "\t", $stat, $stats{$genome}{$stat};
+	}
+    }
+}
 unlink $cpbase_response;
 
 #
@@ -199,7 +212,6 @@ sub get_cp_data {
     my %assem_stats;
     my $ua = LWP::UserAgent->new;
     my $cpbase_response = "CpBase_database_response_$id".".html";
-
     my $urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run?genome_id=$id&view=genome";
     my $response = $ua->get($urlbase);
 
@@ -254,101 +266,152 @@ sub get_cp_data {
             }
 	}
     }
+    unlink $cpbase_response;
     return \%assem_stats;
 }
 
-sub fetch_gene_clusters {
-
-    # $gc_urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run?view=u_feature_index";
-    # table: http://chloroplast.ocean.washington.edu/CpBase_data/tmp/gene_matrix_8307.xls
-
-    my %gene_stats;
-    my $ua = LWP::UserAgent->new;
-    my $cpbase_response = "CpBase_database_response_gene_clusters.html";
-
-    my $urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run?view=u_feature_index"; 
-    my $response = $ua->get($urlbase);
-
-    unless ($response->is_success) {
-        die "Can't get url $urlbase -- ", $response->status_line;
-    }
-
-    open my $out, '>', $cpbase_response or die "\nERROR: Could not open file: $!\n";
-    say $out $response->content;
-    close $out;
-
-    my $te = HTML::TableExtract->new( attribs => { border => 1 } );
-    $te->parse_file($cpbase_response);
-
-    for my $ts ($te->tables) {
-        for my $row ($ts->rows) {
-	    my @elem = grep { defined } @$row;
-	    #           gene_id   => gene_fucntion => gene_product
-	    $gene_stats{$elem[0]} = { $elem[1] => $elem[2] };
-	}
-    }
-
-    return \%gene_stats;
-}
-
-sub fetch_feature_seqs {
-
-    # http://chloroplast.ocean.washington.edu/tools/cpbase/run?u_feature_id=35549&view=universal_feature
-    # nuc or prot
-    # 
-    # TODO: get alignments also
-
+sub fetch_ortholog_sets {
+    my ($gene_name, $alignments, $alphabet, $type) = @_;
     my %gene_stats;
     my $mech = WWW::Mechanize->new;
     my $urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run?view=u_feature_index"; 
     $mech->get($urlbase);
     my @links = $mech->links();
 
-    #my $ua = LWP::UserAgent->new;
-    #my $cpbase_response = "CpBase_database_response_gene_clusters.html";
-
     for my $link ( @links ) {
         next unless defined $link && $link->url =~ /tools/;
-        if ($link->text =~ /accA/ && $link->url =~ /u_feature_id=(\d+)/) {
-            my $id = $1;
-            say $link->text, ' -> ', "http://chloroplast.ocean.washington.edu/tools/cpbase/run?u_feature_id=$id&view=universal_feature";
-
+	if ($link->url =~ /u_feature_id=(\d+)/) {
+	    my $id = $1;
 	    my $ua = LWP::UserAgent->new;
 	    my $cpbase_response = "CpBase_database_response_gene_clusters_$id".".html";
-
+	    
 	    my $urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run?u_feature_id=$id&view=universal_feature"; 
 	    my $response = $ua->get($urlbase);
-
+	    
 	    unless ($response->is_success) {
-                die "Can't get url $urlbase -- ", $response->status_line;
-            }
-
-            open my $out, '>', $cpbase_response or die "\nERROR: Could not open file: $!\n";
-            say $out $response->content;
-            close $out;
-
+		die "Can't get url $urlbase -- ", $response->status_line;
+	    }
+	    
+	    open my $out, '>', $cpbase_response or die "\nERROR: Could not open file: $!\n";
+	    say $out $response->content;
+	    close $out;
+	    
 	    my $te = HTML::TableExtract->new( attribs => { border => 1 } );
 	    $te->parse_file($cpbase_response);
-
+	    
 	    for my $ts ($te->tables) {
 		for my $row ($ts->rows) {
 		    my @elem = grep { defined } @$row;
 		    if (defined $elem[1] && $elem[1] eq $link->text) {
-			#           gene_id   => gene_fucntion => gene_product                                                                                                    
-			#say join q{, }, @elem;
-			# Locus Name, Gene, Product, Genome
 			next if $elem[0] =~ /Gene/i;
-			$gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
+			my ($g, $sp) = split /\s+/, $elem[3] if defined $elem[3];
+
+			if ($alignments && $all) {
+			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
+			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
+			    unless (-e $file) {
+                                my $exit_code;
+                                try {
+                                    $exit_code = system([0..5], "wget -O $file $endpoint");
+                                }
+                                catch {
+                                    say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
+                                };
+                            }
+			    unlink $cpbase_response;
+			}
+			elsif ($alignments && 
+			       defined $genus && 
+			       $genus =~ /$g/ && 
+			       defined $species && 
+			       $species =~ /$sp/) {
+			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
+			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
+			    unless (-e $file) {
+                                my $exit_code;
+                                try {
+                                    $exit_code = system([0..5], "wget -O $file $endpoint");
+                                }
+                                catch {
+                                    say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
+                                };
+                            }
+			    unlink $cpbase_response;
+			}
+			elsif ($alignments && 
+			       defined $genus && 
+			       $genus =~ /$g/ && 
+			       defined $species && 
+			       $species =~ /$sp/ && 
+			       defined $gene_name && 
+			       $gene_name =~ /$elem[0]/) {
+			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
+			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
+			    unless (-e $file) {
+                                my $exit_code;
+                                try {
+                                    $exit_code = system([0..5], "wget -O $file $endpoint");
+                                }
+                                catch {
+                                    say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
+                                };
+                            }
+			    unlink $cpbase_response;
+			}
+			elsif ($alignments && 
+			       !defined $genus && 
+			       !defined $species && 
+			       defined $gene_name && 
+			       $gene_name =~ /$elem[1]/) {
+			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
+			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
+			    unless (-e $file) {
+				my $exit_code;
+				try {
+				    $exit_code = system([0..5], "wget -O $file $endpoint");
+				}
+				catch {
+				    say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
+				};
+			    }
+			    unlink $cpbase_response;
+			}
 		    }
 		}
 	    }
+	    unlink $cpbase_response if -e $cpbase_response;
 	}
     }
-
     return \%gene_stats;
-
 }
 
+sub make_alignment_url_from_gene {
+    my ($gene, $alphabet, $type) = @_;
+
+    my $file = $gene."_orthologs";
+    my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/tmp/$gene";
+    if ($alphabet =~ /dna/i && $type =~ /fasta/i) {
+	$endpoint .= "_orthologs.nt.aln.fa";
+	$file .= ".nt.aln.fa";
+    }
+    elsif ($alphabet =~ /protein/i && $type =~ /fasta/i) {
+	$endpoint .= "_orthologs.aa.aln.fa";
+	$file .= ".aa.aln.fa";
+    }
+    elsif ($alphabet =~ /dna/i && $type =~ /clustal/i) {
+	$endpoint .= "_orthologs.nt.aln.clw";
+	$file .= ".nt.aln.clw";
+    }
+    elsif ($alphabet =~ /protein/i && $type =~ /clustal/i) {
+	$endpoint .= "_orthologs.aa.aln.clw";
+	$file .= ".aa.aln.clw";
+    }
+    else {
+	die "\nERROR: Could not determine parameter options for fetching ortholog clusters. alpha: $alphabet type: $type";
+    }
+    
+    return ($file, $endpoint)
+}
 
 sub fetch_rna_clusters {
     
@@ -376,7 +439,7 @@ sub fetch_sequence_files {
 	$exit_code = system([0..5], "wget -O $file $endpoint");
     }
     catch {
-	say "\nERROR: wget exited abnormally with exit code $exit_code. Here is the exception: $_\n";
+	say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
     };
 }
 
@@ -384,19 +447,25 @@ sub usage {
     my $script = basename( $0, () );
     print STDERR <<END
 
-USAGE: perl $script [-g] [-s] [-d] [-asm] [-gc] [-rc] [-t] [-stats] [--available] [-h] [-m]
+USAGE: perl $script [-g] [-s] [-d] [-asm] [-aln] [-gn] [-gc] [-rc] [-t] [-mol] [-stats] [--available] [-h] [-m]
 
 Required Arguments:
-  d|db              :      The database to search. Must be one of: Viridiplantae, non_viridiplanate, 
+  d|db              :      The database to search. 
+                           Must be one of: viridiplantae, non_viridiplanate, 'red lineage', rhodophyta, stramenopiles, 
   
 Options:
   all               :      Download files of the specified type for all species in the database.
   g|genus           :      The name of a genus query.
   s|species         :      The name of a species to query.
   asm|assemblies    :      Specifies that the chlorplast genome assemblies should be fetched.
-  gc|gene_clusters  :      Download gene clusters for the specified genes (NOT IMPLEMENTED).
+  aln|alignments    :      Download ortholog alignments for a gene, or all genes.
+  gn|gene_name      :      The name of a specific gene to fetch ortholog cluster stats or alignments for.
+  gc|gene_clusters  :      Fetch gene cluster information.
   rc|rna_clusters   :      Download rna clusters for the specified genes (NOT IMPLEMENTED).
-  t|type            :      Type of sequence file to fetch (genbank or fasta, Default: fasta).
+  t|type            :      Type of sequence file to fetch.
+                              - For assemblies, options are: genbank or fasta. Default: fasta.
+                              - For alignments, options are: clustalw or fasta. Default: fasta.
+  mol|alphabet      :      The type of alignments to return. Options are: DNA or protein. Default: DNA.
   stats|statistics  :      Get statistics for the specified species.
   available         :      Print the number of species available in the database and exit. 
   h|help            :      Print a help statement.
