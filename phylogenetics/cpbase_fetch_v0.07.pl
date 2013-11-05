@@ -487,11 +487,22 @@ sub fetch_rna_clusters {
 	}
     }
     elsif ($sequences && $all) {
-	# fasta file of orthologs: http://chloroplast.ocean.washington.edu/CpBase_data/tmp/16s_orthologs.nt.fasta
+	# fasta file of orthologs: http://chloroplast.ocean.washington.edu/CpBase_data/tmp/16S_orthologs.nt.fasta
     }
     elsif ($sequences && $gene_name) {
 	
     }
+    elsif ($alignments && $all) {
+	# fasta file of orthologs: http://chloroplast.ocean.washington.edu/CpBase_data/tmp/16S_orthologs.nt.aln.fa
+	# clustal file of orthologs: http://chloroplast.ocean.washington.edu/CpBase_data/tmp/16s_orthologs.nt.aln.clw
+    }
+    elsif ($alignments && $gene_name) {
+
+    }
+
+    ## reorder control flow to if gene_name
+    ##                             if sequences
+    ##                             elsif alignments
     #return \%rna_cluster_stats;
 }
 
