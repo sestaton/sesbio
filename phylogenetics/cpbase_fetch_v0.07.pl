@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
-#TODO: add POD
+#TODO: Check if it is possible to get alignments. Since they are stored in the document path of /tmp
+#      they may be generated on the fly (hence, not available on demand).
 
 #
 # library imports
