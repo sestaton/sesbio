@@ -291,7 +291,7 @@ sub fetch_ortholog_sets {
 			#           gene    => genome   => locus     => product
 			#$gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 	
-			my ($g, $sp) = split /\s+/, $elem[3];
+			my ($g, $sp) = split /\s+/, $elem[3] if defined $elem[3];
 			## filter taxa here
 			if ($alignments && $all) {
 			    # prot fasta : http://chloroplast.ocean.washington.edu/CpBase_data/tmp/accA_orthologs.aa.aln.fa
@@ -303,33 +303,58 @@ sub fetch_ortholog_sets {
 			    fetch_ortholog_alignments($link->text, $alphabet, $type);
 			    unlink $cpbase_response;
 			}
-			elsif ($alignments && defined $genus && $genus =~ /$g/ && defined $species && $species =~ /$sp/) {
+			elsif ($alignments && 
+			       defined $genus && 
+			       $genus =~ /$g/ && 
+			       defined $species && 
+			       $species =~ /$sp/) {
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    fetch_ortholog_alignments($link->text, $alphabet, $type);
 			    unlink $cpbase_response;
-			    return \%gene_stats;
+			    #return \%gene_stats;
 			}
-			elsif ($alignments && defined $genus && $genus =~ /$g/ && defined $species && $species =~ /$sp/ && defined $gene_name && $gene_name =~ /$elem[0]/) {
+			elsif ($alignments && 
+			       defined $genus && 
+			       $genus =~ /$g/ && 
+			       defined $species && 
+			       $species =~ /$sp/ && 
+			       defined $gene_name && 
+			       $gene_name =~ /$elem[0]/) {
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    fetch_ortholog_alignments($link->text, $alphabet, $type);
 			    unlink $cpbase_response;
-			    return \%gene_stats;
+			    #return \%gene_stats;
 			}
-			elsif ($alignments && !defined $genus && !defined $species && defined $gene_name && $gene_name =~ /$elem[1]/) {
+			elsif ($alignments && 
+			       !defined $genus && 
+			       !defined $species && 
+			       defined $gene_name && 
+			       $gene_name =~ /$elem[1]/) {
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
-			    fetch_ortholog_alignments($link->text, $alphabet, $type);
+			    #fetch_ortholog_alignments($link->text, $alphabet, $type);
+			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
+			    unless (-e $file) {
+				my $exit_code;
+				try {
+				    $exit_code = system([0..5], "wget -O $file $endpoint");
+				}
+				catch {
+				    say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
+				};
+			    }
 			    unlink $cpbase_response;
-			    return \%gene_stats;
+			    #return \%gene_stats;
 			}
 		    }
 		}
 	    }
+	    unlink $cpbase_response if -e $cpbase_response;
 	}
     }
     return \%gene_stats;
 }
 
-sub fetch_ortholog_alignments {
+sub make_alignment_url_from_gene {
     my ($gene, $alphabet, $type) = @_;
 
     my $file = $gene."_orthologs";
@@ -353,15 +378,8 @@ sub fetch_ortholog_alignments {
     else {
 	die "\nERROR: Could not determine parameter options for fetching ortholog clusters. alpha: $alphabet type: $type";
     }
-
-    my $exit_code;
-    try {
-        $exit_code = system([0..5], "wget -O $file $endpoint");
-    }
-    catch {
-        say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
-    };
- 
+    
+    return ($file, $endpoint)
 }
 
 sub fetch_rna_clusters {
