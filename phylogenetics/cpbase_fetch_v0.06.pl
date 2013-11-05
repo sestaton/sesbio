@@ -55,7 +55,7 @@ GetOptions(
 	   'o|outfile=s'             => \$outfile,
 	   'stats|statistics'        => \$statistics,
 	   'available'               => \$available,
-	   'mol|alphabet=s'            => \$alphabet,
+	   'mol|alphabet=s'          => \$alphabet,
 	   'asm|assemblies'          => \$assemblies,
 	   'aln|alignments'          => \$alignments,
 	   'gn|gene_name=s'          => \$gene_name,
@@ -68,11 +68,22 @@ GetOptions(
 #pod2usage( -verbose => 1 ) if $help;
 #pod2usage( -verbose => 2 ) if $man;
 
-usage() and exit(0) if !$gene_clusters;  ## for testing
+usage() and exit(0) if $help;
 
-if ($gene_clusters && $gene_name) {
+## set defaults for search
+$type //= 'fasta';
+$alphabet //= 'dna';
+
+if ($gene_clusters && $gene_name && $alignments) {
     my $gene_stats = fetch_ortholog_sets($gene_name, $alignments, $alphabet, $type);
-    dd $gene_stats;
+    say join "\t", "Gene","Genome","Locus","Product";
+    for my $gene (keys %$gene_stats) {
+	for my $genome (keys %{$gene_stats->{$gene}}) {
+	    for my $locus (keys %{$gene_stats->{$gene}{$genome}}) {
+		say join "\t", $gene, $genome, $locus, $gene_stats->{$gene}{$genome}{$locus};
+	    }
+	}
+    }
     exit;
 }
 
@@ -115,9 +126,6 @@ given ($db) {
     when (/non viridiplantae/i) { $db = "NOT_Viridiplantae"; }
     default {                     die "Invalid name for option db."; }
 }
-
-$type //= 'fasta';
-$alphabet //= 'dna';
 
 my $ua = LWP::UserAgent->new;
 my $urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run&genome_taxonomy=$db";
@@ -164,7 +172,10 @@ for my $ts ($te->tables) {
 	}
     }
 }
-#dd \%stats;
+
+if ($statistics) {
+    dd \%stats;
+}
 unlink $cpbase_response;
 
 #
@@ -288,9 +299,6 @@ sub fetch_ortholog_sets {
 		    my @elem = grep { defined } @$row;
 		    if (defined $elem[1] && $elem[1] eq $link->text) {
 			next if $elem[0] =~ /Gene/i;
-			#           gene    => genome   => locus     => product
-			#$gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
-	
 			my ($g, $sp) = split /\s+/, $elem[3] if defined $elem[3];
 			## filter taxa here
 			if ($alignments && $all) {
@@ -300,7 +308,8 @@ sub fetch_ortholog_sets {
 			    # nuc fasta : http://chloroplast.ocean.washington.edu/CpBase_data/tmp/accA_orthologs.nt.aln.fa
 			    # nuc clustal : http://chloroplast.ocean.washington.edu/CpBase_data/tmp/accA_orthologs.nt.aln.clw
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
-			    fetch_ortholog_alignments($link->text, $alphabet, $type);
+			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
+			    #fetch_ortholog_alignments($link->text, $alphabet, $type);
 			    unlink $cpbase_response;
 			}
 			elsif ($alignments && 
@@ -309,7 +318,8 @@ sub fetch_ortholog_sets {
 			       defined $species && 
 			       $species =~ /$sp/) {
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
-			    fetch_ortholog_alignments($link->text, $alphabet, $type);
+			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
+			    #fetch_ortholog_alignments($link->text, $alphabet, $type);
 			    unlink $cpbase_response;
 			    #return \%gene_stats;
 			}
@@ -321,7 +331,8 @@ sub fetch_ortholog_sets {
 			       defined $gene_name && 
 			       $gene_name =~ /$elem[0]/) {
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
-			    fetch_ortholog_alignments($link->text, $alphabet, $type);
+			    #fetch_ortholog_alignments($link->text, $alphabet, $type);
+			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
 			    unlink $cpbase_response;
 			    #return \%gene_stats;
 			}
