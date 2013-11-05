@@ -47,30 +47,31 @@ my $cpbase_response = "CpBase_database_response.html"; # HTML
 # set opts
 #
 GetOptions(
-           'all'                     => \$all,
-           'd|db=s'                  => \$db,
-           't|type=s'                => \$type,
-           'g|genus=s'               => \$genus,
+	   'all'                     => \$all,
+	   'd|db=s'                  => \$db,
+	   't|type=s'                => \$type,
+	   'g|genus=s'               => \$genus,
 	   's|species=s'             => \$species,
 	   'o|outfile=s'             => \$outfile,
-           'stats|statistics'        => \$statistics,
-           'available'               => \$available,
-	   'mol|alphabet'            => \$alphabet,
-           'asm|assemblies'          => \$assemblies,
+	   'stats|statistics'        => \$statistics,
+	   'available'               => \$available,
+	   'mol|alphabet=s'            => \$alphabet,
+	   'asm|assemblies'          => \$assemblies,
 	   'aln|alignments'          => \$alignments,
-	   'gn|gene_name=s'          => \$gene_name
-           'gc|gene_clusters'        => \$gene_clusters,
-           'rc|rna_clusters'         => \$rna_clusters,
+	   'gn|gene_name=s'          => \$gene_name,
+	   'gc|gene_clusters'        => \$gene_clusters,
+	   'rc|rna_clusters'         => \$rna_clusters,
 	   'h|help'                  => \$help,
 	   'm|man'                   => \$man,
-	  );
+	   );
 
 #pod2usage( -verbose => 1 ) if $help;
 #pod2usage( -verbose => 2 ) if $man;
 
-if ($gene_clusters) {
-    #my $gene_stats = fetch_gene_clusters();
-    my $gene_stats = fetch_ortholog_sets();
+usage() and exit(0) if !$gene_clusters;  ## for testing
+
+if ($gene_clusters && $gene_name) {
+    my $gene_stats = fetch_ortholog_sets($gene_name, $alignments, $alphabet, $type);
     dd $gene_stats;
     exit;
 }
@@ -195,7 +196,6 @@ sub get_cp_data {
     my %assem_stats;
     my $ua = LWP::UserAgent->new;
     my $cpbase_response = "CpBase_database_response_$id".".html";
-    my $urlbase = get_agent_and_respose(undef, $cpbase_response);
     my $urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run?genome_id=$id&view=genome";
     my $response = $ua->get($urlbase);
 
@@ -255,7 +255,7 @@ sub get_cp_data {
 }
 
 sub fetch_ortholog_sets {
-    my ($alignments, $alphabet, $type) = @_;
+    my ($gene_name, $alignments, $alphabet, $type) = @_;
     my %gene_stats;
     my $mech = WWW::Mechanize->new;
     my $urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run?view=u_feature_index"; 
@@ -289,9 +289,9 @@ sub fetch_ortholog_sets {
 		    if (defined $elem[1] && $elem[1] eq $link->text) {
 			next if $elem[0] =~ /Gene/i;
 			#           gene    => genome   => locus     => product
-			$gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
+			#$gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 	
-			my ($g, $sp) = split /\s+, $elem[3];
+			my ($g, $sp) = split /\s+/, $elem[3];
 			## filter taxa here
 			if ($alignments && $all) {
 			    # prot fasta : http://chloroplast.ocean.washington.edu/CpBase_data/tmp/accA_orthologs.aa.aln.fa
@@ -299,16 +299,27 @@ sub fetch_ortholog_sets {
 			    #
 			    # nuc fasta : http://chloroplast.ocean.washington.edu/CpBase_data/tmp/accA_orthologs.nt.aln.fa
 			    # nuc clustal : http://chloroplast.ocean.washington.edu/CpBase_data/tmp/accA_orthologs.nt.aln.clw
+			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    fetch_ortholog_alignments($link->text, $alphabet, $type);
+			    unlink $cpbase_response;
 			}
 			elsif ($alignments && defined $genus && $genus =~ /$g/ && defined $species && $species =~ /$sp/) {
+			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    fetch_ortholog_alignments($link->text, $alphabet, $type);
+			    unlink $cpbase_response;
+			    return \%gene_stats;
 			}
 			elsif ($alignments && defined $genus && $genus =~ /$g/ && defined $species && $species =~ /$sp/ && defined $gene_name && $gene_name =~ /$elem[0]/) {
+			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    fetch_ortholog_alignments($link->text, $alphabet, $type);
+			    unlink $cpbase_response;
+			    return \%gene_stats;
 			}
-			elsif ($alignments && !defined $genus && !defined $species && defined $gene_name && $gene_name =~ /$elem[0]/) {
+			elsif ($alignments && !defined $genus && !defined $species && defined $gene_name && $gene_name =~ /$elem[1]/) {
+			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    fetch_ortholog_alignments($link->text, $alphabet, $type);
+			    unlink $cpbase_response;
+			    return \%gene_stats;
 			}
 		    }
 		}
@@ -322,25 +333,25 @@ sub fetch_ortholog_alignments {
     my ($gene, $alphabet, $type) = @_;
 
     my $file = $gene."_orthologs";
-    my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/tmp/$gene"
-    if ($alphabet =~ /dna/i && $type =~ /fa/i) {
+    my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/tmp/$gene";
+    if ($alphabet =~ /dna/i && $type =~ /fasta/i) {
 	$endpoint .= "_orthologs.nt.aln.fa";
 	$file .= ".nt.aln.fa";
     }
-    elsif ($alphabet =~ /prot/i && $type =~ /fa/i) {
+    elsif ($alphabet =~ /protein/i && $type =~ /fasta/i) {
 	$endpoint .= "_orthologs.aa.aln.fa";
 	$file .= ".aa.aln.fa";
     }
-    elsif ($alphabet =~ /dna/i && $type =~ /cl/i) {
+    elsif ($alphabet =~ /dna/i && $type =~ /clustal/i) {
 	$endpoint .= "_orthologs.nt.aln.clw";
 	$file .= ".nt.aln.clw";
     }
-    elsif ($alphabet =~ /prot/i && $type =~ /cl/i) {
+    elsif ($alphabet =~ /protein/i && $type =~ /clustal/i) {
 	$endpoint .= "_orthologs.aa.aln.clw";
 	$file .= ".aa.aln.clw";
     }
     else {
-	die "\nERROR: Could not determine parameter options for fetching ortholog clusters.";
+	die "\nERROR: Could not determine parameter options for fetching ortholog clusters. alpha: $alphabet type: $type";
     }
 
     my $exit_code;
@@ -387,10 +398,11 @@ sub usage {
     my $script = basename( $0, () );
     print STDERR <<END
 
-USAGE: perl $script [-g] [-s] [-d] [-asm] [-aln] [-gc] [-gc] [-rc] [-t] [-mol] [-stats] [--available] [-h] [-m]
+USAGE: perl $script [-g] [-s] [-d] [-asm] [-aln] [-gn] [-gc] [-rc] [-t] [-mol] [-stats] [--available] [-h] [-m]
 
 Required Arguments:
-  d|db              :      The database to search. Must be one of: Viridiplantae, non_viridiplanate, 
+  d|db              :      The database to search. 
+                           Must be one of: viridiplantae, non_viridiplanate, 'red lineage', rhodophyta, stramenopiles, 
   
 Options:
   all               :      Download files of the specified type for all species in the database.
