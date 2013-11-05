@@ -38,6 +38,7 @@ my $man;
 my $alphabet;
 my $assemblies;
 my $alignments;
+my $sequences;
 my $gene_name;
 my $gene_clusters;
 my $rna_clusters;
@@ -58,6 +59,7 @@ GetOptions(
 	   'mol|alphabet=s'          => \$alphabet,
 	   'asm|assemblies'          => \$assemblies,
 	   'aln|alignments'          => \$alignments,
+	   'seq|sequences'           => \$sequences, 
 	   'gn|gene_name=s'          => \$gene_name,
 	   'gc|gene_clusters'        => \$gene_clusters,
 	   'rc|rna_clusters'         => \$rna_clusters,
@@ -84,6 +86,11 @@ if ($gene_clusters && $gene_name && $alignments) {
 	    }
 	}
     }
+    exit;
+}
+
+if ($rna_clusters && $gene_name) {
+    fetch_rna_clusters($statistics, $sequences, $gene_name, $all);
     exit;
 }
 
@@ -414,9 +421,78 @@ sub make_alignment_url_from_gene {
 }
 
 sub fetch_rna_clusters {
+    my ($statistics, $sequences, $gene_name, $all) = @_;
+    my $rna_cluster_stats;
+    my %rna_cluster_links;
+    my $urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run?view=rna_cluster_index";
+    my $mech = WWW::Mechanize->new();
+    $mech->get( $urlbase );
+    my @links = $mech->links();
+    for my $link ( @links ) {
+        next unless defined $link->text;
+	if ($link->url =~ /u_feature_id=(\d+)) {
+	    my $id = $1;
+	    #say join "\t", $link->url, $link->text;
+	    my $url = "http://chloroplast.ocean.washington/tools/cpbase/run?u_feature_id=$id&view=universal_feature";
+	    $rna_cluster_links{$link->text} = $url;
+	}
+    }
     
-    # $rc_urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run?view=rna_cluster_index";
+    if ($statistics && $all) {
+	for my $gene (keys %rna_cluster_links) {
+	    my $ua = LWP::UserAgent->new;
+	    my $response = $ua->get($rna_cluster_links{$gene});
+	    
+	    unless ($response->is_success) {
+		die "Can't get url $urlbase -- ", $response->status_line;
+	    }
+	    
+	    open my $out, '>', $cpbase_response or die "\nERROR: Could not open file: $!\n";
+	    say $out $response->content;
+	    close $out;
+	    
+	    my $te = HTML::TableExtract->new( attribs => { border => 1 } );
+	    $te->parse_file($cpbase_response);
+	    
+	    for my $ts ($te->tables) {
+		for my $row ($ts->rows) {
+		    my @elem = grep { defined } @$row;
+		    say join q{, }, @elem;
+		}
+	    }
+	}
+    }
+    elsif ($statistics && $gene_name) { 
+	for my $gene (keys %rna_cluster_links) {
+	    my $ua = LWP::UserAgent->new;
+	    my $response = $ua->get($rna_cluster_links{$gene});
+	    
+	    unless ($response->is_success) {
+		die "Can't get url $urlbase -- ", $response->status_line;
+	    }
+	    
+	    open my $out, '>', $cpbase_response or die "\nERROR: Could not open file: $!\n";
+	    say $out $response->content;
+	    close $out;
 
+	    my $te = HTML::TableExtract->new( attribs => { border => 1 } );
+	    $te->parse_file($cpbase_response);
+	    
+	    for my $ts ($te->tables) {
+		for my $row ($ts->rows) {
+		    my @elem = grep { defined } @$row;
+		    say join q{, }, @elem;
+		}
+	    }
+	}
+    }
+    elsif ($sequences && $all) {
+	# fasta file of orthologs: http://chloroplast.ocean.washington.edu/CpBase_data/tmp/16s_orthologs.nt.fasta
+    }
+    elsif ($sequences && $gene_name) {
+	
+    }
+    #return \%rna_cluster_stats;
 }
 
 sub fetch_sequence_files {
@@ -459,6 +535,7 @@ Options:
   s|species         :      The name of a species to query.
   asm|assemblies    :      Specifies that the chlorplast genome assemblies should be fetched.
   aln|alignments    :      Download ortholog alignments for a gene, or all genes.
+  seq|sequences     :      Download RNA cluster ortholog sequences for each gene (if --all) or specific genes (if --gene_name).
   gn|gene_name      :      The name of a specific gene to fetch ortholog cluster stats or alignments for.
   gc|gene_clusters  :      Fetch gene cluster information.
   rc|rna_clusters   :      Download rna clusters for the specified genes (NOT IMPLEMENTED).
