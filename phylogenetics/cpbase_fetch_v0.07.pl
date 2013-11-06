@@ -429,13 +429,14 @@ sub fetch_rna_clusters {
     my $mech = WWW::Mechanize->new();
     $mech->get( $urlbase );
     my @links = $mech->links();
+    my $gene;
     for my $link ( @links ) {
         next unless defined $link->text;
 	if ($link->url =~ /u_feature_id=(\d+)) {
 	    my $id = $1;
-	    #say join "\t", $link->url, $link->text;
+	    $gene = $link->text;
 	    my $url = "http://chloroplast.ocean.washington/tools/cpbase/run?u_feature_id=$id&view=universal_feature";
-	    $rna_cluster_links{$link->text} = $url;
+	    $rna_cluster_links{$gene} = $url;
 	}
     }
     
@@ -488,19 +489,68 @@ sub fetch_rna_clusters {
 	}
     }
     elsif ($sequences && $all) {
-	# fasta file of orthologs: http://chloroplast.ocean.washington.edu/CpBase_data/tmp/16S_orthologs.nt.fasta
+	my $file = $gene."_orthologs.nt.fasta";
+	my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/tmp/$file";
+	unless (-e $file) {
+	    my $exit_code;
+	    try {
+		$exit_code = system([0..5], "wget -O $file $endpoint");
+	    }
+	    catch {
+		say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
+	    };
+	}
     }
     elsif ($sequences && $gene_name) {
-	
+	if ($gene_name eq $gene) {
+	    my $file = $gene."_orthologs.nt.fasta";
+	    my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/tmp/$file";
+	    unless (-e $file) {
+		my $exit_code;
+		try {
+		    $exit_code = system([0..5], "wget -O $file $endpoint");
+		}
+		catch {
+		    say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
+		};
+	    }
+	}
     }
     elsif ($alignments && $all) {
-	# fasta file of orthologs: http://chloroplast.ocean.washington.edu/CpBase_data/tmp/16S_orthologs.nt.aln.fa
-	# clustal file of orthologs: http://chloroplast.ocean.washington.edu/CpBase_data/tmp/16s_orthologs.nt.aln.clw
+	my $file = $gene."_orthologs.nt.aln.";
+	my $suf = "clw" if $type =~ /cl/i;
+	my $suf = "fa" if $type =~ /fa/i;
+	$file .= $suf;
+	my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/tmp/$file";
+	unless (-e $file) {
+	    my $exit_code;
+	    try {
+		$exit_code = system([0..5], "wget -O $file $endpoint");
+	    }
+	    catch {
+		say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
+	    };
+	}
     }
     elsif ($alignments && $gene_name) {
-
+	if ($gene_name eq $gene) {
+	    my $file = $gene."_orthologs.nt.aln.";
+	    my $suf= "clw"if $type =~ /cl/i;
+	    my $suf = "fa" if $type=~ /fa/i;
+	    $file .= $suf;
+	    my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/tmp/$file";
+	    unless (-e $file) {
+		my $exit_code;
+		try {
+		    $exit_code = system([0..5], "wget -O $file $endpoint");
+		}
+		catch {
+		    say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
+		};
+	    }
+	}
     }
-
+    unlink $cpbase_response;
     ## reorder control flow to if gene_name
     ##                             if sequences
     ##                             elsif alignments
@@ -537,26 +587,35 @@ sub usage {
 
 USAGE: perl $script [-g] [-s] [-d] [-asm] [-aln] [-gn] [-gc] [-rc] [-t] [-mol] [-stats] [--available] [-h] [-m]
 
-Required Arguments:
-  d|db              :      The database to search. 
-                           Must be one of: viridiplantae, non_viridiplanate, 'red lineage', rhodophyta, stramenopiles, 
-  
-Options:
+Options for CpBase statistics:
+  available         :      Print the number of species available in the database and exit.
+
+Options for chlorplast assemblies:
+  d|db              :      The database to search.
+                           Must be one of: viridiplantae, non_viridiplanate, 'red lineage', rhodophyta, or stramenopiles.
   all               :      Download files of the specified type for all species in the database.
   g|genus           :      The name of a genus query.
   s|species         :      The name of a species to query.
   asm|assemblies    :      Specifies that the chlorplast genome assemblies should be fetched.
+  stats|statistics  :      Get statistics for the specified species.
+
+Options for chloroplast orthologs:
+  all               :      Download files of the specified type for all species in the database.
   aln|alignments    :      Download ortholog alignments for a gene, or all genes.
-  seq|sequences     :      Download RNA cluster ortholog sequences for each gene (if --all) or specific genes (if --gene_name).
   gn|gene_name      :      The name of a specific gene to fetch ortholog cluster stats or alignments for.
   gc|gene_clusters  :      Fetch gene cluster information.
-  rc|rna_clusters   :      Download rna clusters for the specified genes (NOT IMPLEMENTED).
+  mol|alphabet      :      The type of alignments to return. Options are: DNA or protein. Default: DNA.
+  stats|statistics  :      Get statistics for the specified species.
+
+Options for RNA orthologs:
+  all               :      Download files of the specified type for all species in the database.
+  rc|rna_clusters   :      Download RNA clusters for the specified genes.
+  seq|sequences     :      Download RNA cluster ortholog sequences for each gene (if --all) or specific genes (if --gene_name).
   t|type            :      Type of sequence file to fetch.
                               - For assemblies, options are: genbank or fasta. Default: fasta.
                               - For alignments, options are: clustalw or fasta. Default: fasta.
   mol|alphabet      :      The type of alignments to return. Options are: DNA or protein. Default: DNA.
   stats|statistics  :      Get statistics for the specified species.
-  available         :      Print the number of species available in the database and exit. 
   h|help            :      Print a help statement.
   m|man             :      Print the full manual. 
 
