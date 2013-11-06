@@ -99,7 +99,7 @@ if ($rna_clusters && $gene_name) {
 # check @ARGV
 #
 if (!$db) {
-   say "\nERROR: A database to query must be given. Exiting.";
+   say "\nERROR: A database to query must be given for getting stats or assemblies. Or, other arguments may be supplied. Exiting.";
    usage();
    exit(1);
 }
@@ -412,7 +412,7 @@ sub fetch_rna_clusters {
     my $gene;
     for my $link ( @links ) {
         next unless defined $link->text;
-	if ($link->url =~ /u_feature_id=(\d+)) {
+	if ($link->url =~ /u_feature_id=(\d+)/) {
 	    my $id = $1;
 	    $gene = $link->text;
 	    my $url = "http://chloroplast.ocean.washington/tools/cpbase/run?u_feature_id=$id&view=universal_feature";
@@ -482,17 +482,19 @@ sub fetch_rna_clusters {
     }
     elsif ($alignments && $all) {
 	my $file = $gene."_orthologs.nt.aln.";
-	my $suf = "clw" if $type =~ /cl/i;
-	my $suf = "fa" if $type =~ /fa/i;
+	my $suf; ##TODO
+	$suf = "clw" if $type =~ /cl/i;
+	$suf = "fa" if $type =~ /fa/i;
 	$file .= $suf;
 	my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/tmp/$file";
 	fetch_file($file, $endpoint);
     }
     elsif ($alignments && $gene_name) {
 	if ($gene_name eq $gene) {
+	    my $suf; ##TODO
 	    my $file = $gene."_orthologs.nt.aln.";
-	    my $suf= "clw"if $type =~ /cl/i;
-	    my $suf = "fa" if $type=~ /fa/i;
+	    $suf = "clw" if $type =~ /cl/i;
+	    $suf = "fa" if $type =~ /fa/i;
 	    $file .= $suf;
 	    my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/tmp/$file";
 	    fetch_file($file, $endpoint);
@@ -503,30 +505,6 @@ sub fetch_rna_clusters {
     ##                             if sequences
     ##                             elsif alignments
     #return \%rna_cluster_stats;
-}
-
-sub fetch_sequence_files {
-    my ($type, $locus, $organism) = @_;
-
-    my $file = $organism."_".$locus;
-    my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/$locus/files/$file";
-
-    if ($type eq 'genbank') {
-	$file = $file.".gb";
-	$endpoint = $endpoint.".gb";
-    }
-    elsif ($type eq 'fasta') {
-	$file = $file.".fasta";
-	$endpoint = $endpoint.".fasta";
-    }
-
-    my $exit_code;
-    try {
-	$exit_code = system([0..5], "wget -O $file $endpoint");
-    }
-    catch {
-	say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
-    };
 }
 
 sub fetch_file {
@@ -549,9 +527,6 @@ sub usage {
 
 USAGE: perl $script [-g] [-s] [-d] [-asm] [-aln] [-gn] [-gc] [-rc] [-t] [-mol] [-stats] [--available] [-h] [-m]
 
-Options for CpBase statistics:
-  available         :      Print the number of species available in the database and exit.
-
 Options for chlorplast assemblies:
   d|db              :      The database to search.
                            Must be one of: viridiplantae, non_viridiplanate, 'red lineage', rhodophyta, or stramenopiles.
@@ -559,24 +534,25 @@ Options for chlorplast assemblies:
   g|genus           :      The name of a genus query.
   s|species         :      The name of a species to query.
   asm|assemblies    :      Specifies that the chlorplast genome assemblies should be fetched.
+  t|type            :      Format of the sequence file to fetch. Options are: genbank or fasta (Default: fasta).
   stats|statistics  :      Get statistics for the specified species.
+  available         :      Print the number of species available in the database and exit.
 
 Options for chloroplast orthologs:
   all               :      Download files of the specified type for all species in the database.
   aln|alignments    :      Download ortholog alignments for a gene, or all genes.
+  t|type            :      Format of the alignment file to fetch. Options are: clustalw or fasta (Default: fasta).
   gn|gene_name      :      The name of a specific gene to fetch ortholog cluster stats or alignments for.
   gc|gene_clusters  :      Fetch gene cluster information.
-  mol|alphabet      :      The type of alignments to return. Options are: DNA or protein. Default: DNA.
+  mol|alphabet      :      The type of alignments to return. Options are: DNA or protein (Default: DNA).
   stats|statistics  :      Get statistics for the specified species.
 
 Options for RNA orthologs:
   all               :      Download files of the specified type for all species in the database.
   rc|rna_clusters   :      Download RNA clusters for the specified genes.
   seq|sequences     :      Download RNA cluster ortholog sequences for each gene (if --all) or specific genes (if --gene_name).
-  t|type            :      Type of sequence file to fetch.
-                              - For assemblies, options are: genbank or fasta. Default: fasta.
-                              - For alignments, options are: clustalw or fasta. Default: fasta.
-  mol|alphabet      :      The type of alignments to return. Options are: DNA or protein. Default: DNA.
+  t|type            :      Format of the alignment file to fetch. Options are: clustalw or fasta (Default: fasta).
+  mol|alphabet      :      The type of alignments to return. Options are: DNA or protein (Default: DNA).
   stats|statistics  :      Get statistics for the specified species.
   h|help            :      Print a help statement.
   m|man             :      Print the full manual. 
