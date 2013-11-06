@@ -130,8 +130,8 @@ given ($db) {
     when (/red lineage/i) {       $db = "Red_Lineage"; }
     when (/rhodophyta/i) {        $db = "Rhodophyta"; }
     when (/stramenopiles/i) {     $db = "stramenopiles"; }
+    when (/non_viridiplantae/i) { $db = "NOT_Viridiplantae"; }
     when (/viridiplantae/i) {     $db = "Viridiplantae"; }
-    when (/non viridiplantae/i) { $db = "NOT_Viridiplantae"; }
     default {                     die "Invalid name for option db."; }
 }
 
@@ -158,6 +158,7 @@ for my $ts ($te->tables) {
 	my @elem = grep { defined } @$row;
 	if ($elem[0] =~ /(\d+) Genomes/i) {
 	    $genomes = $1;
+	    unlink $cpbase_response;
 	    say "$genomes $db genomes available in CpBase." and exit if $available;
 	}
 	else {
