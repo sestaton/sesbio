@@ -169,7 +169,19 @@ for my $ts ($te->tables) {
 		    my $id = $id_map->{$organism};
 		    my $assem_stats = get_cp_data($id);
 		    $stats{$organism} = $assem_stats;
-		    fetch_sequence_files($type, $locus, $organism) if $assemblies;
+		    #fetch_sequence_files($type, $locus, $organism) if $assemblies;
+		    my $file = $organism."_".$locus;
+		    my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/$locus/files/$file";
+
+		    if ($type eq 'genbank') {
+			$file = $file.".gb";
+			$endpoint = $endpoint.".gb";
+		    }
+		    elsif ($type eq 'fasta') {
+			$file = $file.".fasta";
+			$endpoint = $endpoint.".fasta";
+		    }
+		    fetch_file($file, $endpoint) if $assemblies;
 		}
 		elsif ($genus && $organism =~ /\Q$genus\E/i) {
 		    my $id = $id_map->{$organism};
@@ -317,15 +329,7 @@ sub fetch_ortholog_sets {
 			if ($alignments && $all) {
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
-			    unless (-e $file) {
-                                my $exit_code;
-                                try {
-                                    $exit_code = system([0..5], "wget -O $file $endpoint");
-                                }
-                                catch {
-                                    say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
-                                };
-                            }
+			    fetch_file($file, $endpoint);
 			    unlink $cpbase_response;
 			}
 			elsif ($alignments && 
@@ -335,15 +339,7 @@ sub fetch_ortholog_sets {
 			       $species =~ /$sp/) {
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
-			    unless (-e $file) {
-                                my $exit_code;
-                                try {
-                                    $exit_code = system([0..5], "wget -O $file $endpoint");
-                                }
-                                catch {
-                                    say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
-                                };
-                            }
+			    fetch_file($file, $endpoint);
 			    unlink $cpbase_response;
 			}
 			elsif ($alignments && 
@@ -355,15 +351,7 @@ sub fetch_ortholog_sets {
 			       $gene_name =~ /$elem[0]/) {
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
-			    unless (-e $file) {
-                                my $exit_code;
-                                try {
-                                    $exit_code = system([0..5], "wget -O $file $endpoint");
-                                }
-                                catch {
-                                    say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
-                                };
-                            }
+			    fetch_file($file, $endpoint);
 			    unlink $cpbase_response;
 			}
 			elsif ($alignments && 
@@ -373,15 +361,7 @@ sub fetch_ortholog_sets {
 			       $gene_name =~ /$elem[1]/) {
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
-			    unless (-e $file) {
-				my $exit_code;
-				try {
-				    $exit_code = system([0..5], "wget -O $file $endpoint");
-				}
-				catch {
-				    say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
-				};
-			    }
+			    fetch_file($file, $endpoint);
 			    unlink $cpbase_response;
 			}
 		    }
@@ -491,29 +471,13 @@ sub fetch_rna_clusters {
     elsif ($sequences && $all) {
 	my $file = $gene."_orthologs.nt.fasta";
 	my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/tmp/$file";
-	unless (-e $file) {
-	    my $exit_code;
-	    try {
-		$exit_code = system([0..5], "wget -O $file $endpoint");
-	    }
-	    catch {
-		say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
-	    };
-	}
+	fetch_file($file, $endpoint);
     }
     elsif ($sequences && $gene_name) {
 	if ($gene_name eq $gene) {
 	    my $file = $gene."_orthologs.nt.fasta";
 	    my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/tmp/$file";
-	    unless (-e $file) {
-		my $exit_code;
-		try {
-		    $exit_code = system([0..5], "wget -O $file $endpoint");
-		}
-		catch {
-		    say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
-		};
-	    }
+	    fetch_file($file, $endpoint);
 	}
     }
     elsif ($alignments && $all) {
@@ -522,15 +486,7 @@ sub fetch_rna_clusters {
 	my $suf = "fa" if $type =~ /fa/i;
 	$file .= $suf;
 	my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/tmp/$file";
-	unless (-e $file) {
-	    my $exit_code;
-	    try {
-		$exit_code = system([0..5], "wget -O $file $endpoint");
-	    }
-	    catch {
-		say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
-	    };
-	}
+	fetch_file($file, $endpoint);
     }
     elsif ($alignments && $gene_name) {
 	if ($gene_name eq $gene) {
@@ -539,15 +495,7 @@ sub fetch_rna_clusters {
 	    my $suf = "fa" if $type=~ /fa/i;
 	    $file .= $suf;
 	    my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/tmp/$file";
-	    unless (-e $file) {
-		my $exit_code;
-		try {
-		    $exit_code = system([0..5], "wget -O $file $endpoint");
-		}
-		catch {
-		    say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
-		};
-	    }
+	    fetch_file($file, $endpoint);
 	}
     }
     unlink $cpbase_response;
@@ -579,6 +527,20 @@ sub fetch_sequence_files {
     catch {
 	say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
     };
+}
+
+sub fetch_file {
+    my ($file, $endpoint) = @_;
+
+    unless (-e $file) {
+	my $exit_code;
+	try {
+	    $exit_code = system([0..5], "wget -O $file $endpoint");
+	}
+	catch {
+	    say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
+	};
+    }
 }
 
 sub usage { 
