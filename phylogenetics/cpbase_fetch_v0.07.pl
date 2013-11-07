@@ -162,6 +162,8 @@ for my $ts ($te->tables) {
 	    say "$genomes $db genomes available in CpBase." and exit if $available;
 	}
 	else {
+	    say "\nERROR: Be advised, this command will now attempt to download $genomes assemblies. ".
+		"It would be nicer to specify one species. Exiting now.\n" and exit if $assemblies && $all;
 	    my ($organism,$locus,$sequence_length,$assembled,$annotated,$added) = @elem;
 	    $organism =~ s/\s+/_/g;
 	    
@@ -170,7 +172,6 @@ for my $ts ($te->tables) {
 		    my $id = $id_map->{$organism};
 		    my $assem_stats = get_cp_data($id);
 		    $stats{$organism} = $assem_stats;
-		    #fetch_sequence_files($type, $locus, $organism) if $assemblies;
 		    my $file = $organism."_".$locus;
 		    my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/$locus/files/$file";
 
