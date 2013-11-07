@@ -77,6 +77,7 @@ usage() and exit(0) if $help;
 $type //= 'fasta';
 $alphabet //= 'dna';
 
+##TODO add handling of option for getting all alignments
 if ($gene_clusters && $gene_name && $alignments) {
     my $gene_stats = fetch_ortholog_sets($gene_name, $alignments, $alphabet, $type);
     say join "\t", "Gene","Genome","Locus","Product";
@@ -366,6 +367,7 @@ sub fetch_ortholog_sets {
 			    fetch_file($file, $endpoint);
 			    unlink $cpbase_response;
 			}
+			else { say join "\t", $genus, $g, $species, $sp; }
 		    }
 		}
 	    }
