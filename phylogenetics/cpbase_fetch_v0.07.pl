@@ -73,11 +73,24 @@ GetOptions(
 
 usage() and exit(0) if $help;
 
+if (($assemblies && !$db) || ($gene_clusters && !$db)) {
+    say "\nERROR: A database to query must be given for getting stats or assemblies. Exiting.";
+    usage();
+    exit(1);
+}
+
+if (!$genus && $species) {
+    say "\nERROR: Can not query a species without a genus. Exiting.";
+    usage();
+    exit(1);
+}
+
 ## set defaults for search
 $type //= 'fasta';
 $alphabet //= 'dna';
 
-if ($gene_clusters && $gene_name && $alignments) {
+if (($gene_clusters && $gene_name && $alignments) ||
+    ($gene_clusters && $gene_name && $statistics)) {
     my $gene_stats = fetch_ortholog_sets($gene_name, $alignments, $alphabet, $type);
     say join "\t", "Gene","Genome","Locus","Product";
     for my $gene (keys %$gene_stats) {
@@ -95,20 +108,7 @@ if ($rna_clusters && $gene_name) {
     exit;
 }
 
-#
-# check @ARGV
-#
-if (!$db) {
-   say "\nERROR: A database to query must be given for getting stats or assemblies. Or, other arguments may be supplied. Exiting.";
-   usage();
-   exit(1);
-}
 
-if (!$genus && $species) {
-    say "\nERROR: Can not query a species without a genus. Exiting.";
-    usage();
-    exit(1);
-}
 
 # make epithet
 my $epithet;
@@ -330,7 +330,7 @@ sub fetch_ortholog_sets {
 			if ($alignments && $all) {
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
-			    fetch_file($file, $endpoint);
+			    fetch_file($file, $endpoint) if $alignments;
 			    unlink $cpbase_response;
 			}
 			elsif ($alignments && 
@@ -340,7 +340,7 @@ sub fetch_ortholog_sets {
 			       $species =~ /$sp/) {
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
-			    fetch_file($file, $endpoint);
+			    fetch_file($file, $endpoint) if $alignments;
 			    unlink $cpbase_response;
 			}
 			elsif ($alignments && 
@@ -352,7 +352,7 @@ sub fetch_ortholog_sets {
 			       $gene_name =~ /$elem[0]/) {
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
-			    fetch_file($file, $endpoint);
+			    fetch_file($file, $endpoint) if $alignments;
 			    unlink $cpbase_response;
 			}
 			elsif ($alignments && 
@@ -362,7 +362,7 @@ sub fetch_ortholog_sets {
 			       $gene_name =~ /$elem[1]/) {
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
-			    fetch_file($file, $endpoint);
+			    fetch_file($file, $endpoint) if $alignments;
 			    unlink $cpbase_response;
 			}
 		    }
