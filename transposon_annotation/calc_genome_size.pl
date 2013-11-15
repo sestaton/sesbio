@@ -6,9 +6,9 @@ use warnings;
 use autodie qw(open);
 use Bio::Kseq;
 use List::MoreUtils qw(uniq);
+use List::Utils qw(sum);
 use Statistics::Descriptive;
 use Getopt::Long;
-use Data::Dump qw(dd);
 
 my $usage = "perl $0 -i infile -q query -t target -ml mer_len -fl filter_len [-e] [-pid]\n";
 my $infile;
@@ -29,7 +29,7 @@ GetOptions(
 	   'pid|perc_ident=i' => \$pid,
    );
 
-die $usage if !$infile or !$query or !$target;
+die $usage if !$infile or !$query or !$target or !$mer_len;
 
 $filter_len //= 50;
 $evalue //= 10;
@@ -39,7 +39,7 @@ my ($query_store, $qseq_ct, $query_bases) = store_seq_len($query);
 say STDERR "Finished storing $$qseq_ct sequences in $query.";
 my ($target_store, $tseq_ct, $target_bases) = store_seq_len($target);
 #my $target_bases = sum values %$target_store;
-say STDERR "Finished storing $$tseq_ct sequences in $target ($$target_bases bases).";
+say STDERR "Finished storing $$tseq_ct sequences in $target ($target_bases bases).";
 
 my %matches;
 
@@ -85,27 +85,17 @@ say STDERR "Finished summarizing mapped hits to each transcript.";
 my %counts;
 for my $k (keys %matches) { # this will calculate the number of hits per transcript
     #$counts{$_}++ for @{$matches{$k}};
-    my @filtered_matches = uniq(@{$matches{$k}});
-    my $match_base_count;
-    for (@filtered_matches) {
-	$match_base_count += $target_store->{$_};# for @filtered_matches;
-    }
-    $counts{$k} = $match_base_count;
-    #say join "\t", $query_store->{$k}, scalar(@filtered_matches), $match_base_count;
+    my $count = uniq(@{$matches{$k}});
+    $counts{$k} = $count;
 }
 %matches = ();
 say STDERR "Finished calculating the number of mapped reads per transcript.";
 
-#dd \%counts;
-#exit;
-
 my %trans_cov;
 for my $transc (keys %counts) {
-    if (exists $query_store->{$transc}) {
-	## need to calc total length of bases mapped to
-	#
-	my $len_mapped = $counts{$transc};
-	my $trans_len = $query_store->{$transc};
+    if (exists $store->{$transc}) {
+	my $len_mapped = $counts{$transc} * 59;
+	my $trans_len = $store->{$transc};
 	my $trans_cov = $len_mapped / $trans_len;
 	#my $trans_cov_rnd = int($trans_cov + $trans_cov/abs($trans_cov*2)); # round num
 	my $trans_cov_nornd = sprintf("%.2f", $trans_cov);
@@ -114,8 +104,6 @@ for my $transc (keys %counts) {
 }
 %counts = ();
 say STDERR "Finished calculating the per transcript coverage. Now writing output.";
-
-#dd \%trans_cov; exit;
 
 my $stat = Statistics::Descriptive::Full->new();
 for my $trans (reverse sort { $trans_cov{$a} <=> $trans_cov{$b} } keys %trans_cov) {
@@ -134,7 +122,7 @@ my $sd    = $stat->standard_deviation;
 say STDERR join "\t", "Count", "Mean", "Median", "Variance", "SD", "Min", "Max";
 say STDERR join "\t", $count, $mean, $medi, $var, $sd, $min, $max;
 say STDERR join "\t", "cval_by_mean", "cval_by_median", "cval_by_min", "cval_by_max";
-say STDERR join "\t", ($$target_bases/$mean), ($$target_bases/$medi), ($$target_bases/$min), ($$target_bases/$max);
+say STDERR join "\t", ($target_bases/$mean), ($target_bases/$medi), ($target_bases/$min), ($target_bases/$max);
 
 undef $stat;
 exit;
