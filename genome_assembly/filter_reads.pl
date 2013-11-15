@@ -106,7 +106,8 @@ catch {
  
 # 
 # Run Vmatch for the query
-# 
+#
+my $vmatch_cmd; 
 my $vmerSearchSeqnum = $ifile."_vmermatches_$str";
 if ($keep) {
     $vmatch_cmd = "$vmatch -p -d -showdesc 0 -q $infile -l $merlen";
