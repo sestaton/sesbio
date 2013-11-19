@@ -63,25 +63,25 @@ Print the full documentation.
 
 =cut   
 
+use 5.010;
 use strict;
 use warnings;
-use Bio::SeqIO;
 use Getopt::Long;
 use Pod::Usage;
-use Time::HiRes qw(gettimeofday);
 use File::Basename;
-use File::Copy;
 
 #
 # Vars
 #
 my $infile;
+my $outfile;
 my $num;
 my $help;
 my $man;
 
 GetOptions(# Required
            'i|infile=s'   => \$infile,
+	   'o|outfile=s'  => \$outfile,
 	   'n|numseqs=i'  => \$num,
 	  
            # Options
@@ -90,8 +90,9 @@ GetOptions(# Required
            ) || pod2usage( "Try 'basename($0) --man' for more information." );
 
 pod2usage( -verbose => 2 ) if $man;
+usage() and exit(0) if $help;
 
-if (!$infile || !$num || $help) {
+if (!$infile || !$num || !$outfile) {
     print "\nERROR: No input was given.\n";
     usage();
     exit(1);
@@ -99,53 +100,100 @@ if (!$infile || !$num || $help) {
 
 # counters
 my $seqct = 0;
-my $seqover = 0;
-my $t0 = gettimeofday();
 
-# create SeqIO objects to read in and to write outfiles
-my $seq_in  = Bio::SeqIO->new( -format => 'fasta', -file => $infile); 
+my ($name, $comm, $seq, $qual);
+my @aux = undef;
 
-my $outfile1 = $infile;
-$outfile1 =~ s/\.fa.*//;
-$outfile1 .= "_".$num.".fasta";
-my $seqs_out = Bio::SeqIO->new( -format => 'fasta', -file => ">$outfile1");
+my $fh = get_fh($infile);
+open my $out, '<', $outfile or die "\nERROR: Could not open file: $outfile";
 
-my $outfile2 = $outfile1;
-my $rem = "after"; 
-$outfile2 =~ s/$num/$rem/;
-my $seqs_out2 = Bio::SeqIO->new( -format => 'fasta', -file => ">$outfile2");
-
-while( my $seqs = $seq_in->next_seq() ) {
+while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
     if ($seqct < $num) {
 	$seqct++;
-	$seqs_out->write_seq($seqs);
-    } else {
-	$seqover++;
-	$seqs_out2->write_seq($seqs);
+	if (defined $qual) {
+	    say join "\n", "@".$name, $seq, '+', $qual;
+	}
+	else {
+	    say join "\n", ">".$name, $seq;
+	}
     }
 }
 
-my $seqtot = $seqct + $seqover;
-my $outfafter = $outfile1;
-$outfafter =~ s/$num/$seqover/;
-move("$outfile2","$outfafter");
-
-my $t1 = gettimeofday();
-my $elapsed = $t1 - $t0;
-my $time = sprintf("%.2f",$elapsed/60);
-
-say "\n$seqtot reads ($seqct in file $outfile1, $seqover in file $outfafter) written in $time minutes.\n";
-
 exit;
+#
+# methods
+#
+sub get_fh {
+    my ($file) = @_;
 
-# subs
+    my $fh;
+    if ($file =~ /\.gz$/) {
+        open $fh, '-|', 'zcat', $file or die "\nERROR: Could not open file: $file\n";
+    }
+    elsif ($file =~ /\.bz2$/) {
+        open $fh, '-|', 'bzcat', $file or die "\nERROR: Could not open file: $file\n";
+    }
+    else {
+        open $fh, '<', $file or die "\nERROR: Could not open file: $file\n";
+    }
+
+    return $fh;
+}
+
+sub readfq {
+    my ($fh, $aux) = @_;
+    @$aux = [undef, 0] if (!@$aux);
+    return if ($aux->[1]);
+    if (!defined($aux->[0])) {
+        while (<$fh>) {
+            chomp;
+            if (substr($_, 0, 1) eq '>' || substr($_, 0, 1) eq '@') {
+                $aux->[0] = $_;
+                last;
+            }
+        }
+        if (!defined($aux->[0])) {
+            $aux->[1] = 1;
+            return;
+        }
+    }
+    my ($name, $comm);
+    defined $_ && do {
+        ($name, $comm) = /^.(\S+)(?:\s+)(\S+)/ ? ($1, $2) : 
+	                 /^.(\S+)/ ? ($1, '') : ('', '');
+    };
+    my $seq = '';
+    my $c;
+    $aux->[0] = undef;
+    while (<$fh>) {
+        chomp;
+        $c = substr($_, 0, 1);
+        last if ($c eq '>' || $c eq '@' || $c eq '+');
+        $seq .= $_;
+    }
+    $aux->[0] = $_;
+    $aux->[1] = 1 if (!defined($aux->[0]));
+    return ($name, $comm, $seq) if ($c ne '+');
+    my $qual = '';
+    while (<$fh>) {
+        chomp;
+        $qual .= $_;
+        if (length($qual) >= length($seq)) {
+            $aux->[0] = undef;
+            return ($name, $comm, $seq, $qual);
+        }
+    }
+    $aux->[1] = 1;
+    return ($name, $seq);
+}
+
 sub usage {
     my $script = basename($0);
   print STDERR <<END
 USAGE: $script -i s_1_sequence.fasta -n 100000 
 
 Required:
-    -i|infile   :    Fasta file of left paired reads.
+    -i|infile   :    Fasta file of r
     -n|num      :    The number of reads to select.
 
 Options:
