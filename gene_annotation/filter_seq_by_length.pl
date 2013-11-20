@@ -122,7 +122,7 @@ my ($name, $comm, $seq, $qual);
 my @aux = undef;
 
 my $fh = get_fh($infile);
-open my $out, '<', $outfile or die "\nERROR: Could not open file: $outfile";
+open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile";
 
 while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
     if ($over) {
