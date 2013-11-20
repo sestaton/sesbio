@@ -2,7 +2,7 @@
 
 =head1 NAME 
                                                                        
-pickNreads.pl - Extract N reads from a Fasta file
+pickNreads.pl - Extract N reads from a FastA/Q file
 
 =head1 SYNOPSIS    
 
@@ -10,22 +10,11 @@ pickNreads.pl -i seqs.fasta -n 1000
 
 =head1 DESCRIPTION
                                                                    
-Takes a Fasta file and picks the first N, where N
+Takes a FastA/Q file and picks the first N, where N
 can be any number, sequences. The selection of sequences
-is sequential and is based on the order in the file so, 
+is sequential and is based on the order in the file, so 
 the sequences are NOT picked randomly. There are many 
 programs for randomly picking sequences from a file.
-
-The output is two files where the first is named
-based on the selected number of sequences and the second
-will contain every other sequence in the file. For
-example if "seqs.fasta" contains 100 sequences and we 
-want 10 we would do:
-
-perl pickNreads.pl -i seqs.fasa -n 10
-
-and the output would be:  seqs_10.fasta
-                          seqs_90.fasfa
 
 =head1 AUTHOR 
 
@@ -41,7 +30,7 @@ statonse at gmail dot com
 
 =item -i, --infile
 
-The Fasta file from which to select sequences.
+The FastA/Q file from which to select sequences.
 
 =item -n, --numreads
 
@@ -110,12 +99,10 @@ open my $out, '<', $outfile or die "\nERROR: Could not open file: $outfile";
 while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
     if ($seqct < $num) {
 	$seqct++;
-	if (defined $qual) {
-	    say join "\n", "@".$name, $seq, '+', $qual;
-	}
-	else {
-	    say join "\n", ">".$name, $seq;
-	}
+	say $out join "\n", ">".$name, $seq if !defined $qual && !defined $comm;
+	say $out join "\n", ">".$name.q{ }.$comm, $seq if !defined $qual && defined $comm;
+	say $out join "\n", "@".$name, $seq, '+', $qual if defined $qual && !defined $comm;
+	say $out join "\n", "@".$name.q{ }.$comm, $seq, '+', $qual if defined $qual && defined $comm; 
     }
 }
 
@@ -190,11 +177,12 @@ sub readfq {
 sub usage {
     my $script = basename($0);
   print STDERR <<END
-USAGE: $script -i s_1_sequence.fasta -n 100000 
+USAGE: $script -i s_1_sequence.fasta -o s_1_sequence_100k.fasta -n 100000 
 
 Required:
-    -i|infile   :    Fasta file of r
+    -i|infile   :    FastA/Q file of reads/contigs.
     -n|num      :    The number of reads to select.
+    -o|outfile  :    The file to place the selected reads.
 
 Options:
     -h|help     :    Print usage statement.
