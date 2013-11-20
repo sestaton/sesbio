@@ -9,18 +9,16 @@ use 5.012;
 use strict;
 use warnings;
 use warnings FATAL => "utf8";
-use open qw(:std :utf8);
 use autodie qw(open);
 use Getopt::Long;
 use File::Basename;
 use File::Temp;
 use Try::Tiny;
-use Capture::Tiny qw(:all);
 use File::Copy;
 use POSIX qw(strftime);
-use IPC::System::Simple qw(system);
+use IPC::System::Simple qw(system capture);
 use Cwd;
-use Data::Dump qw(dd);
+#use Data::Dump qw(dd);
 
 # lexical vars
 my $infile;
@@ -76,10 +74,13 @@ $db .= "_$str";
 
 my $cwd = getcwd();
 my $tmpiname = $ifile."_XXXX";
-my $o_tmp = File::Temp->new( TEMPLATE => $tmpiname,
-			     DIR      => $cwd,
-			     SUFFIX   => $iext,
-			     UNLINK   => 0);
+my $o_tmp;
+if ($keep) {
+    $o_tmp = File::Temp->new( TEMPLATE => $tmpiname,
+			      DIR      => $cwd,
+			      SUFFIX   => $iext,
+			      UNLINK   => 0);
+}
 
 # set paths to programs used
 my $mkvtree = find_prog("mkvtree");
@@ -89,23 +90,24 @@ my $records = find_prog("faSomeRecords");
 #
 # Create the index
 #
-my ($mkvtree_o, $mkvtree_e);
 try {
-    ($mkvtree_o, $mkvtree_e) = capture { system("$mkvtree -db $subject -indexname $db -dna -allout -v -pl"); };
-    if ($mkvtree_e =~ /^mkvtree\:/) {
-	say "\nERROR: $mkvtree_e. Exiting."; exit(1);
+    my @mkvout = capture([0..5], "$mkvtree -db $subject -indexname $db -dna -allout -v -pl");
+    for my $mko (@mkvout) {
+	if ($mko =~ /^mkvtree\:/) {
+	    say "\nERROR: $mko. Exiting.";
+	    exit(1);
+	}
     }
 }
 catch {
-    say "\nERROR: mkvtree appears to have exited abnormally. Here is the exception: $_\n" and exit(1);
-    say "mkvtree output: $mkvtree_o";
-    say "mkvtree error:  $mkvtree_e";
+    say "\nERROR: mkvtree appears to have exited abnormally. Here is the exception: $_\n";
+    exit(1);
 };
  
 # 
 # Run Vmatch for the query
-# 
-my ($vmatch_o, $vmatch_e, $vmatch_cmd);
+#
+my $vmatch_cmd; 
 my $vmerSearchSeqnum = $ifile."_vmermatches_$str";
 if ($keep) {
     $vmatch_cmd = "$vmatch -p -d -showdesc 0 -q $infile -l $merlen";
@@ -113,16 +115,17 @@ if ($keep) {
     $vmatch_cmd .= " $db";
 
     try {
-	($vmatch_o, $vmatch_e) = capture { system("$vmatch_cmd > $vsearch_out"); };
-	system("grep -v \"^#\" $vsearch_out | sed -e 's\/^\[ \\t\]*\/\/g' | perl -lane 'print \$F\[5\]' | sort -u > $vmerSearchSeqnum");
-	if ($vmatch_e =~ /^vmatch\:/) {
-	    say "\nERROR: $vmatch_e. Exiting."; exit(1);
-	}
+	my @vmatchout = capture([0..5], "$vmatch_cmd > $vsearch_out");
+	for my $vmline (@vmatchout) {
+	    if ($vmline =~ /^vmatch\:/) {
+		say "\nERROR: $vmline. Exiting."; exit(1);
+	    }
+	} 
+	system([0..5], "grep -v \"^#\" $vsearch_out | sed -e 's\/^\[ \\t\]*\/\/g' | perl -lane 'print \$F\[5\]' | sort -u > $vmerSearchSeqnum");
     }
     catch {
-	say "\nERROR: Vmatch appears to have exited abnormally. Here is the exception: $_\n" and exit(1);
-	say "vmatch output: $vmatch_o";
-	say "vmatch error:  $vmatch_e";
+	say "\nERROR: Vmatch appears to have exited abnormally. Here is the exception: $_\n";
+	exit(1);
     };
 }
 else {
@@ -131,15 +134,17 @@ else {
     $vmatch_cmd .= " $db";
 
     try {
-	($vmatch_o, $vmatch_e) = capture { system("$vmatch_cmd | grep -v \"^#\" | sed 's\/\\s\.*\/\/' > $o_tmp"); };
-	if ($vmatch_e =~ /^vmatch\:/) {
-	    say "\nERROR: $vmatch_e. Exiting."; exit(1);
+	my @vmatchout = capture([0..5], "$vmatch_cmd | grep -v \"^#\" | sed 's\/\\s\.*\/\/' > $outfile");
+	for my $vmline (@vmatchout) {
+	    if ($vmline =~ /^vmatch\:/) {
+		say "\nERROR: $vmline. Exiting.";
+		exit(1);
+	    }
 	}
     }
     catch {
-	say "\nERROR: Vmatch appears to have exited abnormally. Here is the exception: $_\n" and exit(1);
-	say "vmatch output: $vmatch_o";
-	say "vmatch error: $vmatch_e";
+	say "\nERROR: Vmatch appears to have exited abnormally. Here is the exception: $_\n";
+	exit(1);
     };
 }
 
@@ -164,14 +169,12 @@ if ($keep) {
     close $vsearch;
 
     # return the sequences matching the subject index
-    my ($fa_o, $fa_e);
     try {
-	($fa_o, $fa_e) = capture { system("$records $infile $vmerSearchSeqnum $o_tmp") };
+	system([0..5], "$records $infile $vmerSearchSeqnum $o_tmp");
     }
     catch {
-	say "\nERROR: faSomeRecords appears to have exited abnormally. Here is the exception: $_\n" and exit(1);
-	say "faSomeRecords output: $fa_o";
-	say "faSomeRecords error:  $fa_e";
+	say "\nERROR: faSomeRecords appears to have exited abnormally. Here is the exception: $_\n";
+	exit(1);
     };
 }
 
@@ -213,12 +216,12 @@ if ($keep && $filter) {
 #
 # Compute screening results
 #
-my ($qrySeqCt_o, $qrySetCt_e) = capture { system("grep -c '>' $infile"); }; 
+my $qrySeqCt_o = capture([0..5], "grep -c '>' $infile"); 
 chomp $qrySeqCt_o;
 
 my ($scrSeqCt_o, $scrSeqCt_e);
 unless ($keep && $filter) {
-    ($scrSeqCt_o, $scrSeqCt_e) = capture { system("grep -c '>' $o_tmp"); };
+    $scrSeqCt_o = capture([0..5], "grep -c '>' $o_tmp");
     chomp $scrSeqCt_o;
 }
 
@@ -244,10 +247,10 @@ else {
 
 # clean up
 if ($clean) {
-    my ($clean_o, $clean_e) = capture { system("rm ${db}*"); };
-    unlink $vsearch_out;
-    unlink $o_tmp;
-    unlink $vmerSearchSeqnum;
+    unlink glob "${db}*";
+    unlink $vsearch_out if -e $vsearch_out;
+    unlink $o_tmp if -e $o_tmp;
+    unlink $vmerSearchSeqnum if -e $vmerSearchSeqnum;
 }
 
 #
@@ -255,7 +258,7 @@ if ($clean) {
 #
 sub find_prog {
     my $prog = shift;
-    my ($path, $err) = capture { system("which $prog"); };
+    my $path = capture([0..5], "which $prog");
     chomp $path;
     
     ## given/when moved to experimental in v5.18
