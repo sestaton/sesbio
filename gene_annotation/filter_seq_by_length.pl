@@ -27,7 +27,7 @@ statonse at gmail dot com
 
 =item -i, --infile
 
-The fasta file containing reads for contigs to filter.
+The FastA/Q file containing reads for contigs to filter.
 
 =item -o, --outfile
 
@@ -67,7 +67,6 @@ Print the full documentation.
 use 5.010;
 use strict;
 use warnings; 
-use Bio::SeqIO;
 use Getopt::Long;
 use File::Basename;
 use Pod::Usage;
@@ -96,8 +95,8 @@ GetOptions(
 	   'over'           => \$over,
 	   'under'          => \$under,
 	   'h|help'         => \$help,
-	   'm|man'          => \$man,
-) || pod2usage( "Try 'basename($0) --man' for more information." );
+           'm|man'          => \$man,
+    ) or pod2usage( "Try 'basename($0) --man' for more information." );
 
 #
 # Check @ARGV
@@ -119,38 +118,42 @@ if ($over && $under) {
 }
 
 # create SeqIO objects to read in and to write outfiles
-my $seqs_in = Bio::SeqIO->new('-file' => "$infile",
-			      '-format' => 'fasta',
-			     );
+my ($name, $comm, $seq, $qual);
+my @aux = undef;
 
-my %seqs_out = (
-                'selected' => Bio::SeqIO->new('-file' => ">$outfile",
-					   '-format' => 'fasta'),
-		);
+my $fh = get_fh($infile);
+open my $out, '<', $outfile or die "\nERROR: Could not open file: $outfile";
 
-while ( my $seq = $seqs_in->next_seq() ) {
-  #partition the sequences by length
+while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
     if ($over) {
-	if ( $seq->length >= $length ) {     
+	if ( length($seq) >= $length ) {     
 	    $overCount++;
-	    $overTotal += $seq->length;
-	    $seqs_out{'selected'}->write_seq($seq);
+	    $overTotal += length($seq);
+	    say $out join "\n", ">".$name, $seq if !defined $qual && !defined $comm;
+	    say $out join "\n", ">".$name.q{ }.$comm, $seq if !defined $qual && defined $comm;
+	    say $out join "\n", "@".$name, $seq, '+', $qual if defined $qual && !defined $comm;
+	    say $out join "\n", "@".$name.q{ }.$comm, $seq, '+', $qual if defined $qual && defined $comm; 
 	} else {	
 	    $underCount++;
-	    $underTotal += $seq->length;
+	    $underTotal += length($seq);
 	}
     }
     if ($under) {
-	if ( $seq->length < $length ) {
+	if ( length($seq) < $length ) {
 	    $underCount++;
             $underTotal += $seq->length;
-            $seqs_out{'selected'}->write_seq($seq);
+	    say $out join "\n", ">".$name, $seq if !defined $qual && !defined $comm;
+	    say $out join "\n", ">".$name.q{ }.$comm, $seq if !defined $qual && defined $comm;
+	    say $out join "\n", "@".$name, $seq, '+', $qual if defined $qual && !defined $comm;
+	    say $out join "\n", "@".$name.q{ }.$comm, $seq, '+', $qual if defined $qual && defined $comm;
         } else {
 	    $overCount++;
-            $overTotal += $seq->length;
+            $overTotal += length($seq);
         }
     }
 } 
+close $fh;
+close $out;
 
 my $count = $overCount + $underCount;
 my $total = $overTotal + $underTotal;
@@ -175,15 +178,79 @@ if ($underCount >= 1) {
 
 exit;
 #
-# SUBS
+# methods
 #
+sub get_fh {
+    my ($file) = @_;
+
+    my $fh;
+    if ($file =~ /\.gz$/) {
+        open $fh, '-|', 'zcat', $file or die "\nERROR: Could not open file: $file\n";
+    }
+    elsif ($file =~ /\.bz2$/) {
+        open $fh, '-|', 'bzcat', $file or die "\nERROR: Could not open file: $file\n";
+    }
+    else {
+        open $fh, '<', $file or die "\nERROR: Could not open file: $file\n";
+    }
+
+    return $fh;
+}
+
+sub readfq {
+    my ($fh, $aux) = @_;
+    @$aux = [undef, 0] if (!@$aux);
+    return if ($aux->[1]);
+    if (!defined($aux->[0])) {
+        while (<$fh>) {
+            chomp;
+            if (substr($_, 0, 1) eq '>' || substr($_, 0, 1) eq '@') {
+                $aux->[0] = $_;
+                last;
+            }
+        }
+        if (!defined($aux->[0])) {
+            $aux->[1] = 1;
+            return;
+        }
+    }
+    my ($name, $comm);
+    defined $_ && do {
+        ($name, $comm) = /^.(\S+)(?:\s+)(\S+)/ ? ($1, $2) : 
+                         /^.(\S+)/ ? ($1, '') : ('', '');
+    };
+    my $seq = '';
+    my $c;
+    $aux->[0] = undef;
+    while (<$fh>) {
+        chomp;
+        $c = substr($_, 0, 1);
+        last if ($c eq '>' || $c eq '@' || $c eq '+');
+        $seq .= $_;
+    }
+    $aux->[0] = $_;
+    $aux->[1] = 1 if (!defined($aux->[0]));
+    return ($name, $comm, $seq) if ($c ne '+');
+    my $qual = '';
+    while (<$fh>) {
+        chomp;
+        $qual .= $_;
+        if (length($qual) >= length($seq)) {
+            $aux->[0] = undef;
+            return ($name, $comm, $seq, $qual);
+        }
+    }
+    $aux->[1] = 1;
+    return ($name, $seq);
+}
+
 sub usage {
   my $script = basename($0);
   print STDERR <<END
 USAGE: $script -i seqsin.fas -o filterseqs.fas -l length [--over] [--under]
 
 Required:
-    -i|infile    :    Fasta file of reads or contigs to filter.
+    -i|infile    :    FastA/Q file of reads or contigs to filter.
     -o|outfile   :    File to place the filtered reads or contigs.
     -l|length    :    Length (integer) to be used as the lower
                       threshold for filtering.
