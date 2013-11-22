@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use v5.10;
+use 5.010;
 use strict;
 use warnings;
 use autodie qw(open);
@@ -34,7 +34,7 @@ my ($totalct, $subseqct) = (0, 0);
 	my $seq = join '', @seqparts;
 	next unless defined $seqid && defined $seq;
 	next unless length($seq) >= $length;
-	my $subseq = substr($seq, 0, $length-1);
+	my $subseq = substr($seq, 0, $length);
 	$subseqct++;
 	say $out join "\n", ">".$seqid, $subseq;
     }
