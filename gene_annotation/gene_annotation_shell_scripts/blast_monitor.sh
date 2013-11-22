@@ -44,7 +44,7 @@ echo "The BLAST report is: $blast"
 echo "The Fasta query is : $query"
 echo ""
 curquery=$(tail -2 $blast | head -1 | cut -f 1)
-curline=$(grep ">" $query | grep -n $curquery | cut -f 1 -d ':')
+curline=$(grep ">" $query | grep -Fwn $curquery | cut -f 1 -d ':')
 nblines=$(grep -c ">" $query)
 percent=$(echo "($curline/$nblines) *100" | bc -l | cut -c 1-4)
 echo "The BLAST job is $percent% done..."
