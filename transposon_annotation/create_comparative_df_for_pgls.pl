@@ -3,7 +3,7 @@
 
 ## TODO: Change names for printing out full Genus name in plot
 
-use v5.14;
+use 5.014;
 use utf8;
 use strict;
 use warnings;
@@ -81,6 +81,7 @@ my %species_map = (
     TKS       => 'Taraxacum',
     );
 
+##TODO: Fix bug with creating format that can't be read in R without reformatting in excel
 for my $species (sort keys %df) {
     print $species_map{$species};
     for my $f (sort keys %fams) {
@@ -99,7 +100,6 @@ for my $species (sort keys %df) {
     print "\n";
 }
 #dd \%sfdf;
-
 #print $fam_ct," expected families\n";
 
 ## subs
