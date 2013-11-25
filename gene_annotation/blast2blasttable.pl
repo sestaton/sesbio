@@ -1,12 +1,14 @@
 #!/usr/bin/env perl
 
-# Convert a blastxml report to a blast table
+# Convert a blastxml or standard blast report to a blast table
+# TODO: Not currently getting top hit.
+
 
 use 5.010;
 use strict;
 use warnings;
-use Bio::SearchIO; # for searchio stuff with blast reports
-use Getopt::Long; # for getting options at the command line
+use Bio::SearchIO;
+use Getopt::Long;
 use File::Basename;
 
 #
@@ -30,29 +32,20 @@ GetOptions(
 	   't|top'         => \$tophit,
 	   'l|length=i'    => \$length_thresh,
 	   'p|percentid=f' => \$pid_thresh,
-	   'v|verbose'     => \$verbose,
+#	   'v|verbose'     => \$verbose,
 	   );
 	 
 #
 # Check @ARGVs 
 #
-if (!$infile){
-    say "\nERROR: No infile was given at the command line\n";
-    usage();
-    exit(0);
-}
-if (!$outfile){
-    say "\nERROR: No outfile was given at the command line\n";
-    usage();
-    exit(0);
-}
-if (!$format){
-    say "\nERROR: No blastformat was given at the command line\n";
+if (!$infile || !$outfile || !$format){
+    say "\nERROR: Command line not parsed correctly.\n";
     usage();
     exit(0);
 }
 
-my $allq = 0;
+
+#my $allq = 0;
 $length_thresh //= 0;
 $pid_thresh //= 0;
 
@@ -65,11 +58,11 @@ my $search_in = Bio::SearchIO->new(-format => $format, -file => $infile, -tempfi
 #say $blastout "#Query\tHit\tPercent_ID\tHSP_len\tNum_mismatch\tNum_gaps\tQuery_start\tQuery_end\tHit_start\tHit_end\tE-value\tBit_score";
 
 while ( my $result = $search_in->next_result ) {
-    while( my $hit = $result->next_hit ) {
+    while ( my $hit = $result->next_hit ) {
 	#my $hitlen = $hit->length();
-	while( my $hsp = $hit->next_hsp ) {
+	while ( my $hsp = $hit->next_hsp ) {
 	    my $hsplen = $hsp->length('total');
-	    if( $hsplen >= $length_thresh && $hsp->percent_identity >= $pid_thresh ) {
+	    if ( $hsplen >= $length_thresh && $hsp->percent_identity >= $pid_thresh ) {
 		$allq++;
 		my $percent_identity = sprintf("%.2f",$hsp->percent_identity);
 		
