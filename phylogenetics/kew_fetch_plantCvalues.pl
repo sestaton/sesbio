@@ -2,11 +2,11 @@
 
 =head1 NAME 
                                                                        
-kewfetch_plantCvalues.pl - Fetch C-values for a plant family  
+kew_fetch_plantCvalues.pl - Fetch C-values for a plant family  
 
 =head1 SYNOPSIS    
  
-kewfetch_plantCvalues.pl -f familyname -e email -o resultsfile
+kew_fetch_plantCvalues.pl -f familyname -e email -o resultsfile
 
 =head1 DESCRIPTION
                                                                    
@@ -100,8 +100,6 @@ Print a usage statement.
 Print the full documentation.
 
 =cut      
-
-# TODO: take options to search any family, gymnosperm for example. DONE
 
 #
 # INCLUDES
