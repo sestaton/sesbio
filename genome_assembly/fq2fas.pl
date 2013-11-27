@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl
 
 =head1 NAME 
                                                                        
@@ -49,6 +49,7 @@ Print the full documentation.
 =cut   
 
 use strict;
+use warnings;
 use Getopt::Long;
 use Pod::Usage;
 use Time::HiRes qw(gettimeofday);
