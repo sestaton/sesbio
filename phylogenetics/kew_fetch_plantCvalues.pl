@@ -101,6 +101,8 @@ Print the full documentation.
 
 =cut      
 
+##TODO: get return type (2C Mbp, 1C Mbp, etc...) Currently, 1C Mbp is returned 
+
 #
 # INCLUDES
 #
@@ -298,7 +300,7 @@ sub geturlfordb {
 			 'chkSpecies'          => "on",
 			 'chkChromosome'       => "on",
 			 'chkPloidyLevel'      => "on",
-			 'cmbFourcSelect'      => "1",
+			 'cmbFourcSelect'      => "1",   # this is the return type, currently 1C Mbp
 			 'chkOrigReference'    => "on",
 			 'cmbPrimeOrAllData'   => "0",
 			 'txtFamily'           => $fam,
