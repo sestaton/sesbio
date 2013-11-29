@@ -1,6 +1,9 @@
 #!/usr/bin/env perl
 
-use v5.12;
+##NB: This script only works with my version of Graph::GEXF (https://github.com/sestaton/graph-gexf)
+##    At least, I could only get the graphs load in Geffi with some modifications implemented in that library.
+
+use 5.012;
 use strict;
 use warnings;
 use autodie qw(open);
