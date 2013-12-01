@@ -132,22 +132,13 @@ use Data::Dumper;
 use File::Basename;
 #File::Temp;
 
-# TODO: Filter simple, dinuc, trinuc, etc. repeats           DONE
-#       Filter by threshhold (raw counts or log counts)      DONE
-#       SEE "filter_oligocounts.pl"
-#       SEE "cnv_oligocounts2log.pl" to convert existing
-#       gff file
- 
+#TODO: 
 #       (Makes more sense to use separate script because 
 #        there is no way to know the range of counts,
 #        though it may be a useful option to just do the 
 #        search and print the statistical properties
 #        of the k-mers.) 
 #
-#       Add option --gff.                                    DONE
-#       Remove option --outfile and create
-#       outfile names with File::Spec.
-
 #       Print information about the outfile names.
 #       Print time or message that program is completed.
 

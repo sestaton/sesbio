@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
 ##TODO: add POD
+##NB: For 4 line records, head -N is preferred for simplicity
 
 use 5.014;
 use strict;
