@@ -138,7 +138,7 @@ close $out;
 sub usage {
     my $script = basename($0);
   print STDERR <<END
-      USAGE: $script -f seqsin.fas -o filterseqs.fas -b blastfile -l length
+USAGE: $script -f seqsin.fas -o filterseqs.fas -b blastfile -l length
 
 Required:
     -f|fastafile    :    Fasta file of reads or contigs to filter.
