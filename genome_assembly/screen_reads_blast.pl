@@ -29,7 +29,7 @@ statonse at gmail dot com
 
 The blast file (tab-delimited "-m8" or "-outfmt 6").
 
-=item -f, --fastafile
+=item -i, --infile
 
 The file of reads used as the query in the blast search.
 
@@ -73,7 +73,7 @@ my $help;
 my $man;
 
 GetOptions(
-           'f|fastafile=s'   => \$fasta,
+           'i|infile=s'      => \$fasta,
            'b|blastfile=s'   => \$blast,
            'o|outfile=s'     => \$outfile,
            'l|length=i'      => \$length,
@@ -138,10 +138,10 @@ close $out;
 sub usage {
     my $script = basename($0);
   print STDERR <<END
-USAGE: $script -f seqsin.fas -o filterseqs.fas -b blastfile -l length
+USAGE: $script -i seqsin.fas -o filterseqs.fas -b blastfile -l length
 
 Required:
-    -f|fastafile    :    Fasta file of reads or contigs to filter.
+    -i|infile       :    Fasta file of reads or contigs to filter.
     -b|blastfile    :    Blast file of query reads to some screening database.
     -o|outfile      :    A file to place the filtered sequences.
 
