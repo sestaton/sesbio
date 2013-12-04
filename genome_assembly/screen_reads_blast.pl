@@ -91,7 +91,7 @@ if (!$fasta || !$blast || !$outfile) {
 
 $length //= 50;
 open my $in, '<', $blast;
-open my $fas, '<', $fasta;
+my $fas = get_fh($fasta);
 open my $out, '>', $outfile;
 
 my %match_range;
@@ -108,32 +108,94 @@ close $in;
 
 my ($scrSeqCt, $validscrSeqCt) = (0, 0);
 
-{
-    local $/ = '>';
-    
-    while (my $line = <$fas>) {
-	$line =~ s/>//g;
-	next if !length($line);
-	my ($seqid, @seqs) = split /\n/, $line; 
-	my $seq = join '', @seqs;
-	my $useq = uc($seq);
-	$scrSeqCt++ if defined $seq;
-	$seqid =~ s/\s.*//;
-	if (exists $match_range{$seqid}) {
-	    my ($match_start, $match_end) = split /\|/, $match_range{$seqid};
-	    if (defined $match_start && defined $match_end) {
-		my $match_length = $match_end - $match_start;
-		if ($match_length >= $length) {
-		    $validscrSeqCt++;
-		    my $seq_match = substr $useq, $match_start, $match_length;
-		    say $out join "\n", ">".$seqid, $seq_match;
-		}
+my @aux = undef;
+my ($name, $comm, $seq, $qual);
+while (($name, $comm, $seq, $qual) = readfq(\*$fas, \@aux)) {
+    $scrSeqCt++ if defined $seq;
+    if (exists $match_range{$name}) {
+	my ($match_start, $match_end) = split /\|/, $match_range{$name};
+	if (defined $match_start && defined $match_end) {
+	    my $match_length = $match_end - $match_start;
+	    if ($match_length >= $length) {
+		$validscrSeqCt++;
+		my $seq_match = substr $seq, $match_start, $match_length;
+		say $out join "\n", ">".$name, $seq_match;
 	    }
 	}
     }
 }
 close $fas;
 close $out;
+
+say STDERR "$scrSeqCt total sequences matched the target.";
+say STDERR "$validscrSeqCt were above the length threshold and were written to $outfile.";
+
+#
+# methods
+#
+sub readfq {
+    my ($fh, $aux) = @_;
+    @$aux = [undef, 0] if (!@$aux);
+    return if ($aux->[1]);
+    if (!defined($aux->[0])) {
+        while (<$fh>) {
+            chomp;
+            if (substr($_, 0, 1) eq '>' || substr($_, 0, 1) eq '@') {
+                $aux->[0] = $_;
+                last;
+            }
+        }
+        if (!defined($aux->[0])) {
+            $aux->[1] = 1;
+            return;
+        }
+    }
+    my ($name, $comm);
+    defined $_ && do {
+        ($name, $comm) = /^.(\S+)(?:\s+)(\S+)/ ? ($1, $2) : 
+	    /^.(\S+)/ ? ($1, '') : ('', '');
+    };
+    my $seq = '';
+    my $c;
+    $aux->[0] = undef;
+    while (<$fh>) {
+        chomp;
+        $c = substr($_, 0, 1);
+        last if ($c eq '>' || $c eq '@' || $c eq '+');
+        $seq .= $_;
+    }
+    $aux->[0] = $_;
+    $aux->[1] = 1 if (!defined($aux->[0]));
+    return ($name, $comm, $seq) if ($c ne '+');
+    my $qual = '';
+    while (<$fh>) {
+        chomp;
+        $qual .= $_;
+        if (length($qual) >= length($seq)) {
+            $aux->[0] = undef;
+            return ($name, $comm, $seq, $qual);
+        }
+    }
+    $aux->[1] = 1;
+    return ($name, $seq);
+}
+
+sub get_fh {
+    my ($file) = @_;
+
+    my $fh;
+    if ($file =~ /\.gz$/) {
+        open $fh, '-|', 'zcat', $file or die "\nERROR: Could not open file: $file\n";
+    }
+    elsif ($file =~ /\.bz2$/) {
+        open $fh, '-|', 'bzcat', $file or die "\nERROR: Could not open file: $file\n";
+    }
+    else {
+        open $fh, '<', $file or die "\nERROR: Could not open file: $file\n";
+    }
+
+    return $fh;
+}
 
 sub usage {
     my $script = basename($0);
