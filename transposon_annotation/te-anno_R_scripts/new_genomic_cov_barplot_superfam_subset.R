@@ -1,6 +1,6 @@
 # This script generates a histrogram show the % genomic proportion for each superfamily
 #
-# 9/25/13 SES
+# 12/03/13 SES
 #
 # TODO:
 
@@ -33,46 +33,6 @@ Species <- rep("Hann",length(ann.summ[,1]))
 ann.summ.f <- cbind(Species, ann.summ)
 names(ann.summ.f) <- c("Species", "Superfamily","Sum","GenomePerc","Cval","Mbp")
 rm(ann.summ)
-
-# H. arg
-harg <- read.table("harg_transposome_results_9-10_annotations_summary.tsv", sep="\t", header=T)
-harg.summ <- ddply(harg, "Superfamily", summarize, sum = sum(GenomePerc), as_perc = as_percent(GenomePerc), Cval = 4174, Mbp = sum * 4174)
-Species <- rep("Harg",length(harg.summ[,1]))
-harg.summ.f <- cbind(Species, harg.summ)
-names(harg.summ.f) <- c("Species", "Superfamily","Sum","GenomePerc","Cval","Mbp")
-rm(harg.summ)
-
-# H. port
-hport <- read.table("hport_transposome_results_9-10_annotations_summary.tsv", sep="\t", header=T)
-hport.summ <- ddply(hport, "Superfamily", summarize, sum = sum(GenomePerc), as_perc = as_percent(GenomePerc), Cval = 4330, Mbp = sum * 4330)
-Species <- rep("Hport",length(hport.summ[,1]))
-hport.summ.f <- cbind(Species, hport.summ)
-names(hport.summ.f) <- c("Species", "Superfamily","Sum","GenomePerc","Cval","Mbp")
-rm(hport.summ)
-
-# H. teph
-hteph <- read.table("hteph_transposome_results_9-10_annotations_summary.tsv", sep="\t", header=T)
-hteph.summ <- ddply(hteph, "Superfamily", summarize, sum = sum(GenomePerc), as_perc = as_percent(GenomePerc), Cval = 4192, Mbp = sum * 4192)
-Species <- rep("Hteph",length(hteph.summ[,1]))
-hteph.summ.f <- cbind(Species, hteph.summ)
-names(hteph.summ.f) <- c("Species", "Superfamily","Sum","GenomePerc","Cval","Mbp")
-rm(hteph.summ)
-
-# H. vert
-hvert <- read.table("hvert_transposome_results_9-11_annotations_summary.tsv", sep="\t", header=T)
-hvert.summ <- ddply(hvert, "Superfamily", summarize, sum = sum(GenomePerc), as_perc = as_percent(GenomePerc), Cval = 2278, Mbp = sum * 2278)
-Species <- rep("Hvert",length(hvert.summ[,1]))
-hvert.summ.f <- cbind(Species, hvert.summ)
-names(hvert.summ.f) <- c("Species", "Superfamily","Sum","GenomePerc","Cval","Mbp")
-rm(hvert.summ)
-
-# Phoeb
-phoeb <- read.table("phoeb_transposome_cluster_report_11-17_annotations_summary.tsv", sep="\t", header=T)
-phoeb.summ <- ddply(hvert, "Superfamily", summarize, sum = sum(GenomePerc), as_perc = as_percent(GenomePerc), Cval = 4267, Mbp = sum * 4267)
-Species <- rep("Phoeb",length(phoeb.summ[,1]))
-phoeb.summ.f <- cbind(Species, phoeb.summ)
-names(phoeb.summ.f) <- c("Species", "Superfamily","Sum","GenomePerc","Cval","Mbp")
-rm(phoeb.summ)
 
 # CP
 cp <- read.table("cp_transposome_results_9-10_annotations_summary.tsv", sep="\t", header=T)
@@ -122,14 +82,6 @@ saff.summ.f <- cbind(Species, saff.summ)
 names(saff.summ.f) <- c("Species", "Superfamily","Sum","GenomePerc","Cval","Mbp")
 rm(saff.summ)
 
-# Senecio
-sene <- read.table("sene_transposome_results_annotations_summary.tsv", sep="\t", header=T)
-sene.summ <- ddply(sene, "Superfamily", summarize, sum = sum(GenomePerc), as_perc = as_percent(GenomePerc), Cval = 2045, Mbp = sum * 2045)
-Species <- rep("Sene",length(sene.summ[,1]))
-sene.summ.f <- cbind(Species, sene.summ)
-names(sene.summ.f) <- c("Species", "Superfamily","Sum","GenomePerc","Cval","Mbp")
-rm(sene.summ)
-
 # TKS
 tks <- read.table("tks_transposome_results_annotations_summary.tsv", sep="\t", header=T)
 tks.summ <- ddply(tks, "Superfamily", summarize, sum = sum(GenomePerc), as_perc = as_percent(GenomePerc), Cval = 2582, Mbp = sum * 2582)
@@ -139,8 +91,7 @@ names(tks.summ.f) <- c("Species", "Superfamily","Sum","GenomePerc","Cval","Mbp")
 rm(tks.summ)
 
 ## merge data
-all_species_merged.df <- Reduce(function(...) merge(...,all=T), list(ager.summ.f, phoeb.summ.f, ann.summ.f, harg.summ.f, hport.summ.f, hteph.summ.f,
-                                                                     hvert.summ.f, gnaph.summ.f, sene.summ.f, cp.summ.f, tks.summ.f,
+all_species_merged.df <- Reduce(function(...) merge(...,all=T), list(ager.summ.f, ann.summ.f, gnaph.summ.f, cp.summ.f, tks.summ.f,
                                                                      saff.summ.f, gerb.summ.f, calyc.summ.f, dasy.summ.f))
 
 # filter the data
@@ -149,23 +100,16 @@ filtered_full_df <- fullcp[fullcp$GenomePerc >= 0.2,]
 
 ## plot
 
-bp <- ggplot(filtered_full_df, aes(x=Species, y=Mbp, fill=Superfamily)) + geom_point(aes(x=Species, y=Cval), size=3, title="Genome size") + geom_bar(stat="identity",color="black") + coord_flip() + scale_x_discrete(limits=c("Calyc","Dasy", "Gerb","Saff","TKS","CP","Sene","Gnaph","Ager", "Phoeb", "Harg","Hport","Hteph","Hvert","Hann"),
-                      labels=c("Nasanthus patagonicus",
+bp <- ggplot(filtered_full_df, aes(x=Species, y=Cval)) + geom_point(aes(size=Cval)) + labs(size="Genome size") + coord_flip() + geom_bar(aes(x=Species, y=Mbp, fill=Superfamily), stat="identity",color="black") + scale_x_discrete(limits=c("Calyc","Dasy", "Gerb","Saff","TKS","CP","Gnaph","Ager", "Hann"), labels=c("Nasanthus patagonicus",
                         "Fulcaldea stuessyi",
                         "Gerbera hybrida",
                         "Carthamus tinctorius",
                         "Taraxacum kok-saghyz",
                         "Centrapallus pauciflorus",
-                        "Senecio vulgaris",
                         "Pseudognaphalium helleri",
                         "Conoclinium coelestinum",
-                        "Phoebanthus tenuifolius",
-                        "Helianthus arghophyllus",
-                        "Helianthus porteri",
-                        "Helianthus niveus ssp. tephrodes",
-                        "Helianthus verticillatus",
                         "Helianthus annuus")) + scale_fill_manual(name="Superfamily",values = c("Gypsy" = "darkgreen",
-                                                                      "Copia" = "aquamarine4",
+                                             "Copia" = "aquamarine4",
                                                                       "DIRS" = "lightgreen",
                                                                       "L1" = "darkgrey",
                                                                       "EnSpm" = "azure2",
@@ -179,9 +123,6 @@ bp <- ggplot(filtered_full_df, aes(x=Species, y=Mbp, fill=Superfamily)) + geom_p
                                                                       "ERV1" = "darkblue",
                                                                       "CR1" = "chartreuse3",
                                                                       "Penelope" = "cyan",
-                                                                      "R1" = "black")) + xlab(label = "Mbp") + theme(
-                                                                                                axis.text.x = element_text(color = "black"),                                                                                                                axis.text.y = element_text(color = "black", size = 14),
-                                                                                                axis.title.x = element_text(color = "black", size = 14),
-                                                                                                axis.title.y = element_blank())
-
-#+ geom_point(aes(x=Species, y=Cval),color="black",size=3)
+                                                                      "R1" = "black")) + theme(axis.text.x = element_text(color = "black"),                                                                                                                                  axis.text.y = element_text(color = "black", size = 14),
+                                                                                               axis.title.x = element_blank(),
+                                                                                               axis.title.y = element_blank())
