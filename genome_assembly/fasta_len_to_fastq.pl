@@ -44,7 +44,8 @@ while (($name, $comm, $seq, $qual) = readfq(\*$fq, \@aux)) {
     if (exists $fa_idx->{$name}) {
 	$fqct++;
 	my $seq_match;
-	($seq_match = $seq) =~ /($fa_idx->{$name})/;
+	#($seq_match = $seq) =~ /($fa_idx->{$name})/;
+	($seq_match = $fa_idx->{$name}) =~ /($seq)/;
 	my $seqlen = length($seq_match);
 	my $qual_region = substr $qual, 0, $seqlen;
 	say $out join "\n", "@".$name, $seq_match, q{+}, $qual_region;
