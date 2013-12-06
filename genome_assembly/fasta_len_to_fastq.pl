@@ -6,19 +6,23 @@ use warnings;
 use File::Basename;
 use autodie qw(open);
 use Getopt::Long;
+use Pod::Usage
 
 my $fasta;
 my $fastq;
 my $outfile;
 my $help;
+my $man;
 
 GetOptions(
 	   'fa|fasta=s'   => \$fasta,
 	   'fq|fastq=s'   => \$fastq,
 	   'o|outfile=s'  => \$outfile,
 	   'h|help'       => \$help,
-	   );
+	   'm|man'        => \$man,
+	   ) or pod2usage( "Try 'basename($0) --man' for more information." );;
 
+pod2usage( -verbose => 2 ) if $man;
 usage() and exit(0) if $help;
 
 if (!$fasta || !$fastq || !$outfile) {
