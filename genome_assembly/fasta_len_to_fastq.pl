@@ -1,5 +1,60 @@
 #!/usr/bin/env perl
 
+=head1 NAME 
+                                                                       
+fasta_len_to_fastq.pl - Extract the seq and qual string from a Fastq file given a Fasta
+
+=head1 SYNOPSIS    
+
+ fasta_len_to_fastq.pl -fa seqs.fasta -fq orig_seqs.fastq.gz -o seqs.fastq
+
+=head1 DESCRIPTION
+                                                                   
+After quality trimming or screening reads one often needs to go back to Fastq for mapping
+or assembly. This script takes a Fasta file and will extract the exact sequence and correct
+qual string from a Fastq file. The DNA sequences are expected to be different, however, the
+sequence names must be the same.
+
+=head1 AUTHOR 
+
+S. Evan Staton                                                
+
+=head1 CONTACT
+ 
+statonse at gmail dot com
+
+=head1 REQUIRED ARGUMENTS
+
+=over 2
+
+=item -fa, --fasta
+
+The Fasta file from which to select sequences.
+
+=item -fq, --fastq
+
+The Fastq file from which to pull the sequence and quality scores.
+
+=item -o, --outfile
+
+The file to write the Fastq records that are selected.
+
+=back
+
+=head1 OPTIONS
+
+=over 2
+
+=item -h, --help
+
+Print a usage statement. 
+
+=item -m, --man
+
+Print the full documentation.
+
+=cut   
+
 use 5.014;
 use strict;
 use warnings;
