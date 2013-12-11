@@ -3,14 +3,20 @@
 use 5.010;
 use strict;
 use warnings;
-use Bio::SeqIO;
 
 my $usage = "$0 infile > out\n";
 my $infile = shift or die $usage;
 
-my $seq_in = Bio::SeqIO->new(-file => $infile,
-			     -format => 'fasta');
+open my $in, '<', $infile or die "\nERROR: Could not open file: $infile\n";
 
-while(my $seq = $seq_in->next_seq) {
-    say join "\t", $seq->id, $seq->seq;
+{
+    local $/ = '>';
+
+    while (my $line = <$in>) {
+        chomp $line;
+        my ($seqid, @seqparts) = split /\n/, $line;
+        my $seq = join '', @seqparts;
+        next unless defined $seqid && defined $seq;
+	say join "\t", $seqid, $seq;
+    }
 }
