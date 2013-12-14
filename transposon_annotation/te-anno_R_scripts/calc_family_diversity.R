@@ -34,3 +34,7 @@ ncol(fam_bp_div)/mean(specnumber(fam_bp_div)) - 1
 ## RAD and plotting
 rad <- radfit(fam_bp_div)
 plot(rad)
+
+# or select a single site
+#rad4 <- radfit(fam_bp_div[4,])
+#plot(rad4)
