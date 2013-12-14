@@ -19,3 +19,14 @@ confint(fish) # get confidence intervals
 
 ## calc Preston lognormal model
 prestondistr(fam_bp_div[4,])
+
+## TE accumulation
+teac <- specaccum(fam_bp_div)
+#teac # inspect richness and sd
+plot(teac, ci.type="polygon", ci.col="yellow")
+
+## get quick diversity stats
+specnumber(fam_bp_div)
+
+## Beta diversity
+ncol(fam_bp_div)/mean(specnumber(fam_bp_div)) - 1
