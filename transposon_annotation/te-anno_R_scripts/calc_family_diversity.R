@@ -34,6 +34,8 @@ ncol(fam_bp_div)/mean(specnumber(fam_bp_div)) - 1
 ## RAD and plotting
 rad <- radfit(fam_bp_div)
 plot(rad)
+# change panel order in lattice plot
+# plot(fams_rad,index.cond=list(c(4,5,6,13,7,3,14,15,1,12,9,10,11,2,8)))
 
 # or select a single site
 #rad4 <- radfit(fam_bp_div[4,])
