@@ -6,6 +6,8 @@
 ## USAGE: Just create exemplar for each fam and use that as input,
 ##        otherwise the number of files will explode with this script
 
+## NB: This uses HMMER 2.3.2 because  HMMER3 does not currently support globabl alignments.
+##
 use 5.010;
 use strict;
 use warnings;
