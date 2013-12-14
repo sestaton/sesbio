@@ -30,3 +30,7 @@ specnumber(fam_bp_div)
 
 ## Beta diversity
 ncol(fam_bp_div)/mean(specnumber(fam_bp_div)) - 1
+
+## RAD and plotting
+rad <- radfit(fam_bp_div)
+plot(rad)
