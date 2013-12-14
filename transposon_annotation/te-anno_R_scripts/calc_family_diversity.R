@@ -40,3 +40,7 @@ plot(rad)
 # or select a single site
 #rad4 <- radfit(fam_bp_div[4,])
 #plot(rad4)
+
+## calc Arrhenius species-area model and plot quantiles
+z <- betadiver(fam_bp_div, "z")
+plot(quantile(z))
