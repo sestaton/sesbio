@@ -12,3 +12,10 @@ plot(R)
 
 ## generate Fisher's log-series to use as a diversity index
 alpha <- fisher.alpha(fam_bp_div)
+
+## calc Fisher's log-series for a plot
+fish <- fisherfit(fam_bp_div[1,])
+confint(fish) # get confidence intervals
+
+## calc Preston lognormal model
+prestondistr(fam_bp_div[4,])
