@@ -1,3 +1,5 @@
+library(picante)
+
 ## GLS and PGLS
 allsuperfam.dat <- read.table("all_15_species_te-superfamilies_cval_raw_bp_counts_tab.tsv.txt",header=T,sep="\t",row.names=1)
 superfam.gls <- gls(GenomeSize ~ Gypsy, data = allsuperfam.dat)
