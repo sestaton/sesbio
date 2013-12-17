@@ -1,23 +1,24 @@
 #!/usr/bin/env perl
 
+use 5.010;
 use strict;
 use warnings;
 use Cwd;
-use feature 'say';
 use File::Basename;
+use autodie qw(open);
 
 my $usage = "$0 cls_file hitsort cores\n";
 my $cls_file = shift or die $usage;
-my $hitsort = shift or die $usage;
-my $cores = shift or die $usage;
+my $hitsort  = shift or die $usage;
+my $cores    = shift or die $usage;
 #my $gl_dir = shift or die $usage;
 
 clusters2graphs($cls_file, $hitsort, $cores);
 
+exit;
 #
-# subs
+# methods
 #
-
 sub clusters2graphs {
     my ($cls_file, $hitsort) = @_;
 
@@ -31,7 +32,7 @@ sub clusters2graphs {
     my $clusters2graph_rscript = $cls_file;
     $clusters2graph_rscript .= ".clusters2graph.rscript";
     my ($hname, $hpath, $hsuffix) = fileparse($hitsort, qr/\.[^.]*/);
-    open(my $rscript, '>', $clusters2graph_rscript);
+    open my $rscript, '>', $clusters2graph_rscript;
 
     say $rscript "suppressPackageStartupMessages(library(igraph))
 suppressPackageStartupMessages(library(foreach))
@@ -180,9 +181,8 @@ out=foreach(i = seq_along(clusters),.inorder=FALSE) %dopar% {
 
 }";
 
-close($rscript);
+close $rscript;
 	 
 system("/usr/local/R/2.15.0/lib64/R/bin/R --vanilla --slave --silent < $clusters2graph_rscript 2> /dev/null");
-unlink($clusters2graph_rscript);
-
+unlink $clusters2graph_rscript;
 }
