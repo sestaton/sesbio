@@ -21,8 +21,6 @@ GetOptions(
 	   'f|fas_file=s'  => \$fas_file,
 	   );
 
-open my $cls, '<', $cls_file;
-
 my $seqhash = fas2hash($fas_file);
 #dd $seqhash;
 
@@ -33,8 +31,7 @@ my $seqhash = fas2hash($fas_file);
 
     $cluster_size = defined($cluster_size) ? $cluster_size : '500';
 
-    open(my $cls, '<', $cls_file);
-    local $/ = '>';
+    open my $cls, '<', $cls_file;
 
     my $str = POSIX::strftime("%m_%d_%Y_%H_%M_%S", localtime);
     my ($iname, $ipath, $isuffix) = fileparse($cls_file, qr/\.[^.]*/);
