@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+## NB: Faster alternative now is : seqtk seq -A seq.fq > seq.fa
+                              or : seqret -sequence seq.fq -outseq seq.fa
+
 use 5.010;
 use strict;
 use warnings;
