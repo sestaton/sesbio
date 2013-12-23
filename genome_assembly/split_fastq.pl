@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-##TODO: add POD
+##TODO: add POD; add reading from stdin and compressed files (may have to pass fh ref to new)
 ##NB: For 4 line records, head -N is preferred for simplicity
 
 use 5.014;
@@ -57,9 +57,9 @@ while (my $nseq = $nt_it->next_seq) {
 }
 close $out;
 
-
+exit;
 #
-#
+# methods
 #
 sub usage {
     my $script = basename($0);
