@@ -58,7 +58,6 @@ for my $gene (keys %$bl_hash_f) {
 }
 
 for my $match (keys %$bl_match_hash) {
-
     my $gene_file = $match.".fasta";
     open my $out, ">>", $gene_file or die "\nERROR: Could not open file: $!\n";
 
@@ -93,12 +92,11 @@ for my $match (keys %$bl_match_hash) {
     }
     
     close $out;
-
 }
 
 exit;
 #
-# Subs
+# methods
 #
 sub blast2hash {
     my ($bl) = @_;
@@ -136,10 +134,10 @@ sub seq2hash {
     
     open my $seq_in, "<", $fas or die "\nERROR: Could not open file: $fas\n";  
 
-    my ($name, $seq, $qual);
+    my ($name, $comm, $seq, $qual);
     my @aux = undef;
 
-    while (($name, $seq, $qual) = readfq(\*$seq_in, \@aux)) {
+    while (($name, $comm, $seq, $qual) = readfq(\*$seq_in, \@aux)) {
 	$seqct++;
 	$seqhash{$name} = $seq;
     }
@@ -151,7 +149,7 @@ sub seq2hash {
 
 sub readfq {
     my ($fh, $aux) = @_;
-    @$aux = [undef, 0] if (!defined(@$aux));
+    @$aux = [undef, 0] if (!@$aux);
     return if ($aux->[1]);
     if (!defined($aux->[0])) {
         while (<$fh>) {
@@ -166,18 +164,11 @@ sub readfq {
             return;
         }
     }
-    #my $name;
-    #if (/^.?(\S+\s\S+.*)/) {          # Illumina 1.8+, now more greedy 8/1 SES
-	#$name = $1;
-    #}
-    #elsif (/^.?(\S+)/) {              # Illumina 1.3+
-    #    $name = $1;
-    #} 
-    #else {
-        #$name = '';                   # ?
-    #}
-    my $name = /^.(\S+)/? $1 : '';   # Heng Li's original regex
-    #}
+    my ($name, $comm);
+    defined $_ && do {
+        ($name, $comm) = /^.(\S+)(?:\s+)(\S+)/ ? ($1, $2) : 
+	                 /^.(\S+)/ ? ($1, '') : ('', '');
+    };
     my $seq = '';
     my $c;
     $aux->[0] = undef;
@@ -189,14 +180,14 @@ sub readfq {
     }
     $aux->[0] = $_;
     $aux->[1] = 1 if (!defined($aux->[0]));
-    return ($name, $seq) if ($c ne '+');
+    return ($name, $comm, $seq) if ($c ne '+');
     my $qual = '';
     while (<$fh>) {
         chomp;
         $qual .= $_;
         if (length($qual) >= length($seq)) {
             $aux->[0] = undef;
-            return ($name, $seq, $qual);
+            return ($name, $comm, $seq, $qual);
         }
     }
     $aux->[1] = 1;
