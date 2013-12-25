@@ -46,7 +46,7 @@ while (my $sline = <$subj>) {
     chomp $sline;
     next if $sline =~ /^#/;
     my @subj_fields = split /\t/, $sline;
-    while( my ($qid, $qhit) = each %qhash) {
+    while (my ($qid, $qhit) = each %qhash) {
 	my ($qq, $qh) = split /\,/, $qid;
 	my ($qpid, $qaln_len, $qeval, $qbits) = split /\t/, $qhit;
 	if ($qq =~ /$subj_fields[1]/ && $qh =~ /$subj_fields[0]/) {
@@ -64,7 +64,7 @@ say "\nFound $recip_hit reciprocal hits in $query_blast and $subj_blast.\n";
 
 exit;
 #
-# subs
+# methods
 #
 sub usage {
     my $script = basename($0);
