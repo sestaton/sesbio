@@ -32,7 +32,7 @@ open my $bl, '<', $blast or die "\nERROR: Could not open file: $blast\n";
 open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
 my %ids;
-while(<$in>) {
+while (<$in>) {
     chomp;
     next if /^\#/;
     $ids{$_} = 1;
@@ -41,7 +41,7 @@ close $in;
 
 #my %pfamids;
 
-while(<$bl>) {
+while (<$bl>) {
     chomp;
     next if /^\#/;
     my ($target_name, $accession, $query_name, $accession_q, $E_value_full, $score_full, 
