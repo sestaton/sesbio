@@ -26,9 +26,9 @@ if (!$outfile) {
 open my $in, '<', $infile or die "\nERROR: Could not open file: $infile\n";
 open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
-while(<$in>) {
+while (<$in>) {
     chomp;
-    my @f = split(/\t/,$_);
+    my @f = split /\t/;
     say join "\t", $out $f[4], "ND", $f[0];
 }
 
