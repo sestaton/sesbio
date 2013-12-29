@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+## this was my response to a biostars question: http://www.biostars.org/p/66538/#66569
+
 use strict;
 use warnings;
 use Bio::Seq;
@@ -20,7 +22,7 @@ while (my $aln = $alnio->next_aln) {
 	if (exists $dnasymbols{$r}) {
 	    if (scalar @{$dnasymbols{$r}} > 1) {
 		print "[";
-		print join "|",@{$dnasymbols{$r}};
+		print join "|", @{$dnasymbols{$r}};
 		print "]";
 	    }
 	    else {
