@@ -2,18 +2,13 @@
 
 ##TODO:
 
-use v5.14;
+use 5.014;
 use strict;
 use warnings;
-#use BerkeleyDB;
 use File::Basename;
 use Getopt::Long;
-use lib qw(/iob_home/jmblab/statonse/apps/perlmod/Data-Dump-1.21/blib/lib);
 use Data::Dump qw(dd);
-use lib qw(/iob_home/jmblab/statonse/apps/perlmod/cjfields-Bio-Kseq-dc7a71c/lib/site_perl/5.14.1/x86_64-linux-thread-multi/auto); #/Bio/Kseq/Kseq.bs
-use lib qw(/iob_home/jmblab/statonse/apps/perlmod/cjfields-Bio-Kseq-dc7a71c/lib/site_perl/5.14.1/x86_64-linux-thread-multi); #/Bio/Kseq.pm
 use Bio::Kseq;
-use lib qw(/iob_home/jmblab/statonse/apps/perlmod/Capture-Tiny-0.19/blib/lib);
 use Capture::Tiny qw(:all);
 BEGIN {
   @AnyDBM_File::ISA = qw( DB_File SQLite_File )
@@ -22,6 +17,8 @@ BEGIN {
 use AnyDBM_File;
 use vars qw( $DB_BTREE &R_DUP );
 use AnyDBM_File::Importer qw(:bdb);
+
+## add warnings for given/when
 
 #
 # lexical vars
@@ -68,7 +65,7 @@ my $gblocks = find_prog("Gblocks");
 my $pal2nal = find_prog("pal2nal");
 my $raxml = find_prog("raxml");
 
-my $knseq = Bio::Kseq->new($nt_fas);
+my $knseq = Bio::Kseq->new($nt_fas); ## TODO: Check if file exists
 my $nt_it = $knseq->iterator;
 
 my $kpseq = Bio::Kseq->new($pep_fas);
@@ -80,7 +77,7 @@ while (my $nseq = $nt_it->next_seq) {
 
 while (my $pseq = $pep_it->next_seq) {
     if (exists $seqhash{ $pseq->{name} }) {
-	push(@{$seqhash{ $pseq->{name} }}, $pseq->{seq});
+	push @{$seqhash{ $pseq->{name} }}, $pseq->{seq};
     }
 }
 
@@ -88,7 +85,7 @@ my $clusters = parse_groups($infile, %seqhash);
 
 for my $cluster (sort keys %$clusters) {
     my $cluster_size = scalar @{$clusters->{$cluster}};
-    push(@stats, $cluster_size);
+    push @stats, $cluster_size;
     if ($cluster_size  > 10 && $cluster_size < 12) { # for testing
 	my @species = map { s/\|.*//r } @{$clusters->{$cluster}};  # need Perl 5.14+ to do non-destructive substitution
 	my %ortho_group; 
@@ -96,7 +93,7 @@ for my $cluster (sort keys %$clusters) {
 	    my $species = $gene;
 	    $species =~ s/\|.*//;
 	    if (exists $ortho_group{$cluster}{$species}) {
-		push(@{$ortho_group{$cluster}{$species}}, $gene);
+		push @{$ortho_group{$cluster}{$species}}, $gene;
 	    }
 	    else {
 		$ortho_group{$cluster}{$species} = [ $gene ];
@@ -108,19 +105,19 @@ for my $cluster (sort keys %$clusters) {
 		
 		my $gene_file = "gene_cluster_".$cluster."_".$taxa."_nt.fasta";
 		my $pep_file = "gene_cluster_".$cluster."_".$taxa."_pep.fasta";
-		open(my $nt_group, ">>", $gene_file) or die "\nERROR: Could not open file: $gene_file\n";
-		open(my $pep_group, ">>", $pep_file) or die "\nERROR: Could not open file: $pep_file\n";
+		open my $nt_group, ">>", $gene_file or die "\nERROR: Could not open file: $gene_file\n";
+		open my $pep_group, ">>", $pep_file or die "\nERROR: Could not open file: $pep_file\n";
 	
 		my $gene_ct = 0;
 		for my $paralog (@{$ortho_group{$group}{$taxa}}) {
 		    if (exists $seqhash{$paralog}) {
 			$gene_ct++;
-			print $nt_group join("\n",(">".$paralog,${$seqhash{$paralog}}[0])),"\n";
-			print $pep_group join("\n",(">".$paralog,${$seqhash{$paralog}}[1])),"\n";
+			say $nt_group join "\n", ">".$paralog, ${$seqhash{$paralog}}[0];
+			say $pep_group join "\n", ">".$paralog, ${$seqhash{$paralog}}[1];
 		    }
 		}
-		close($nt_group);
-		close($pep_group);
+		close $nt_group;
+		close $pep_group;
     
 		if (-s $gene_file && -s $pep_file && $gene_ct > 3) {
 		    my ($gene_aln, $pep_aln) = align($gene_file, $pep_file, $muscle);
@@ -136,13 +133,13 @@ for my $cluster (sort keys %$clusters) {
 			#print "Gene tree on line 131 is: ", $gene_tree,"\n";
 			my $treehash = summarize_trees($taxa, $gene_tree, $gene_ct);
 			#print "Branch length for $gene_tree is: ", $total_length,"\n";
-			push(@treestats,$treehash);
+			push @treestats, $treehash;
 			###### compute ka/ks, etc. on alignment
-			#&infer_substitution_patterns($gene_aln_fas);     # need to look at pal2nal aln
+			#infer_substitution_patterns($gene_aln_fas);     # need to look at pal2nal aln
 		    }
 		}
 		else {
-		    unlink($gene_file, $pep_file);
+		    unlink $gene_file, $pep_file;
 		}
 		$gene_ct = 0;
 	    }
@@ -159,19 +156,19 @@ my $median = median(@stats);
 my $min = min(@stats);
 my $max = max(@stats);
 
-open(my $report, ">", $outfile) or die "\nERROR: Could not open file: $outfile\n";
-print $report "=-=" x 25, "\n";
-print $report join("\t",("Cluster_count","Cluster_mean","Cluster_median","Cluster_min","Cluster_max")),"\n";
-print $report join("\t",($count, $mean, $median, $min, $max)), "\n";
-print $report "=-=" x 25, "\n";
-print $report join("\t",("Cluster_number","Cluster_size")),"\n";
+open my $report, ">", $outfile or die "\nERROR: Could not open file: $outfile\n";
+say $report "=-=" x 25;
+say $report join "\t", "Cluster_count","Cluster_mean","Cluster_median","Cluster_min","Cluster_max";
+say $report join "\t", $count, $mean, $median, $min, $max;
+say $report "=-=" x 25;
+say $report join "\t", "Cluster_number","Cluster_size";
 
 for my $key (reverse sort { $statshash{$a} <=> $statshash{$b} } keys %statshash) {
-    print $report join("\t",($key,$statshash{$key})), "\n";
+    say $report join "\t", $key,$statshash{$key};
 }
-close($report);
+close $report;
 
-print join("\t","Species", "Tree_file", "Tree_stat"),"\n";
+say join "\t","Species", "Tree_file", "Tree_stat";
 for my $treehashref (@treestats) {
     for my $taxa (keys %$treehashref) {
 	dd $taxa;
@@ -184,7 +181,6 @@ for my $treehashref (@treestats) {
 }
 
 exit;
-
 #
 # subs
 #
@@ -193,22 +189,22 @@ sub parse_groups {
     # http://cpansearch.perl.org/src/EASR/ONTO-PERL-1.19/lib/OBO/CCO/OrthoMCLParser.pm
 
     my $infile = shift;	
-    open(my $fh, '<', $infile) or die "\nERROR: Could not open file: $infile\n.";
+    open my $fh, '<', $infile or die "\nERROR: Could not open file: $infile\n.";
     
     my %clusters; 
-    while(<$fh>){
-	my ($cluster, $proteins) = split(/:\s+/xms);
+    while (<$fh>){
+	my ($cluster, $proteins) = split /:\s+/xms;
 	my $cluster_num;
 	if ($cluster =~ /(\d+)/) { # work on this regex
 	    $cluster_num = $1;
 	}
 	$cluster = $cluster_num;
-	my @proteins = split(/\s/xms, $proteins);
+	my @proteins = split /\s/xms, $proteins;
 	my $protein_ct = @proteins;
-	foreach my $protein ( @proteins) {
+	for my $protein ( @proteins) {
 	    if ($protein  =~ /((\w+)\|(\w+))/) {
 		if (exists $clusters{$cluster}) {
-		    push(@{$clusters{$cluster}}, $1);
+		    push @{$clusters{$cluster}}, $1;
 		}
 		else {
 		    $clusters{$cluster} = [ $1 ];
@@ -216,8 +212,8 @@ sub parse_groups {
 	    }		
 	}
     }		
-    close($fh);
-    return(\%clusters);
+    close $fh;
+    return \%clusters;
 }
 
 sub infer_substitution_patterns {
@@ -233,10 +229,9 @@ sub infer_substitution_patterns {
     use Bio::Align::Utilities qw(aa_to_dna_aln);
 
     my $aln_factory = Bio::Tools::Run::Alignment::Muscle->new;
-    my $kaks_factory = Bio::Tools::Run::Phylo::PAML::Codeml->new
-	( -params => { 'runmode' => -2,
-		       'seqtype' => 1,
-	  } );
+    my $kaks_factory = Bio::Tools::Run::Phylo::PAML::Codeml->new( -params => { 'runmode' => -2,
+									       'seqtype' => 1,
+								              } );
     
     my $seqio = Bio::SeqIO->new(-file => $gene_aln_fas, -format => 'fasta');
 
@@ -247,8 +242,8 @@ sub infer_substitution_patterns {
 	# translate them into protein
 	my $protein = $seq->translate();
 	my $pseq = $protein->seq();
-	if( $pseq =~ /\*/ &&
-	    $pseq !~ /\*$/ ) {
+	if ( $pseq =~ /\*/ &&
+	     $pseq !~ /\*$/ ) {
 	    warn("provided a CDS sequence with a stop codon, PAML will choke!");
 	    exit(0);
 	}
@@ -258,7 +253,7 @@ sub infer_substitution_patterns {
 	push @prots, $protein;
     }
  
-    if( @prots < 2 ) {
+    if ( @prots < 2 ) {
 	warn("Need at least 2 CDS sequences to proceed");
 	exit(0);
     }
@@ -281,26 +276,25 @@ sub infer_substitution_patterns {
     # this gives us a mapping from the PAML order of sequences back to
     # the input order (since names get truncated)
     my @pos = map {
-	my $c= 1;
-	foreach my $s ( @each ) {
-	    last if( $s->display_id eq $_->display_id );
+	my $c = 1;
+	for my $s ( @each ) {
+	    last if $s->display_id eq $_->display_id;
 	    $c++;
 	}
 	$c;
     } @otus;
  
-    print join("\t", qw(SEQ1 SEQ2 Ka Ks Ka/Ks PROT_PERCENTID CDNA_PERCENTID)),"\n";
-    foreach my $i ( 0 .. $#otus -1 ) {
-	foreach my $j ( $i+1 .. $#otus ) {
+    say join "\t", qw(SEQ1 SEQ2 Ka Ks Ka/Ks PROT_PERCENTID CDNA_PERCENTID);
+    for my $i ( 0 .. $#otus -1 ) {
+	for my $j ( $i+1 .. $#otus ) {
 	    my $sub_aa_aln  = $aa_aln->select_noncont($pos[$i],$pos[$j]);
 	    my $sub_dna_aln = $dna_aln->select_noncont($pos[$i],$pos[$j]);
-	    print join("\t", $otus[$i]->display_id,
+	    say join "\t", $otus[$i]->display_id,
 		       $otus[$j]->display_id,$MLmatrix->[$i]->[$j]->{'dN'},
 		       $MLmatrix->[$i]->[$j]->{'dS'},
 		       $MLmatrix->[$i]->[$j]->{'omega'},
 		       sprintf("%.2f",$sub_aa_aln->percentage_identity),
-		       sprintf("%.2f",$sub_dna_aln->percentage_identity),
-		), "\n";
+	               sprintf("%.2f",$sub_dna_aln->percentage_identity);
 	}
     }
     # return \%somehash;
@@ -308,9 +302,7 @@ sub infer_substitution_patterns {
 
 sub summarize_trees {
     my ($taxa, $gene_tree, $gene_ct) = @_;
-    eval { use lib qw(/iob_home/jmblab/statonse/apps/perlmod/Bio-Phylo-0.50/blib/lib); 
-	   require Bio::Phylo::IO;    
-	};
+    eval { require Bio::Phylo::IO; };
     if ($@) {
 	die "\nERROR: The Bio::Phylo Perl package is required to work with trees. Exiting.\n";
     }
@@ -329,16 +321,16 @@ sub summarize_trees {
 
     my $ave_branch_len = $tree_length / $node_num;
     my $branch_len_by_genes = $tree_length / $gene_ct;
-    print "Total tree length for $gene_tree is: ",$tree_length,"\n";
-    print "Total path length for $gene_tree is: ",$path_length,"\n";
-    #print "LTT points are: ",$ltt,"\n";
-    print "Total number of sequences for $gene_tree is: ",$gene_ct,"\n";
-    print "Total node number for $gene_tree is: ",$node_num,"\n";
-    print "Ave branch length for $gene_tree is: ",$ave_branch_len,"\n";
-    print "Branch length divided by number of genes is: ",$branch_len_by_genes,"\n\n";
+    say "Total tree length for $gene_tree is: ",$tree_length;
+    say "Total path length for $gene_tree is: ",$path_length;
+    #say "LTT points are: ",$ltt;
+    say "Total number of sequences for $gene_tree is: ",$gene_ct;
+    say "Total node number for $gene_tree is: ",$node_num;
+    say "Ave branch length for $gene_tree is: ",$ave_branch_len;
+    say "Branch length divided by number of genes is: ",$branch_len_by_genes,"\n";
 
     for my $stat (qw($ave_branch_len $tree_length $path_length $node_num $branch_len_by_genes)) {
-	push(@{$treehash{$taxa}{$gene_tree}}, $stat);
+	push @{$treehash{$taxa}{$gene_tree}}, $stat;
     }
 
     return \%treehash;
@@ -350,6 +342,7 @@ sub infer_tree {
     my $raxml_tree = $gene_phy;
     $raxml_tree =~ s/\.phy$/\_raxml\.tre/;
     my $raxml_out_tree = "RAxML_bootstrap.".$raxml_tree;
+    ## TODO: Add better method for executing commands
     my ($raxml_out, $raxml_err, @raxml_res) = capture { 
 	system("$raxml -A S16 -b 4294382 -p 34623 -B 0.03 -f d -k -K GTR -m GTRGAMMAI -T 8 -U -N 100 -s $gene_phy -n $raxml_tree 2>&1 /dev/null"); 
     };
@@ -362,6 +355,7 @@ sub infer_tree {
 sub gblocks {
     my ($gene_aln, $gblocks) = @_;
     my $gblocks_aln .= $gene_aln."-gb";
+    ## TODO: Add better method for executing commands
     my ($gblocks_out, $gblocks_err, @gblocks_res) = capture { system("$gblocks $gene_aln -t=d -s=y -p=y -b4=5 -e=-gb"); };
     return $gblocks_aln;
 }
@@ -373,8 +367,7 @@ sub pal2nal {
     my ($pal2nal_out, $pal2nal_err, @pal2nal_res) = capture { system("$pal2nal $pep_aln $gene_file -nogap > $pal2nal_aln"); };
 
     my $clustalw_to_fasta = sub {
-	eval { require Bio::AlignIO;
-	};
+	eval { require Bio::AlignIO; };
 	if ($@) {
 	    die "BioPerl is needed to do alignment format conversion. Exiting.\n";
 	}
@@ -384,7 +377,7 @@ sub pal2nal {
 	my $aln_in = Bio::AlignIO->new(-file => $clustalw_aln, -format => 'clustalw');
 	my $aln_out = Bio::AlignIO->new(-file => ">$fas_aln", -format => 'fasta');
 	
-	while(my $aln = $aln_in->next_aln ) {
+	while (my $aln = $aln_in->next_aln ) {
 	    $aln_out->write_aln($aln);
 	}
 	
@@ -407,13 +400,13 @@ sub pal2nal {
 	my $aln_in = Bio::AlignIO->new(-file => $clustalw_aln, -format => 'clustalw');
 	my $aln_out = Bio::AlignIO->new(-file => ">$phy_outtmp", -format => 'phylip', -longid => 1, -interleaved => 0);
 	
-	while(my $aln = $aln_in->next_aln ) {
+	while (my $aln = $aln_in->next_aln ) {
 	    $aln_out->write_aln($aln);
 	}
 	
 	# this is so RaxML won't complain about pal2nal's clustalw format (including quotes in the identifiers)
-	open(my $phy, "<", $phy_outtmp) or die "\nERROR: Could not open file: $phy_outtmp\n";
-	open(my $correct_phy, ">", $phy_out) or die "\nERROR: Could not open file: $phy_out\n";
+	open my $phy, "<", $phy_outtmp or die "\nERROR: Could not open file: $phy_outtmp\n";
+	open my $correct_phy, ">", $phy_out or die "\nERROR: Could not open file: $phy_out\n";
 	my ($seqnum, $length);
 
 	my %phyhash;
@@ -455,9 +448,9 @@ sub pal2nal {
 	for my $seq (keys %phyhash) {
 	    print $correct_phy "$seq  $phyhash{$seq}\n";
 	}
-	close($phy);
-	close($correct_phy);
-	unlink ($phy_outtmp);
+	close $phy;
+	close $correct_phy;
+	unlink $phy_outtmp;
 	
 	return $phy_out;
     };
@@ -477,6 +470,7 @@ sub align {
     $pep_aln =~ s/\.fa.*//;
     $pep_aln .= ".aln";
 
+    ## TODO: Add better method for executing commands
     my ($gene_aln_out, $gene_aln_err, @gene_aln_res) = capture { system("$muscle -in $gene_file -out $gene_aln -quiet"); };
     my ($pep_aln_out, $pep_aln_err, @pep_aln_res) = capture { system("$muscle -in $pep_file -out $pep_aln -quiet"); };
     
