@@ -1,5 +1,9 @@
 #!/usr/bin/env perl
 
+## Input: summary files from Transposome
+## Output: tab-delimited file in the format:
+#          Species   Families   Family_mean   Genome_size
+
 use 5.014;
 use strict;
 use warnings;
@@ -63,7 +67,7 @@ my @fam_size;
 
 my %sp_sum;
 my $famct = 0;
-#dd \%sfam_fam; exit;
+
 say join "\t", "Species", "Families", "Family_mean", "Genome_size";
 
 for my $spec (keys %sfam_fam) {
