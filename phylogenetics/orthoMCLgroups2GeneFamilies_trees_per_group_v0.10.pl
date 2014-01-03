@@ -1,18 +1,14 @@
 #!/usr/bin/env perl
 
-#########
+#########TODO: add warnings for given/when
 
-use v5.14;
+use 5.014;
 use strict;
 use warnings;
 use File::Basename;
 use Getopt::Long;
-use lib qw(/home/jmblab/statonse/apps/perlmod/Data-Dump-1.21/blib/lib);
 use Data::Dump qw(dd);
-use lib qw(/home/jmblab/statonse/apps/perlmod/cjfields-Bio-Kseq-dc7a71c/lib/site_perl/5.14.1/x86_64-linux-thread-multi/auto); #/Bio/Kseq/Kseq.bs
-use lib qw(/home/jmblab/statonse/apps/perlmod/cjfields-Bio-Kseq-dc7a71c/lib/site_perl/5.14.1/x86_64-linux-thread-multi);      #/Bio/Kseq.pm
 use Bio::Kseq;
-use lib qw(/home/jmblab/statonse/apps/perlmod/Capture-Tiny-0.19/blib/lib);
 use Capture::Tiny qw(:all);
 BEGIN {
   @AnyDBM_File::ISA = qw( DB_File SQLite_File )
@@ -80,7 +76,7 @@ my $pal2nal = find_prog("pal2nal");
 my $raxml = find_prog("raxml");
 
 # create Kseq objects for reading
-my $knseq = Bio::Kseq->new($nt_fas);
+my $knseq = Bio::Kseq->new($nt_fas); ##TODO: check for existence of file
 my $nt_it = $knseq->iterator;
 
 my $kpseq = Bio::Kseq->new($pep_fas);
@@ -98,7 +94,7 @@ while (my $nseq = $nt_it->next_seq) {
 
 while (my $pseq = $pep_it->next_seq) {
     if (exists $seqhash{ $pseq->{name} }) {
-        push(@{$seqhash{ $pseq->{name} }}, $pseq->{seq});
+        push @{$seqhash{ $pseq->{name} }}, $pseq->{seq};
     }
 }
 
@@ -108,7 +104,7 @@ while (my $ognseq = $ogn_it->next_seq) {
 
 while (my $ogpseq = $ogp_it->next_seq) {
     if (exists $oghash{ $ogpseq->{name} }) {
-	push(@{$oghash{ $ogpseq->{name} }}, $ogpseq->{seq});
+	push @{$oghash{ $ogpseq->{name} }}, $ogpseq->{seq};
     }
 }
 
@@ -128,12 +124,12 @@ my $og_taxa = 'grap';
 
 for my $cluster (sort keys %$clusters) {
     my $cluster_size = scalar @{$clusters->{$cluster}};
-    push(@clusterstats, $cluster_size);
+    push @clusterstats, $cluster_size;
     $statshash{$cluster} = $cluster_size; 
     my $gene_file = "gene_cluster_".$cluster."_nt.fasta";
     my $pep_file = "gene_cluster_".$cluster."_pep.fasta";
-    open(my $nt_group, ">>", $gene_file) or die "\nERROR: Could not open file: $gene_file\n";
-    open(my $pep_group, ">>", $pep_file) or die "\nERROR: Could not open file: $pep_file\n";
+    open my $nt_group, ">>", $gene_file or die "\nERROR: Could not open file: $gene_file\n";
+    open my $pep_group, ">>", $pep_file or die "\nERROR: Could not open file: $pep_file\n";
     
     my $gene_ct = 0;
     
@@ -148,8 +144,8 @@ for my $cluster (sort keys %$clusters) {
 	if (exists $seqhash{$gene}) {
 	    $gene_ct++;
 	    $tree_members{$gene} = 1;
-	    print $nt_group join("\n",(">".$gene,${$seqhash{$gene}}[0])),"\n";
-	    print $pep_group join("\n",(">".$gene,${$seqhash{$gene}}[1])),"\n";
+	    say $nt_group join "\n", ">".$gene,${$seqhash{$gene}}[0];
+	    say $pep_group join "\n", ">".$gene,${$seqhash{$gene}}[1];
 	}
     }
     
@@ -164,16 +160,16 @@ for my $cluster (sort keys %$clusters) {
 	    $raxml_recip_hit_id =~ s/\|.*//;
 	    #$raxml_recip_hit_id = "$og_taxa|".$raxml_recip_hit_id;
 	    #######
-	    print $nt_group join("\n",(">".$raxml_recip_hit_id,${$oghash{ $recip_hit_id  }}[0])),"\n";
-	    print $pep_group join("\n",(">".$raxml_recip_hit_id,${$oghash{ $recip_hit_id }}[1])),"\n";
-	    close($nt_group);
-	    close($pep_group);
+	    say $nt_group join "\n", ">".$raxml_recip_hit_id,${$oghash{ $recip_hit_id  }}[0];
+	    say $pep_group join "\n", ">".$raxml_recip_hit_id,${$oghash{ $recip_hit_id }}[1];
+	    close $nt_group;
+	    close $pep_group;
 	}
     }
     else {
-	close($nt_group);
-	close($pep_group);
-	unlink($gene_file, $pep_file);
+	close $nt_group;
+	close $pep_group;
+	unlink $gene_file, $pep_file;
     }
 
     ###### Align $gene_file here
@@ -189,11 +185,11 @@ for my $cluster (sort keys %$clusters) {
 	    my $gene_tree = infer_tree($gene_phy, $raxml, $clusters_with_recip_hit{$cluster});
 	    next unless defined $gene_tree; ## try to catch errors from muscle or raxml that will cause Bio::Phylo to crash
 	    my $tree_stats = summarize_trees($gene_tree, $gene_ct, \%tree_members);
-	    push(@treestats,$tree_stats);
+	    push @treestats, $tree_stats;
 	}
     }
     else {
-	unlink($gene_file, $pep_file);
+	unlink $gene_file, $pep_file;
     }
     undef %taxahash;
     undef %clusters_with_recip_hit;
@@ -216,32 +212,32 @@ my $median = median(@clusterstats);
 my $min = min(@clusterstats);
 my $max = max(@clusterstats);
 
-open(my $cluster_report, ">", $orthogroup_stats) or die "\nERROR: Could not open file: $orthogroup_stats\n";
-print $cluster_report "=-=" x 25, "\n";
-print $cluster_report join("\t",("Cluster_count","Cluster_mean","Cluster_median","Cluster_min","Cluster_max")),"\n";
-print $cluster_report join("\t",($count, $mean, $median, $min, $max)), "\n";
-print $cluster_report "=-=" x 25, "\n";
-print $cluster_report join("\t",("Cluster_number","Cluster_size")),"\n";
+open my $cluster_report, ">", $orthogroup_stats or die "\nERROR: Could not open file: $orthogroup_stats\n";
+say $cluster_report "=-=" x 25;
+say $cluster_report join "\t", "Cluster_count","Cluster_mean","Cluster_median","Cluster_min","Cluster_max";
+say $cluster_report join "\t", $count, $mean, $median, $min, $max;
+say $cluster_report "=-=" x 25;
+say $cluster_report join "\t", "Cluster_number","Cluster_size";
 
 for my $key (reverse sort { $statshash{$a} <=> $statshash{$b} } keys %statshash) {
-    print $cluster_report join("\t",($key,$statshash{$key})), "\n";
+    say $cluster_report join "\t", $key,$statshash{$key};
 }
-close($cluster_report);
+close $cluster_report;
 
 my $gene_tree_ct = 0;
-open(my $tree_report, ">", $tree_stats) or die "\nERROR: Could not open file: $tree_stats\n";
-print $tree_report join("\t",("Gene_tree","Taxon_code","Gene_tree_members","Ave_branch_length")),"\n";
+open my $tree_report, ">", $tree_stats or die "\nERROR: Could not open file: $tree_stats\n";
+say $tree_report join "\t", "Gene_tree","Taxon_code","Gene_tree_members","Ave_branch_length";
 for my $tree_stats_ref (@treestats) {
     for my $gene_fam_tree (keys %$tree_stats_ref) {
 	$gene_tree_ct++;
 	for my $taxon (keys %{$tree_stats_ref->{$gene_fam_tree}}) {
 	    my ($tr_members, $br_len_ave) = split(/\,/,($tree_stats_ref->{$gene_fam_tree}{$taxon}));
-	    print $tree_report join("\t",($gene_fam_tree, $taxon, $tr_members, $br_len_ave)),"\n";
+	    say $tree_report join "\t", $gene_fam_tree, $taxon, $tr_members, $br_len_ave;
 	}
     }
 }
-print $tree_report "\n$gene_tree_ct total trees with all three taxa and an outgroup match.\n";
-close($tree_report);
+say $tree_report "\n$gene_tree_ct total trees with all three taxa and an outgroup match.";
+close $tree_report;
 
 exit;
 
@@ -253,22 +249,22 @@ sub parse_groups {
     # http://cpansearch.perl.org/src/EASR/ONTO-PERL-1.19/lib/OBO/CCO/OrthoMCLParser.pm
 
     my $infile = shift;	
-    open(my $fh, '<', $infile) or die "\nERROR: Could not open file: $infile\n.";
+    open my $fh, '<', $infile or die "\nERROR: Could not open file: $infile\n.";
     
     my %clusters; 
-    while(<$fh>){
-	my ($cluster, $proteins) = split(/:\s+/xms);
+    while (<$fh>){
+	my ($cluster, $proteins) = split /:\s+/xms;
 	my $cluster_num;
 	if ($cluster =~ /(\d+)/) { # work on this regex
 	    $cluster_num = $1;
 	}
 	$cluster = $cluster_num;
-	my @proteins = split(/\s/xms, $proteins);
+	my @proteins = split /\s/xms, $proteins;
 	my $protein_ct = @proteins;
-	foreach my $protein ( @proteins) {
+	for my $protein ( @proteins) {
 	    if ($protein  =~ /((\w+)\|(\w+))/) {
 		if (exists $clusters{$cluster}) {
-		    push(@{$clusters{$cluster}}, $1);
+		    push @{$clusters{$cluster}}, $1;
 		}
 		else {
 		    $clusters{$cluster} = [ $1 ];
@@ -276,31 +272,28 @@ sub parse_groups {
 	    }		
 	}
     }		
-    close($fh);
+    close $fh;
     return \%clusters;
 }
 
 sub parse_best_hits {
     my $infile = shift;	
-    open(my $fh, '<', $infile) or die "\nERROR: Could not open file: $infile\n.";
+    open my $fh, '<', $infile or die "\nERROR: Could not open file: $infile\n.";
     
     my %clusters_best_match;
-    while(<$fh>) {
+    while (<$fh>) {
 	next if /^Query/ || /^\#/;
-	my @hits = split(/\t/,$_);
+	my @hits = split /\t/, $_;
 	my ($clusternum, $read) = ($hits[0] =~ /(\d+)\|(\w+\|\S+)/);
 	$clusters_best_match{$clusternum}{$read} = $hits[1];
     }
-    close($fh);
+    close $fh;
     return \%clusters_best_match;
 }
 
 sub summarize_trees {
     my ($gene_tree, $gene_ct, $tree_members) = @_;
-    eval { 
-	use lib qw(/home/jmblab/statonse/apps/perlmod/Bio-Phylo-0.50/blib/lib);
-	require Bio::Phylo::IO;    
-        };
+    eval { require Bio::Phylo::IO; };
     if ($@) {
         die "\nERROR: The Bio::Phylo Perl package is required to work with trees. Exiting.\n";
     }
@@ -320,7 +313,7 @@ sub summarize_trees {
 	my $taxa = $node_name;
 	$taxa =~ s/\|.*//;
 	if (exists $treehash{$taxa}) {
-	    push(@{$treehash{$taxa}}, $length);
+	    push @{$treehash{$taxa}}, $length;
 	}
 	else {
 	    $treehash{$taxa} = [ $length ];
@@ -334,11 +327,10 @@ sub summarize_trees {
 	my $taxon_tree_members = scalar @taxon_tree_lengths;
 	my $branch_len_sum = sum(@taxon_tree_lengths);
 	my $branch_len_ave = $branch_len_sum / $taxon_tree_members;
-	print "Total branch lengths for $key in $gene_tree is: ",$branch_len_sum,"\n";
-	print "Average branch length for $key in $gene_tree is: ",$branch_len_ave,"\n";
+	say "Total branch lengths for $key in $gene_tree is: ",$branch_len_sum;
+        say "Average branch length for $key in $gene_tree is: ",$branch_len_ave;
 	$tree_stats{$gene_tree}{$key} = $taxon_tree_members.",".$branch_len_ave; 
-  }
-
+    }
     return \%tree_stats;
 }
 
@@ -349,6 +341,7 @@ sub infer_tree {
     my $raxml_out_tree = "RAxML_bestTree.".$raxml_tree; ## unfortunately, the filename changes with different options
     $og_seq_id =~ s/\|.*//;   # just create a simple id
     
+    ##TODO: use better method for executing commands
     my ($raxml_out, $raxml_err, @raxml_res) = capture { ## import to note: this command uses 8 threads
         #system("$raxml -p 34623 -B 0.03 -x 24562 -N 100 -f a -K GTR -m GTRGAMMAI -T 8 -U -s $gene_phy -n $raxml_tree 2>&1 /dev/null");
 	system("$raxml -p 34623 -f d -m GTRGAMMA -T 8 -U -o $og_seq_id -s $gene_phy -n $raxml_tree"); 
@@ -366,8 +359,7 @@ sub pal2nal {
     my ($pal2nal_out, $pal2nal_err, @pal2nal_res) = capture { system("$pal2nal $pep_aln $gene_file -nogap > $pal2nal_aln"); };
 
     my $clustalw_to_fasta = sub {
-        eval { require Bio::AlignIO;
-        };
+        eval { require Bio::AlignIO; };
         if ($@) {
             die "BioPerl is needed to do alignment format conversion. Exiting.\n";
         }
@@ -377,7 +369,7 @@ sub pal2nal {
         my $aln_in = Bio::AlignIO->new(-file => $clustalw_aln, -format => 'clustalw');
         my $aln_out = Bio::AlignIO->new(-file => ">$fas_aln", -format => 'fasta');
         
-        while(my $aln = $aln_in->next_aln ) {
+        while (my $aln = $aln_in->next_aln ) {
             $aln_out->write_aln($aln);
         }
         
@@ -400,13 +392,13 @@ sub pal2nal {
         my $aln_in = Bio::AlignIO->new(-file => $clustalw_aln, -format => 'clustalw');
         my $aln_out = Bio::AlignIO->new(-file => ">$phy_outtmp", -format => 'phylip', -longid => 1, -interleaved => 0);
         
-        while(my $aln = $aln_in->next_aln ) {
+        while (my $aln = $aln_in->next_aln ) {
             $aln_out->write_aln($aln);
         }
         
         # this is so RaxML won't complain about pal2nal's clustalw format (including quotes in the identifiers)
-        open(my $phy, "<", $phy_outtmp) or die "\nERROR: Could not open file: $phy_outtmp\n";
-        open(my $correct_phy, ">", $phy_out) or die "\nERROR: Could not open file: $phy_out\n";
+        open my $phy, "<", $phy_outtmp or die "\nERROR: Could not open file: $phy_outtmp\n";
+        open my $correct_phy, ">", $phy_out or die "\nERROR: Could not open file: $phy_out\n";
         my ($seqnum, $length);
 
         my %phyhash;
@@ -447,9 +439,9 @@ sub pal2nal {
         for my $seq (keys %phyhash) {
             print $correct_phy "$seq  $phyhash{$seq}\n";
         }
-        close($phy);
-        close($correct_phy);
-        unlink ($phy_outtmp);
+        close $phy;
+        close $correct_phy;
+        unlink $phy_outtmp;
 
 	return $phy_out;
     };
@@ -457,7 +449,7 @@ sub pal2nal {
     my $gene_phy = $clustalw_to_phylip->($pal2nal_aln);
     my $gene_aln_fas = $clustalw_to_fasta->($pal2nal_aln);
 
-    return($gene_phy, $gene_aln_fas); 
+    return ($gene_phy, $gene_aln_fas); 
 }
 
 sub align {
@@ -486,7 +478,7 @@ sub align {
 	#print "muscle pep aln out on line 485 is: ",$pep_aln_out,"\n";
 	#print "muscle gene aln out on line 486 is: ",$gene_aln_out,"\n";
     #}
-    return($gene_aln, $pep_aln);
+    return ($gene_aln, $pep_aln);
 }
 
 sub sum {
