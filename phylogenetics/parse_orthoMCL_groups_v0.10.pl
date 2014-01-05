@@ -4,6 +4,7 @@
 ##      with the former being the nucleotide sequence of the genes. Use blast2orthologs.pl
 ##      as a guide for creating that file (or data structure). Use the nucleotide/peptide
 ##      alignments for calculating evolutionary rates. Need to trim alignments...
+##      suppress warnings for given/when if v5.18+
 
 use 5.010;
 use strict;
@@ -77,7 +78,7 @@ while (my $pep_seq = $pep_seq_in->next_seq()) {
     my $pepname = $pep_seq->id;
     my $pepseq = $pep_seq->seq;
     if (exists $seqhash{$pepname}) {
-	push(@{$seqhash{$pepname}},$pepseq);
+	push @{$seqhash{$pepname}}, $pepseq;
     }
 }
 
@@ -87,21 +88,21 @@ my $clusters = parse_groups($infile, %seqhash);
 
 for my $cluster (sort keys %$clusters) {
     my $cluster_size = scalar @{$clusters->{$cluster}};
-    push(@stats, $cluster_size);
+    push @stats, $cluster_size;
     if ($cluster_size  > 1 && $cluster_size < 20) { # for testing
 	my $gene_file = "gene_cluster_".$cluster."_nt.fasta";
         my $pep_file = "gene_cluster_".$cluster."_pep.fasta";
-        open(my $nt_group, ">>", $gene_file) or die "\nERROR: Could not open file: $gene_file\n";
-        open(my $pep_group, ">>", $pep_file) or die "\nERROR: Could not open file: $pep_file\n";
+        open my $nt_group, ">>", $gene_file or die "\nERROR: Could not open file: $gene_file\n";
+        open my $pep_group, ">>", $pep_file or die "\nERROR: Could not open file: $pep_file\n";
         
         for my $gene (@{$clusters->{$cluster}}) {
             if (exists $seqhash{$gene} ) { 
-                print $nt_group join("\n",(">".$gene,${$seqhash{$gene}}[0])),"\n";
-                print $pep_group join("\n",(">".$gene,${$seqhash{$gene}}[1])),"\n";
+                say $nt_group join "\n", ">".$gene,${$seqhash{$gene}}[0];
+                say $pep_group join "\n", ">".$gene,${$seqhash{$gene}}[1];
              }
         }
-        close($nt_group);
-        close($pep_group);
+        close $nt_group;
+        close $pep_group;
 
 	###### Align $gene_file here
 	if (-s $gene_file && -s $pep_file) {
@@ -112,7 +113,7 @@ for my $cluster (sort keys %$clusters) {
 	    my $pal2nal_aln = pal2nal($pep_aln, $gene_file, $pal2nal);
 	}
 	else {
-	    unlink($gene_file, $pep_file);
+	    unlink $gene_file, $pep_file;
 	}
     }
 }
@@ -126,20 +127,19 @@ my $median = median(@stats);
 my $min = min(@stats);
 my $max = max(@stats);
 
-open(my $report, ">", $outfile) or die "\nERROR: Could not open file: $outfile\n";
-print $report "=-=" x 25, "\n";
-print $report join("\t",("Cluster_count","Cluster_mean","Cluster_median","Cluster_min","Cluster_max")),"\n";
-print $report join("\t",($count, $mean, $median, $min, $max)), "\n";
-print $report "=-=" x 25, "\n";
-print $report join("\t",("Cluster_number","Cluster_size")),"\n";
+open my $report, ">", $outfile or die "\nERROR: Could not open file: $outfile\n";
+say $report "=-=" x 25;
+say $report join "\t", "Cluster_count","Cluster_mean","Cluster_median","Cluster_min","Cluster_max";
+say $report join "\t", $count, $mean, $median, $min, $max;
+say $report "=-=" x 25;
+say $report join "\t", "Cluster_number","Cluster_size";
 
 for my $key (reverse sort { $statshash{$a} <=> $statshash{$b} } keys %statshash) {
-    print $report join("\t",($key,$statshash{$key})), "\n";
+    say $report join "\t", $key,$statshash{$key};
 }
-close($report);
+close $report;
 
 exit;
-
 #
 # subs
 #
@@ -148,22 +148,22 @@ sub parse_groups {
     # http://cpansearch.perl.org/src/EASR/ONTO-PERL-1.19/lib/OBO/CCO/OrthoMCLParser.pm
 
     my $infile = shift;	
-    open(my $fh, '<', $infile) or die "\nERROR: Could not open file: $infile\n.";
+    open my $fh, '<', $infile or die "\nERROR: Could not open file: $infile\n.";
     
     my %clusters; 
-    while(<$fh>){
-	my ($cluster, $proteins) = split(/:\s+/xms);
+    while (<$fh>){
+	my ($cluster, $proteins) = split /:\s+/xms;
 	my $cluster_num;
 	if ($cluster =~ /(\d+)/) { # work on this regex
 	    $cluster_num = $1;
 	}
 	$cluster = $cluster_num;
-	my @proteins = split(/\s/xms, $proteins);
+	my @proteins = split /\s/xms, $proteins;
 	my $protein_ct = @proteins;
-	foreach my $protein ( @proteins) {
+	for my $protein ( @proteins) {
 	    if ($protein  =~ /((\w+)\|(\w+))/) {
 		if (exists $clusters{$cluster}) {
-		    push(@{$clusters{$cluster}}, $1);
+		    push @{$clusters{$cluster}}, $1;
 		}
 		else {
 		    $clusters{$cluster} = [ $1 ];
@@ -171,8 +171,8 @@ sub parse_groups {
 	    }		
 	}
     }		
-    close($fh);
-    return(\%clusters);
+    close $fh;
+    return \%clusters;
 }
 
 sub infer_tree {
@@ -198,18 +198,18 @@ sub align {
 
     my ($gene_aln_out, $gene_aln_err, @gene_aln_res) = capture { system("$muscle -in $gene_file -out $gene_aln -quiet"); };
     my ($pep_aln_out, $pep_aln_err, @pep_aln_res) = capture { system("$muscle -in $pep_file -out $pep_aln -quiet"); };
-    return($gene_aln, $pep_aln);
+    return ($gene_aln, $pep_aln);
 }
 
 sub min {
     my $min = shift;
-    foreach ( @_ ) { $min = $_ if $_ < $min }
+    for ( @_ ) { $min = $_ if $_ < $min }
     return $min;
 }
 
 sub max {
     my $max = shift;
-    foreach ( @_ ) { $max = $_ if $_ > $max }
+    for ( @_ ) { $max = $_ if $_ > $max }
     return $max;
 }
 
@@ -217,7 +217,7 @@ sub mean {
     my @array = @_; 
     my $sum; 
     my $count = scalar @array; 
-    foreach (@array) { $sum += $_; } 
+    for (@array) { $sum += $_; } 
     return sprintf("%.2f",$sum / $count); 
 }
 
@@ -237,7 +237,7 @@ sub median {
 sub find_prog {
     my $prog = shift;
     my ($path, $err) = capture { system("which $prog"); };
-    chomp($path);
+    chomp $path;
 
     given ($path) {
 	when (/$prog$/) { say "Using $prog located at $path." }
