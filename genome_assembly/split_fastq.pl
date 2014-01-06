@@ -49,10 +49,7 @@ while (my $nseq = $nt_it->next_seq) {
 	    $seq =~ s/^.//;
 	    $qual =~ s/^.//;
 	}
-	say $out "@".$nseq->{name};
-	say $out $seq;
-	say $out "+";
-	say $out $qual;
+	say join "\n", $out "@".$nseq->{name}, $seq, "+", $qual;
     }
 }
 close $out;
