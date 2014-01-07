@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 use utf8;
-use v5.12;
+use 5.012;
 use strict;
 use warnings;
 use warnings FATAL => "utf8";
@@ -60,11 +60,10 @@ $db .= "_$str" if $db_exists;
 
 my $cwd = getcwd();
 my $tmpiname = $ifile."_XXXX";
-#my $vmatch_e;
 my $o_tmp = File::Temp->new( TEMPLATE => $tmpiname,
-			     DIR => $cwd,
-			     SUFFIX => $iext,
-			     UNLINK => 0);
+			     DIR      => $cwd,
+			     SUFFIX   => $iext,
+			     UNLINK   => 0);
 
 # set paths to programs used
 my $mkvtree = find_prog("mkvtree");
