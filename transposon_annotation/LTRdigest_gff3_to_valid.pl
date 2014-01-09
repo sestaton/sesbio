@@ -34,7 +34,7 @@ use Getopt::Long;
 
 my $infile;
 my $outfile;
-my $usage = "USAGE: cnv_LTRdigest_gff3_to_valid.pl -i in.gff3 -o out.gff3\n";
+my $usage = "USAGE: $0 -i in.gff3 -o out.gff3\n";
 
 GetOptions(
            'i|infile=s'           => \$infile,
@@ -49,7 +49,6 @@ if (!$infile || !$outfile) {
 open my $in, '<', $infile or die "\nERROR: Can't open file: $infile\n";
 open my $seq, '<', $infile or die "\nERROR: Can't open file: $infile\n";
 open my $out, '>', $outfile or die "\nERROR: Can't open file: $outfile\n";
-
 
 my @contig = grep {/# (\w)/} <$seq>;
 close $seq;
@@ -80,17 +79,15 @@ for my $line (@gff) {
 	#			$gff_fields[7]."\t".    # Column 8: "phase"
 	#			$gff_fields[8]."\n";    # Column 9: "attributes"  ==> Need to fix here too. (Parent=repeat_region2)
 	
-				
-	say $out join "\t", $correctID,$gff_fields[1],$gff_fields[2],$gff_fields[3],$gff_fields[4],$gff_fields[5],
-				 $gff_fields[6],$gff_fields[7],$gff_fields[8];
+	say $out join "\t", $correctID, @gff_fields[1..8];
     }
 }
 
 sub get_contig {
     my @name = @_;
     for (@name) {
-    my ($comm, $contig) = split /\s+/, $_;
-    return $contig;
+	my ($comm, $contig) = split /\s+/, $_;
+	return $contig;
     }
 }
 
