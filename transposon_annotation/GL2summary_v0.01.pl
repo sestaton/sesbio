@@ -1,9 +1,10 @@
 #!/usr/bin/env perl
 
+use 5.010;
 use strict;
 use warnings;
+use autodie qw(open);
 use Cwd;
-use feature 'say';
 
 my $usage = "$0 cls_file gl_dir\n";
 my $cls_file = shift or die $usage;
@@ -14,7 +15,6 @@ GL2summary($gl_dir, $cls_file);
 #
 # subs
 #
-
 sub GL2summary {
     my ($gl_dir, $cls_file) = @_;
 
@@ -28,10 +28,10 @@ sub GL2summary {
     $gl2summary_plot .= ".cluster_graph_summary.pdf";
     my $gl2summary_rscript = $cls_file;
     $gl2summary_rscript .= "gl2summary.rscript";
-    open(my $rscript, '>', $gl2summary_rscript);
+    open my $rscript, '>', $gl2summary_rscript;
 
     say "gl2summary_rscript $gl2summary_rscript say glsummary_plot $gl2summary_plot";
-
+    
 say $rscript "suppressPackageStartupMessages(library(igraph))
 plotg=function(GG,LL,wlim=NULL,...){
 	
@@ -95,11 +95,10 @@ cmd=paste(\"convert page????.png $gl2summary_plot\")
 system(cmd)
 tmp=lapply(pngFiles,unlink)  # remove all png files";
 
-    close($rscript);
+    close $rscript;
 
     system("R --vanilla --slave --silent < $gl2summary_rscript 2> /dev/null");
-    #unlink($rscript);
-    #return $gl2summary_plot
+    #unlink($rscript); ## keep for debugging
 }
 
 
