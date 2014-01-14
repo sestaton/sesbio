@@ -46,6 +46,10 @@ A short prefix to be used to name the assembly output directory.
 
 =over 2
 
+=item -t, --trimfile
+
+A file to use for contaminant filtering.
+
 =item -o, --outfile
 
 A file to hold the assembly statistics. 
@@ -99,21 +103,21 @@ my $reads;
 my $sample_cov;
 my $num_subsamples;    # Take this at the command line, the # of samples to take
 my $consed;
-my $trimfile = "/iob_home/jmblab/statonse/db/pIndigo_BAC536.fasta";   
- # could make this an option, but there are already a lot...
+my $trimfile; # = "/iob_home/jmblab/statonse/db/pIndigo_BAC536.fasta";   
 
 GetOptions(#Required arguments 
-	   "i|infile=s"         => \$infile,
-	   "o|outfile=s"        => \$outfile,
+	   'i|infile=s'         => \$infile,
+	   'o|outfile=s'        => \$outfile,
 
 	   #Options
-	   "p|prefix=s" 	=> \$prefix,  # prefix for naming the assembly output directory
-	   "sample"             => \$sample,
-	   "bases"      	=> \$bases,
-	   "reads"      	=> \$reads,
-	   "s|sample_cov=s"     => \$sample_cov,
-	   "n|num_subsamples=i" => \$num_subsamples,
-	   "consed"             => \$consed,
+	   't|trimfile=s'       => \$trimfile,
+	   'p|prefix=s' 	=> \$prefix,  # prefix for naming the assembly output directory
+	   'sample'             => \$sample,
+	   'bases'      	=> \$bases,
+	   'reads'      	=> \$reads,
+	   's|sample_cov=s'     => \$sample_cov,
+	   'n|num_subsamples=i' => \$num_subsamples,
+	   'consed'             => \$consed,
 	  );
 
 # Start the program or die with a usage statement and specific error message
@@ -124,68 +128,67 @@ if (!$infile) {
     exit(0);
 }
 else {
-    say "\n\n", "============= Generating subsamples for file: ",
-	$infile if $sample;
-    say "\n\n", "============= Generating assembly for file: ",
-	$infile if !$sample;
+    say "\n============= Generating subsamples for file: ",
+    $infile if $sample;
+    say "\n============= Generating assembly for file: ",
+    $infile if !$sample;
 }
 
 #check for prefix
 if ($prefix) {
     say "============= Generating a subsample of reads for project name: ",
-	$prefix if $sample;
+    $prefix if $sample;
     say "============= Generating assembly for project name: ",
-	$prefix if !$sample;
+    $prefix if !$sample;
 }
 else {
-	say "\nERROR: A job name prefix was not given at the command line.";
-	usage();
-	exit(0);
+    say "\nERROR: A job name prefix was not given at the command line.";
+    usage();
+    exit(0);
 }
 
 #check for sample_cov
 if ($sample) {
-	if ($sample_cov) {
-		say
-	  	"============= Generating a subsample of reads for projected coverage: ",
-	  	$sample_cov;
+    if ($sample_cov) {
+	say "============= Generating a subsample of reads for projected coverage: ",
+	$sample_cov;
+    }
+    else {
+	say "\nERROR: A sample coverage was not given at the command line.";
+	usage();
+	exit(0);
+    }
+    
+    #check for num_subsamples
+    if ($num_subsamples) {
+	say "============= Generating ", $num_subsamples,
+	" subsamples of reads for file: ", $infile;
+    }
+    else {
+	say "\nERROR: The number of subsamples was not given at the command line.";
+	usage();
+	exit(0);
+    }
+    
+    #check for --bases or --reads
+    if ( $bases && $reads ) {
+	say "\nERROR: The --reads or --bases options must not be given together at the command line.";
+	usage();
+	exit(0);
+    }
+    elsif ( !$bases && !$reads ) {
+	say "\nERROR: The --reads or --bases options must be given at the command line.";
+	usage();
+	exit(0);
 	}
-	else {
-		say "\nERROR: A sample coverage was not given at the command line.";
-		usage();
-		exit(0);
-	}
-
-	#check for num_subsamples
-	if ($num_subsamples) {
-		say "============= Generating ", $num_subsamples,
-	  	" subsamples of reads for file: ", $infile;
-	}
-	else {
-		say "\nERROR: The number of subsamples was not given at the command line.";
-		usage();
-		exit(0);
-	}
-
-	#check for --bases or --reads
-	if ( $bases && $reads ) {
-		say "\nERROR: The --reads or --bases options must not be given together at the command line.";
-		usage();
-		exit(0);
-	}
-	elsif ( !$bases && !$reads ) {
-		say "\nERROR: The --reads or --bases options must be given at the command line.";
-		usage();
-		exit(0);
-	}
-	elsif ($bases) {
-		say "============= Generating subsamples of bases for: ", $sample_cov,
-	  	" bases\n";
-	}
-	elsif ($reads) {
-		say "============= Generating subsamples of reads for: ", $sample_cov,
-	  	" reads\n";
-	}
+    elsif ($bases) {
+	say "============= Generating subsamples of bases for: ", $sample_cov,
+	" bases\n";
+    }
+    elsif ($reads) {
+	say "============= Generating subsamples of reads for: ", $sample_cov,
+	" reads\n";
+    }
 }
 
 #-----------------------------------------------------+
@@ -202,41 +205,33 @@ mkdir $results_dir
   || die "Could not create directory to write results\n";   #chdir $results_dir;
 
 if ($sample) {
-    chdir($results_dir);
-	my $it = 0;    # initialize count of subsample iterations
-	for ( $it = 1; $it <= $num_subsamples; $it++ ) {
+    chdir $results_dir ;
+    my $it = 0;    # initialize count of subsample iterations
+    for ( $it = 1; $it <= $num_subsamples; $it++ ) {
+	
+	my $its = ($it);
+	say "\n============> Generating subsample ", $its,
+	" of reads for file: $infile\n";
 
-		my $its = ($it);
-		say "\n\n", "============> Generating subsample ", $its,
-	  	" of reads for file: $infile\n";
-
-		if ($reads) {
-
-			my $sff_cmd_reads =
-		  	"sfffile -pickr $sample_cov -o sub_$its-$infile ../$infile";
-			system($sff_cmd_reads);
-			print "\n";
-
-		}	
-		elsif ($bases) {
-
-			my $sff_cmd_bases =
-		  	"sfffile -pickb $sample_cov -o sub_$its-$infile ../$infile";    
-		  	# 4m = 32x for a 125kb BAC
-			system($sff_cmd_bases);
-			print "\n";
-
-		}
-		if ( $it == $num_subsamples ) {
-
-			say "\n\n", "============= Done sampling reads in: ", $infile,
-		  	" for ", $num_subsamples, " subsamples =============\n";
-
-		}
-
+	if ($reads) {
+	    my $sff_cmd_reads = "sfffile -pickr $sample_cov -o sub_$its-$infile ../$infile";
+	    system($sff_cmd_reads);
+	    print "\n";
+	}	
+	elsif ($bases) {
+	    my $sff_cmd_bases = "sfffile -pickb $sample_cov -o sub_$its-$infile ../$infile";    
+	    # 4m = 32x for a 125kb BAC
+	    system($sff_cmd_bases);
+	    print "\n";
 	}
-	#system("mv sub_* $results_dir");    # safer to `mv stuff` ?
-	#move("sub_*","$results_dir") || die "Move failed: $!";
+	if ( $it == $num_subsamples ) {
+	    say "\n\n", "============= Done sampling reads in: ", $infile,
+	    " for ", $num_subsamples, " subsamples =============\n";
+	}
+
+    }
+    #system("mv sub_* $results_dir");    # safer to `mv stuff` ?
+    #move("sub_*","$results_dir") || die "Move failed: $!";
 }
 #--------------------------------------+
 # DO runAssembly on generated sfffiles |
@@ -249,63 +244,60 @@ chomp $runAssembly;
 
 # get the sfffiles for assembly
 if (!$sample) {
-    chdir($results_dir);
+    chdir $results_dir;
     copy("../$infile",".") || die "Copy failed: $!";
 }
 my $results_path = `pwd`;
 chomp $results_path;
 $results_path =~ s/ \/[^\/]+$//;    # removes the last / and everything after it
 chdir("..");
-opendir( my $dir, $results_dir ) || die "Can't open directory: $results_dir";
+opendir my $dir, $results_dir || die "Can't open directory: $results_dir";
 my @sub_sffs =
   map { "$results_path/$_" } grep { $_ !~ /^\./ } readdir($dir);
-closedir($dir);
+closedir $dir;
 
 # do the assembly on each subsample
-foreach my $f (@sub_sffs) {
-	unless ( ( $f eq "." ) || ( $f eq ".." ) ) {
-		say "\n\n", "============> Running Newbler on file: $f\n";
+for my $f (@sub_sffs) {
+    unless ( ( $f eq "." ) || ( $f eq ".." ) ) {
+	say "\n============> Running Newbler on file: $f\n";
 
-		# cleaned up the output directory names 11/02/10 SES
-		my $output = $f;
-		$output =~ s/\.[^\.]*$//;    # http://www.perlmonks.org/?node_id=729477
-		if ($consed) {
-
-			my $run_Assemb_consed =
-			  "$runAssembly -o $output -consed -vt $trimfile $f";
-			system($run_Assemb_consed);
-			print "\n";
-
-		}
-		else {
-
-			my $run_Assemb = "$runAssembly -o $output -vt $trimfile $f";
-			system($run_Assemb);
-			print "\n";
-
-		}
-		if ($outfile) {
-			chdir($output);
-			#my $sffsample = $output.".sff";
-			#my $outparsed = $output."_parsed.txt";
-			print "\n============= Parsing assembly output for $f\n";
-			my $Metrics = "454NewblerMetrics.txt";
-			get_NewblerMetrics($Metrics,$outfile,$output);
-			chdir("..");
-		}
+	# cleaned up the output directory names 11/02/10 SES
+	my $output = $f;
+	$output =~ s/\.[^\.]*$//;    # http://www.perlmonks.org/?node_id=729477
+	if ($consed) {
+	    my $run_Assemb_consed_cmd;
+	    $run_Assemb_consed = "$runAssembly -o $output -consed -vt $trimfile $f" if $trimfile;
+	    $run_Assemb_consed = "$runAssembly -o $output -consed $f" if !$trimfile;
+	    system($run_Assemb_consed);
+	    print "\n";
 	}
+	else {
+	    my $run_Assemb = "$runAssembly -o $output -vt $trimfile $f";
+	    system($run_Assemb);
+	    print "\n";
+	}
+	if ($outfile) {
+	    chdir $output;
+	    #my $sffsample = $output.".sff";
+	    #my $outparsed = $output."_parsed.txt";
+	    print "\n============= Parsing assembly output for $f\n";
+	    my $Metrics = "454NewblerMetrics.txt";
+	    get_NewblerMetrics($Metrics,$outfile,$output);
+	    chdir("..");
+	}
+    }
 }
 
 system("cat *_parsed.txt > $outfile");
-unlink($infile);
+unlink $infile;
 system("rm *_parsed.txt");
 
 if ($sample){
-	say "\n============= Assembly complete for each of ", $num_subsamples,
-  	" subsamples for file: ", $infile, " =============\n";
+    say "\n============= Assembly complete for each of ", $num_subsamples,
+    " subsamples for file: ", $infile, " =============\n";
 } 
 else {
-	say "\n============= Assembly complete for file: $infile  =============\n";
+    say "\n============= Assembly complete for file: $infile  =============\n";
 }
 #-------------
 # SUBROUTINES
@@ -326,191 +318,145 @@ sub get_NewblerMetrics {
 
 	my $line = 0;
 	while (<$in>) {
-		chomp;
-		$line++;
-		if (/(path = )(\"\/.*\";$)/ && $line == 20) {  # works now, matching only the first "path" 3/19/11 SES
+	    chomp;
+	    $line++;
+	    if (/(path = )(\"\/.*\";$)/ && $line == 20) {  # works now, matching only the first "path" 3/19/11 SES
 		#if (/path = / && $line == 20) {    
-		    
-			my $flowgram = $2;
-			#my ($offset,$pathdir,$eq,$path) = split(/\s+/,$flowgram);
-			#$path =~ s/\"//g;
-			#$path =~ s/\;$//;
-			$flowgram =~ s/\"//g;
-			$flowgram =~ s/\;$//;
-			my ( $sfffile, $dir, $ext ) = fileparse( $flowgram, qr/\.[^.]*/ );
-			$sfffile .= $ext;
-			print $out $sfffile."\t";
-			
-		}
-		elsif (m/(numberOfReads = )(\d+)\, (\d+)\;/) {
-
-			#numberOfReads = 10937, 10937;
-			my $untrimmedReads = $2;
-			my $trimmedReads   = $3;
-			print $out $untrimmedReads."\t".$trimmedReads."\t";
-			
-		}
-		elsif (m/(numberOfBases = )(\d+)\, (\d+)\;/) {
-
-			#numberOfBases = 4000256, 3993688;
-			my $untrimmedBases = $2;
-			my $trimmedBases   = $3;
-			print $out $untrimmedBases."\t".$trimmedBases."\t";
-
-		}
-		elsif (m/(totalNumberOfReads = )(\d+)\;/) {
-
-			#totalNumberOfReads = 10937;
-			my $totNumReads = $2;
-			print $out $totNumReads."\t";
-			
-		}
-		elsif (m/(totalNumberOfBases = )(\d+)\;/) {
-
-			#totalNumberOfBases = 3993688;
-			my $totNumBases = $2;
-			print $out $totNumBases."\t";
-
-			# Omitted for now
-			#numberSearches   = 1534;
-			#seedHitsFound    = 442889, 288.72;
-			#overlapsFound    = 46357, 30.22, 10.47%;
-			#overlapsReported = 42099, 27.44, 90.81%;
-			#overlapsUsed     = 20442, 13.33, 48.56%;
-
-		}
-		elsif (m/(numAlignedReads     = )(\d+)\, (\d\d\.\d\d\%)\;/) {
-
-			#numAlignedReads     = 10677, 97.62%;
-			my $numAlnReads  = $2;
-			my $percAlnReads = $3;
-			print $out $numAlnReads."\t".$percAlnReads."\t";
-
-		}
-		elsif (m/(numAlignedBases     = )(\d+)\, (\d\d\.\d\d\%)\;/) {
-
-			#numAlignedBases     = 3940332, 98.66%;
-			my $numAlnBases  = $2;
-			my $percAlnBases = $3;
-			print $out $numAlnBases."\t".$percAlnBases."\t";
-			
-		}
-		elsif (m/(inferredReadError  = )(\d\.\d\d\%)\, (\d+)/) {
-
-			#inferredReadError  = 0.84%, 33107;
-			my $percAlnError = $2;
-			my $numAlnError  = $3;
-			print $out $percAlnError."\t".$numAlnError."\t";
-			
-		}
-		elsif (m/(numberAssembled = )(\d+)\;/) {
-
-			#numberAssembled = 10234;
-			my $numReadsAssem = $2;
-			print $out $numReadsAssem."\t";
-			
-		}
-		elsif (m/(numberPartial = )(\d+)\;/) {
-
-			#numberPartial   = 443;
-			my $numPartial = $2;
-			print $out $numPartial."\t";
-		}
-		elsif (m/(numberSingleton = )(\d+)\;/) {
-
-			#numberSingleton = 85;
-			my $numSingleton = $2;
-			print $out $numSingleton."\t";
-
-		}
-		elsif (m/(numberRepeat    = )(\d+)\;/) {
-
-			#numberRepeat    = 7;
-			my $numRepeat = $2;
-			print $out $numRepeat."\t";
-
-		}
-		elsif (m/(numberOutlier   = )(\d+)\;/) {
-
-			#numberOutlier   = 27;
-			my $numOutlier = $2;
-			print $out $numOutlier."\t";
-
-		}
-		elsif (m/(numberTooShort  = )(\d+)\;/) {
-
-			#numberTooShort  = 141;
-			my $numTooShort = $2;
-			print $out $numTooShort."\t";
-
-		}
-		elsif (m/(numberOfContigs   = )(\d+)\;/) {
-
-			#	numberOfContigs   = 8;
-			my $numContigs = $2;
-			print $out $numContigs."\t";
-
-		}
-		elsif (m/(numberOfBases     = )(\d+)\;/) {
-
-			#	numberOfBases     = 109378;
-			my $numBases = $2;
-			print $out $numBases."\t";
-
-		}
-		elsif (m/(avgContigSize     = )(\d+)\;/) {
-
-			#	avgContigSize     = 13672;
-			my $aveContigSize = $2;
-			print $out $aveContigSize."\t";
-
-		}
-		elsif (m/(N50ContigSize     = )(\d+)\;/) {
-
-			#	N50ContigSize     = 35275;
-			my $N50ContigSize = $2;
-			print $out $N50ContigSize."\t";
-
-
-		}
-		elsif (m/(largestContigSize = )(\d+)\;/) {
-
-			#	largestContigSize = 38319;
-			my $largestContigSize = $2;
-			print $out $largestContigSize."\t";
-
-		}
-		elsif (m/(Q40PlusBases      = )(\d+)\, (\d\d\.\d\d\%)\;/) {
-
-			#	Q40PlusBases      = 109302, 99.93%;
-			my $Q40PlusBaseCount = $2;
-			my $Q40PlusBasePerc  = $3;
-			print $out $Q40PlusBaseCount."\t".$Q40PlusBasePerc."\t";
-
-		}
-		elsif (m/(Q39MinusBases     = )(\d+)\, (\d\.\d\d\%)\;/) {
-
-			#	Q39MinusBases     = 76, 0.07%;
-			my $Q39MinusBaseCount = $2;
-			my $Q39MinusBasePerc  = $3;
-			print $out $Q39MinusBaseCount."\t".$Q39MinusBasePerc."\t"; 
-
-		}
-		elsif (m/(numberOfContigs = )(\d+)\;/) {
-
-			#	numberOfContigs = 8;
-			my $numContigs = $2;
-			print $out $numContigs."\t";
-
-		}
-		elsif (m/(numberOfBases   = )(\d+)\;/) {
-
-			#	numberOfBases   = 109378;
-			my $numBases = $2;
-			print $out $numBases."\n";
-
-		}
-
+		
+		my $flowgram = $2;
+		#my ($offset,$pathdir,$eq,$path) = split(/\s+/,$flowgram);
+		#$path =~ s/\"//g;
+		#$path =~ s/\;$//;
+		$flowgram =~ s/\"//g;
+		$flowgram =~ s/\;$//;
+		my ( $sfffile, $dir, $ext ) = fileparse( $flowgram, qr/\.[^.]*/ );
+		$sfffile .= $ext;
+		print $out $sfffile."\t";
+	    }
+	    elsif (m/(numberOfReads = )(\d+)\, (\d+)\;/) {
+		#numberOfReads = 10937, 10937;
+		my $untrimmedReads = $2;
+		my $trimmedReads   = $3;
+		print $out $untrimmedReads."\t".$trimmedReads."\t";
+	    }
+	    elsif (m/(numberOfBases = )(\d+)\, (\d+)\;/) {
+		#numberOfBases = 4000256, 3993688;
+		my $untrimmedBases = $2;
+		my $trimmedBases   = $3;
+		print $out $untrimmedBases."\t".$trimmedBases."\t";
+	    }
+	    elsif (m/(totalNumberOfReads = )(\d+)\;/) {
+		#totalNumberOfReads = 10937;
+		my $totNumReads = $2;
+		print $out $totNumReads."\t";
+	    }
+	    elsif (m/(totalNumberOfBases = )(\d+)\;/) {
+		#totalNumberOfBases = 3993688;
+		my $totNumBases = $2;
+		print $out $totNumBases."\t";
+		
+		# Omitted for now
+		#numberSearches   = 1534;
+		#seedHitsFound    = 442889, 288.72;
+		#overlapsFound    = 46357, 30.22, 10.47%;
+		#overlapsReported = 42099, 27.44, 90.81%;
+		#overlapsUsed     = 20442, 13.33, 48.56%;
+	    }
+	    elsif (m/(numAlignedReads     = )(\d+)\, (\d\d\.\d\d\%)\;/) {
+		#numAlignedReads     = 10677, 97.62%;
+		my $numAlnReads  = $2;
+		my $percAlnReads = $3;
+		print $out $numAlnReads."\t".$percAlnReads."\t";
+	    }
+	    elsif (m/(numAlignedBases     = )(\d+)\, (\d\d\.\d\d\%)\;/) {
+		#numAlignedBases     = 3940332, 98.66%;
+		my $numAlnBases  = $2;
+		my $percAlnBases = $3;
+		print $out $numAlnBases."\t".$percAlnBases."\t";
+	    }
+	    elsif (m/(inferredReadError  = )(\d\.\d\d\%)\, (\d+)/) {
+		#inferredReadError  = 0.84%, 33107;
+		my $percAlnError = $2;
+		my $numAlnError  = $3;
+		print $out $percAlnError."\t".$numAlnError."\t";
+	    }
+	    elsif (m/(numberAssembled = )(\d+)\;/) {
+		#numberAssembled = 10234;
+		my $numReadsAssem = $2;
+		print $out $numReadsAssem."\t";
+	    }
+	    elsif (m/(numberPartial = )(\d+)\;/) {
+		#numberPartial   = 443;
+		my $numPartial = $2;
+		print $out $numPartial."\t";
+	    }
+	    elsif (m/(numberSingleton = )(\d+)\;/) {
+		#numberSingleton = 85;
+		my $numSingleton = $2;
+		print $out $numSingleton."\t";
+	    }
+	    elsif (m/(numberRepeat    = )(\d+)\;/) {
+		#numberRepeat    = 7;
+		my $numRepeat = $2;
+		print $out $numRepeat."\t";
+	    }
+	    elsif (m/(numberOutlier   = )(\d+)\;/) {
+		#numberOutlier   = 27;
+		my $numOutlier = $2;
+		print $out $numOutlier."\t";
+	    }
+	    elsif (m/(numberTooShort  = )(\d+)\;/) {
+		#numberTooShort  = 141;
+		my $numTooShort = $2;
+		print $out $numTooShort."\t";
+	    }
+	    elsif (m/(numberOfContigs   = )(\d+)\;/) {
+		#	numberOfContigs   = 8;
+		my $numContigs = $2;
+		print $out $numContigs."\t";
+	    }
+	    elsif (m/(numberOfBases     = )(\d+)\;/) {
+		#	numberOfBases     = 109378;
+		my $numBases = $2;
+		print $out $numBases."\t";
+	    }
+	    elsif (m/(avgContigSize     = )(\d+)\;/) {
+		#	avgContigSize     = 13672;
+		my $aveContigSize = $2;
+		print $out $aveContigSize."\t";
+	    }
+	    elsif (m/(N50ContigSize     = )(\d+)\;/) {
+		#	N50ContigSize     = 35275;
+		my $N50ContigSize = $2;
+		print $out $N50ContigSize."\t";
+	    }
+	    elsif (m/(largestContigSize = )(\d+)\;/) {
+		#	largestContigSize = 38319;
+		my $largestContigSize = $2;
+		print $out $largestContigSize."\t";
+	    }
+	    elsif (m/(Q40PlusBases      = )(\d+)\, (\d\d\.\d\d\%)\;/) {
+		#	Q40PlusBases      = 109302, 99.93%;
+		my $Q40PlusBaseCount = $2;
+		my $Q40PlusBasePerc  = $3;
+		print $out $Q40PlusBaseCount."\t".$Q40PlusBasePerc."\t";
+	    }
+	    elsif (m/(Q39MinusBases     = )(\d+)\, (\d\.\d\d\%)\;/) {
+		#	Q39MinusBases     = 76, 0.07%;
+		my $Q39MinusBaseCount = $2;
+		my $Q39MinusBasePerc  = $3;
+		print $out $Q39MinusBaseCount."\t".$Q39MinusBasePerc."\t"; 
+	    }
+	    elsif (m/(numberOfContigs = )(\d+)\;/) {
+		#	numberOfContigs = 8;
+		my $numContigs = $2;
+		print $out $numContigs."\t";
+	    }
+	    elsif (m/(numberOfBases   = )(\d+)\;/) {
+		#	numberOfBases   = 109378;
+		my $numBases = $2;
+		print $out $numBases."\n";
+	    }
 	}
 	close $in;
 	close $out;
