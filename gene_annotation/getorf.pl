@@ -219,18 +219,11 @@ sub readfq {
             return;
         }
     }
-    # SES mod 5/17/12
-    my $name;
-    if (/^.?(\S+\s\S+.*)/) {          # Illumina 1.8+, now more greedy 8/1 SES
-        $name = $1;
-    }
-    elsif (/^.?(\S+)/) {              # Illumina 1.3+
-        $name = $1;
-    } 
-    else {
-        $name = '';                   # ?
-    }
-    #my $name = /^.(\S+)/? $1 : '';   # Heng Li's original regex
+    my ($name, $comm);
+    defined $_ && do {
+        ($name, $comm) = /^.(\S+)(?:\s+)(\S+)/ ? ($1, $2) : 
+	                 /^.(\S+)/ ? ($1, '') : ('', '');
+    };
     my $seq = '';
     my $c;
     $aux->[0] = undef;
@@ -242,14 +235,14 @@ sub readfq {
     }
     $aux->[0] = $_;
     $aux->[1] = 1 if (!defined($aux->[0]));
-    return ($name, $seq) if ($c ne '+');
+    return ($name, $comm, $seq) if ($c ne '+');
     my $qual = '';
     while (<$fh>) {
         chomp;
         $qual .= $_;
         if (length($qual) >= length($seq)) {
             $aux->[0] = undef;
-            return ($name, $seq, $qual);
+            return ($name, $comm, $seq, $qual);
         }
     }
     $aux->[1] = 1;
@@ -283,11 +276,11 @@ sub find_prog {
 sub seqct {
     my $f = shift;
     open my $fh, "<", $f or die "\nERROR: Could not open file: $f\n";
-    my ($name, $seq, $qual);
+    my ($name, $comm, $seq, $qual);
     my @aux = undef;
     my $seqct = 0;
     my %seqhash;
-    while (($name, $seq, $qual) = readfq(\*$fh, \@aux)) {
+    while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
 	$seqct++;
 	# EMBOSS uses characters in identifiers as delimiters, which can produce some
         # unexpected renaming of sequences, so warn that it's not this script doing
@@ -299,7 +292,7 @@ sub seqct {
 	$seqhash{$name} = $seq;
     }
     close $fh;
-    return(\$seqct,\%seqhash);
+    return (\$seqct,\%seqhash);
 }
 
 sub getorf {
@@ -346,11 +339,11 @@ sub largest_seq {
  
     open my $fh, "<", $file or die "\nERROR: Could not open file: $file\n";
     
-    my ($name, $seq, $qual);
+    my ($name, $comm, $seq, $qual);
     my @aux = undef;
 
     my %seqhash;
-    while (($name, $seq, $qual) = readfq(\*$fh, \@aux)) {
+    while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
 	    $seqhash{$name} = $seq;
     }
     close $fh;
@@ -368,7 +361,7 @@ sub largest_seq {
 	$hash_max{$key} = $value if $max == length($value);
     }
     
-    return(\%hash_max);
+    return \%hash_max;
 }
 
 sub revcom {
@@ -379,7 +372,7 @@ sub revcom {
     $name =~ s/\(R.*//;   
     my $revcom = reverse $seq;
     $revcom =~ tr/ACGTacgt/TGCAtgca/;
-    return($name, $revcom);
+    return ($name, $revcom);
 }
 
 sub usage {
