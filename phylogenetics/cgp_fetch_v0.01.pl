@@ -1,6 +1,55 @@
 #!/usr/bin/env perl
 
-#TODO: add POD
+=head1 NAME 
+                       
+cgp_fetch.pl - Fetch sequences or assemblies from the Compositae Genome Project Database
+
+=head1 SYNOPSIS    
+ 
+cgp_fetch.pl -f familyname -e email -o resultsfile
+
+=head1 DESCRIPTION
+                                                                   
+(...)
+
+=head1 DEPENDENCIES
+
+This client uses URI to format data for a request, and LWP::UserAgent 
+and HTTP GET to perform a request. The program wget is used to fetch data.
+
+Tested with:
+
+(to be added later)
+
+=head1 AUTHOR 
+
+S. Evan Staton                                                
+
+=head1 CONTACT
+ 
+statonse at gmail dot com
+
+=head1 REQUIRED ARGUMENTS
+
+=over 2
+
+=item -d, --db
+
+=back
+
+=head1 OPTIONS
+
+=over 2
+
+=item -h, --help
+
+Print a usage statement. 
+
+=item -m, --man
+
+Print the full documentation.
+
+=cut
 
 #
 # library imports
@@ -47,8 +96,8 @@ GetOptions(
 	   'm|man'            => \$man,
 	  );
 
-#pod2usage( -verbose => 1 ) if $help;
-#pod2usage( -verbose => 2 ) if $man;
+pod2usage( -verbose => 1 ) if $help;
+pod2usage( -verbose => 2 ) if $man;
 
 #
 # check @ARGV
@@ -147,7 +196,7 @@ for my $tag ($tree->look_down(_tag => 'a')) {
 unlink $cgp_response;
 
 #
-# subroutines
+# methods
 #
 sub filter_search {
     my ($genus, $species, $gen, $sp, $file, $type) = @_;
