@@ -1,4 +1,4 @@
-#! /usr/bin/env perl
+#!/usr/bin/env perl
 
 # chienchi@lanl.gov
 # generate some stats for Newbler or Velvet (>0.7.6) contigs.
@@ -11,6 +11,7 @@
 #
 # modified by S. Evan Staton <statonse at gmail dot com>
 
+use 5.010;
 use strict;
 use warnings;
 use File::Basename;
@@ -37,7 +38,7 @@ my $exp_cov;
 my ($over100k_bases,$over50k_bases,$over25k_bases,$over10k_bases,$over5k_bases,$over3k_bases,$over2k_bases,$over1k_bases)=(0,0,0,0,0,0,0,0,0);
 my ($over100k_reads,$over50k_reads,$over25k_reads,$over10k_reads,$over5k_reads,$over3k_reads,$over2k_reads,$over1k_reads)=(0,0,0,0,0,0,0,0,0);
 
-while(<>) {
+while (<>) {
     chomp;
     if (/^[\>\@]/) {
 	$seq_num++;
@@ -86,31 +87,31 @@ for (0..99) {
     $top100 += $x[$_] if ($_ < 99 and $x[$_]);
 }
 
-print "Contigs_number:\t$seq_num\n";
-print "N50:\t$N50\n";
-print "N90:\t$N90\n";
-print "Max:\t$x[0]\n";
-print "Min:\t$x[-1]\n";
-print "Total_bases:\t$total\n";
-print "Top10_bases:\t$top10\n";
-print "Top20_bases:\t$top20\n";
-print "Top40_bases:\t$top40\n";
-print "Top100_bases:\t$top100\n";
-print ">100kb_bases:\t$over100k_bases\n";
-print ">50kb_bases:\t$over50k_bases\n";
-print ">25kb_bases:\t$over25k_bases\n";
-print ">10kb_bases:\t$over10k_bases\n";
-print ">5kb_bases:\t$over5k_bases\n";
-print ">3kb_bases:\t$over3k_bases\n";
-print ">2kb_bases:\t$over2k_bases\n";
-print ">1kb_bases:\t$over1k_bases\n";
+say "Contigs_number:\t$seq_num";
+say "N50:\t$N50";
+say "N90:\t$N90";
+say "Max:\t$x[0]";
+say "Min:\t$x[-1]";
+say "Total_bases:\t$total";
+say "Top10_bases:\t$top10";
+say "Top20_bases:\t$top20";
+say "Top40_bases:\t$top40";
+say "Top100_bases:\t$top100";
+say ">100kb_bases:\t$over100k_bases";
+say ">50kb_bases:\t$over50k_bases";
+say ">25kb_bases:\t$over25k_bases";
+say ">10kb_bases:\t$over10k_bases";
+say ">5kb_bases:\t$over5k_bases";
+say ">3kb_bases:\t$over3k_bases";
+say ">2kb_bases:\t$over2k_bases";
+say ">1kb_bases:\t$over1k_bases";
 
 #
 # Subs
 #
 sub Usage {
-    print STDERR "perl $0 <contigs.fasta>\n";
-    print STDERR "     -help       print usage\n";
+    say STDERR "perl $0 <contigs.fasta>";
+    say STDERR "     -help       print usage";
     exit;
 }
 
