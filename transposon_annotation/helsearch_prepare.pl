@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use File::Basename;
-use File::Copy;
+use File::Copy qw(move);
 
 my $usage = "\nhelsearch_prepare.pl indir\n";
 my $indir = shift or die "\nERROR: No input directory found!\n",$usage;
@@ -15,7 +15,7 @@ closedir $dir;
 chdir $indir;
 
 for my $fas (@fastas) {
-    my ($file,$dir,$ext) = fileparse($fas, qr/\.[^.]*/);
-    move("$fas","$file") || die "Copy failed: $!";
+    my ($file, $dir, $ext) = fileparse($fas, qr/\.[^.]*/);
+    move($fas, $file) || die "Copy failed: $!";
 }
 
