@@ -43,10 +43,10 @@ sam=${qryseqFile}_${subjseqFile}.sam
 bam=${qryseqFile}_${subjseqFile}.bam
 bamsort=${qryseqFile}_${subjseqFile}_sort
 
-## create the database
+## create the index
 bwa index $subjSeq
 
-## run blast
+## run bwa
 bwa mem -t 4 $subjSeq -p $qrySeq 1> $sam 2> $bwaerr
 
 echo -e "bwa done...\n"
@@ -66,6 +66,3 @@ samtools depth ${bamsort}.bam | cut -f3 | stats -all
 echo -e "samtools depth done...\n"
 ## calculate query seq stats
 gt seq -stat $qrySeq | head -3
-
-## clean up
-#rm ${db}.*
