@@ -164,10 +164,12 @@ if ($search_term && $family_term) {
     exit(1);
 }
 
-$family_term = ucfirst($family_term) if $family_term;
+
+$family_term      = ucfirst($family_term) if $family_term;
 my $pfam_response = qq{pfam_sanger_search_res.html};
-my $ua = LWP::UserAgent->new;
-my $tree = HTML::TreeBuilder->new;
+
+my $ua   = LWP::UserAgent->new;
+my $tree  HTML::TreeBuilder->new;
 $ua->env_proxy;
 
 my ($response, $results);
@@ -214,7 +216,7 @@ unlink $pfam_response;
 exit;
 
 #
-# subroutines
+# methods
 #
 sub parse_search_term {
     my ($search_term, $response, $pfam_response) = @_;
@@ -252,9 +254,9 @@ sub parse_family_term {
     my $xml = $response->content;
 
     my $xml_parser = XML::LibXML->new();
-    my $dom = $xml_parser->parse_string( $xml );
+    my $dom        = $xml_parser->parse_string( $xml );
 
-    my $root = $dom->documentElement();
+    my $root      = $dom->documentElement();
     my ( $entry ) = $root->getChildrenByTagName( 'entry' );
 
     my $acc  = $entry->getAttribute('accession');
@@ -280,10 +282,10 @@ sub parse_family_term {
 sub fetch_hmm_files {
     my ($family) = @_;
 
-    my $ua = LWP::UserAgent->new;
-    my $fam_hmm = $family.".hmm";
+    my $ua       = LWP::UserAgent->new;
+    my $fam_hmm  = $family.".hmm";
 
-    my $urlbase = "http://pfam.sanger.ac.uk/family/$family/hmm";
+    my $urlbase  = "http://pfam.sanger.ac.uk/family/$family/hmm";
     my $response = $ua->get($urlbase);
 
     unless ($response->is_success) {
