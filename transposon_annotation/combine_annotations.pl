@@ -39,6 +39,8 @@ for my $file (@files) {
 
 #dd %res and exit;
 
+say join "\t", "Superfamily", "Family", "Mean", "SD";
+
 for my $sfam (sort keys %res) {
     for my $fam (sort keys %{$res{$sfam}}) {
 	if (scalar @{$res{$sfam}{$fam}} > 1) {
@@ -54,7 +56,7 @@ for my $sfam (sort keys %res) {
 	    undef $stat;
 	}
 	else {
-	    say join "\t", $sfam, $fam, $res{$sfam}{$fam}->[0];
+	    say join "\t", $sfam, $fam, $res{$sfam}{$fam}->[0], 0;
 	}
     }
 }
