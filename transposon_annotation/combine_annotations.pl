@@ -56,6 +56,7 @@ for my $sfam (sort keys %res) {
 	    undef $stat;
 	}
 	else {
+	    # not all superfamilies are represented more than once, so the std dev is 0
 	    say join "\t", $sfam, $fam, $res{$sfam}{$fam}->[0], 0;
 	}
     }
