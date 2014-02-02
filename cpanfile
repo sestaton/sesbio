@@ -1,5 +1,6 @@
 requires 'HTML::TableExtract', '2.11';
 requires 'HTML::TreeBuilder', '5.03';
+requires 'HTTP::Request::Common', '6.04';
 requires 'WWW::Mechanize', '1.72';
 requires 'LWP::UserAgent', '6.05';
 requires 'Statistics::Descriptive', '3.0605';
