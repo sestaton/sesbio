@@ -1,9 +1,23 @@
 library(vegan)
 
 fam_bp_div <- read.table("all_15_species_te-families_cval_raw_bp_counts_tab_for_vegan_corr_order_div-format.tsv.txt",sep="\t",row.name=1,header=T)
-H <- diversity(index = "shannon", fam_bp_div)
-S <- specnumber(H)
-J <- H/log(S) # evenness
+#H <- diversity(index = "shannon", fam_bp_div)
+#S <- specnumber(H)
+#J <- H/log(S) # evenness
+
+## to avoid integer overflow errors from R, calculate statistics manually
+## these commands below produce the exact same results as those above
+hteph.pi <- fam_bp_div[10,]/sum(as.numeric(fam_bp_div[10,]))
+hteph.h <- -hteph.pi * log(hteph.pi)
+hteph.H <- apply(hteph.h, 1, sum, na.rm = TRUE)
+#> hteph.H
+#Helianthus niveus ssp. tephrodes 
+#                        2.611064 
+
+hteph.J <- hteph.H/log(specnumber(fam_bp_div[10,]))
+#> hteph.J
+#Helianthus niveus ssp. tephrodes 
+#                       0.7031137
 
 ## calc Renyi diversities for 6 random sites
 k <- sample(nrow(fam_bp_div), 6)
