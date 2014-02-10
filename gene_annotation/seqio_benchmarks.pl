@@ -48,7 +48,7 @@ my $infile = shift or die $usage;
 my $count = 10;
 my $seqct = 0;
 my @aux = undef;
-my ($id, $seq, $qual);
+my ($id, $comm, $seq, $qual);
 
 cmpthese($count, {
     'biome_seqio' => sub {
@@ -73,7 +73,7 @@ cmpthese($count, {
     },
     'readfq' => sub {
 	open my $in, '<', $infile;
-	while (($id, $seq, $qual) = readfq(\*$in, \@aux)) {
+	while (($id, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
 	    $seqct++ if defined $seq;
         }
 	close $in;
@@ -120,16 +120,11 @@ sub readfq {
             return;
         }
     }
-    my $name;
-    if (/^.?(\S+\s(\d)\S+)/) {      # Illumina 1.8+
-	$name = $1."/".$2;
-    }
-    elsif (/^.?(\S+)/) {            # Illumina 1.3+
-	$name = $1;
-    } else {
-	$name = '';                 # ?
-    }
-    #my $name = /^.(\S+)/? $1 : ''; # Heng Li's original regex
+    my ($name, $comm);
+    defined $_ && do {
+        ($name, $comm) = /^.(\S+)(?:\s+)(\S+)/ ? ($1, $2) : 
+	                 /^.(\S+)/ ? ($1, '') : ('', '');
+    };
     my $seq = '';
     my $c;
     $aux->[0] = undef;
@@ -141,16 +136,17 @@ sub readfq {
     }
     $aux->[0] = $_;
     $aux->[1] = 1 if (!defined($aux->[0]));
-    return ($name, $seq) if ($c ne '+');
+    return ($name, $comm, $seq) if ($c ne '+');
     my $qual = '';
     while (<$fh>) {
         chomp;
         $qual .= $_;
         if (length($qual) >= length($seq)) {
             $aux->[0] = undef;
-            return ($name, $seq, $qual);
+            return ($name, $comm, $seq, $qual);
         }
     }
     $aux->[1] = 1;
     return ($name, $seq);
 }
+
