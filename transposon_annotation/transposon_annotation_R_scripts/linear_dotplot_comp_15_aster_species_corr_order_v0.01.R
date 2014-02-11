@@ -36,6 +36,7 @@ fit2 <- lm(Copia ~ Species, data = gyp_cop_perc)
 #
 p <- ggplot(gyp_cop_perc, aes(x=Species, y=Gypsy, group=1)) +
   geom_point(color="darkgreen",size=4,position="jitter") +
+  theme_bw() +
   stat_smooth(method=lm, color="red") + 
   scale_x_discrete(limits=c("Calyc","Dasy","Gerb","Saff",
                             "CP","TKS","Sene","Gnaph","Ager",
@@ -56,6 +57,7 @@ p <- ggplot(gyp_cop_perc, aes(x=Species, y=Gypsy, group=1)) +
 #
 p2 <- ggplot(gyp_cop_perc, aes(x=Species, y=Copia, group=1)) +
   geom_point(color="aquamarine4",size=4,position="jitter") +
+  theme_bw() +
   stat_smooth(method=lm, color="red") + 
   scale_x_discrete(limits=c("Calyc","Dasy","Gerb","Saff",
                             "CP","TKS","Sene","Gnaph","Ager",
