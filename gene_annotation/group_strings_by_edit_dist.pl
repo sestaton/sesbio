@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+##TODO: Take patterns from command line
+
 use 5.014;
 use strict;
 use warnings;
@@ -22,9 +24,11 @@ while (<$in>) {
     push @scores, $_;
 }
 
-## look for dups first 
+## look for duplicates first 
 #for my $k (reverse sort { $matches{$a} <=> $matches{$b} } keys %matches) {
-#    say join "\t", $k, $matches{$k};
+#    if ($k > 1) {
+#        say join "\t", $k, $matches{$k};
+#    }
 #}
 
 for my $i (1..5) {
