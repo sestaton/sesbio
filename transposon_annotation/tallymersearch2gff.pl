@@ -24,11 +24,11 @@ Tested with:
 
 =item *
 
-Perl 5.18.0 (on Red Hat Enterprise Linux Server release 5.9 (Tikanga))
+Perl 5.16.0 (on Mac OS X 10.6.8 (Snow Leopard))
 
 =item *
 
-Perl 5.16.0 (on Mac OS X 10.6.8 (Snow Leopard))
+Perl 5.18.0 (on Red Hat Enterprise Linux Server release 5.9 (Tikanga)) 
 
 =back
 
