@@ -90,7 +90,14 @@ my %allsp;
 for my $species (sort keys %classes) {
     for my $cls (keys %{$classes{$species}}) {
 	my $stat = Statistics::Descriptive::Full->new;
-    
+
+	if (scalar @{$classes{$species}{$cls}} == 1) {
+	    push @{$classes{$species}{$cls}}, (0, 0);
+	}
+	elsif (scalar @{$classes{$species}{$cls}} == 2) {
+	    push @{$classes{$species}{$cls}}, 0;
+	}
+
 	$stat->add_data(@{$classes{$species}{$cls}});
 	my $mean = $stat->mean;
 	my $sd   = $stat->standard_deviation;
