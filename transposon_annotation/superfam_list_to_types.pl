@@ -11,7 +11,7 @@ my $usage = "perl $0\n";
 
 my @files = glob "*summary.tsv";
 
-die "\nERROR: Could not find and summary files." unless scalar @files == 15; ## 15 species for me, change as needed
+die "\nERROR: Could not find all summary files." unless scalar @files == 15; ## 15 species for me, change as needed
 
 my %typemap = (
     'Academ'       => { transposable_element => 'dna_transposon'          },
