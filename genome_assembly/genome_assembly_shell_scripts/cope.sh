@@ -1,7 +1,10 @@
 #!/bin/bash
 
-# specifying the mode is important
-# -m 0 == simple overlap mode
+## The read pairs have to be in the same order,
+## otherwise overlaps will be found between the wrong pairs
+
+## Specifying the mode is important, without it, the program fails silently
+## -m 0 == simple overlap mode
 
  ~/apps/cope-v1-1-3/src/cope \
 -a PAM_S2_L001_R1_001_trimmed_p.fasta \
