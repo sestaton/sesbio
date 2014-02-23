@@ -1,5 +1,6 @@
 allsuperfam.dat <- read.table("all_15_species_te-superfamilies_cval_raw_bp_counts_tab.tsv.txt",header=T,sep="\t",row.names=1)
 
+options(scipen=10)
 par(mfrow=c(2,1), mai=c(1.1,1.1,0.5,0.5))
 superfam.gyp.gls <- gls(Gypsy ~ GenomeSize, data = allsuperfam.dat)
 superfam.gyp.pgls <- gls(Gypsy ~ GenomeSize, correlation = corBrownian(value = 1, tre), data = allsuperfam.dat)
