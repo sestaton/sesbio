@@ -8,20 +8,20 @@ use autodie qw(open);
 use Data::Dump qw(dd);
 
 my $cvalh = {
-    Phoebanthus_tenuifolius          => 4267295897,
-    Conoclinium_coelestinum          => 1746269472,
-    Helianthus_annuus                => 3384161947,
-    Helianthus_argophyllus           => 4174346891,
-    Helianthus_porteri               => 4330738740,
+    'Phoebanthus_tenuifolius'          => 4267295897,
+    'Conoclinium_coelestinum'          => 1746269472,
+    'Helianthus_annuus'                => 3384161947,
+    'Helianthus_argophyllus'           => 4174346891,
+    'Helianthus_porteri'               => 4330738740,
     'Helianthus_niveus_ssp._tephrodes' => 4192677026,
-    Helianthus_verticillatus         => 2278002736,
-    Centrapalus_pauciflorus          => 3125365235,
-    Nasanthus_patagonicus            => 3962340892,
-    Fulcaldea_stuessyi               => 4182557218,
-    Gerbera_hybrida                  => 3861919879,
-    Pseudognaphalium_helleri         => 2920317131,
-    Carthamus_tinctorius             => 2405291468,
-    Senecio_vulgaris                 => 2045909989,
+    'Helianthus_verticillatus'         => 2278002736,
+    'Centrapalus_pauciflorus'          => 3125365235,
+    'Nasanthus_patagonicus'            => 3962340892,
+    'Fulcaldea_stuessyi'               => 4182557218,
+    'Gerbera_hybrida'                  => 3861919879,
+    'Pseudognaphalium_helleri'         => 2920317131,
+    'Carthamus_tinctorius'             => 2405291468,
+    'Senecio_vulgaris'                 => 2045909989,
     'Taraxacum_kok-saghyz'             => 2582325776,
 };
 
