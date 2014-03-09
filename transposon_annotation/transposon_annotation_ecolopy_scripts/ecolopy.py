@@ -3,7 +3,9 @@ matplotlib.use('Agg')
 from ecolopy_dev import Community
 from ecolopy_dev.utils import draw_shannon_distrib
 
-com = Community('test_log_abund.txt')
+##test_abund.txt would be the genome abundance / the diploid number of chromosomes
+## j_tot is obtained by taking the total number of individuals
+com = Community('test_log_abund.txt', j_tot=2150924886)
 print com
 
 com.fit_model('ewens')
