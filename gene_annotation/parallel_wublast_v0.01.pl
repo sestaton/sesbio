@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+## NB: This is a part of the genome size estimation protocol
+##     Need to put this 
 use 5.010;
 use strict;
 use warnings;
@@ -133,6 +135,7 @@ sub run_blast {
     }
     my $subseq_out = $subfile."_".$dbfile.$suffix;
 
+    # send array instead of scalar
     my $blast_cmd = "$blast_program ".
                     "$database ".
 	            "$subseq_file ".
