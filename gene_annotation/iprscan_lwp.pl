@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+##NB: This is the EBI client, not mine (SES)
+##    The licese and/or any restrictions are solely theirs.
+
 =head1 NAME
 
 iprscan_lwp.pl
