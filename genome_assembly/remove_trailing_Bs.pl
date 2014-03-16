@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-##TODO: add length cut off, so short or zero length files are not created. Also, add POD, help/man options.
+##TODO: Add POD, help/man options.
 
 use 5.014;
 use strict;
@@ -45,11 +45,11 @@ while (my $nseq = $nt_it->next_seq) {
     my $seq = $nseq->{seq};
     my $qual = $nseq->{qual};
     my $qual_len = length($qual);
-    if ($qual =~ /(B*)$/) {
+    if ($qual =~ /(B+)$/) {
 	my $b_len = length($1);
 	my $good_len = $qual_len - $b_len;
 	my $no_b_qual = substr($qual,0,$good_len);
-	my $no_b_seq = substr($seq,0,$good_len);
+	my $no_b_seq  = substr($seq,0,$good_len);
 	my $no_b_seq_len = length($no_b_seq);
 	if ($no_b_seq_len >= $length) {
 	    say $out "@".$nseq->{name};
