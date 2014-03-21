@@ -16,7 +16,7 @@ p2 <- ggplot(maize_cov_sims, aes(ReadNum, RepeatTotFromAnnot)) +
     stat_smooth(method="loess",color="red") +
     theme_bw() +
     xlab("Read number (percent genome coverage)") +
-    ylab("Percent genomic coverage")
+    ylab("TE fraction of genome")
 
 gA <- ggplot_gtable(ggplot_build(p + theme(legend.position="none",
                                            axis.text.x = element_blank(),
