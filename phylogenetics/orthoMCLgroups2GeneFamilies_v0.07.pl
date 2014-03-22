@@ -18,7 +18,8 @@ use AnyDBM_File;
 use vars qw( $DB_BTREE &R_DUP );
 use AnyDBM_File::Importer qw(:bdb);
 
-## add warnings for given/when
+# given/when emits warnings in v5.18+
+no if $] >= 5.018, 'warnings', "experimental::smartmatch";
 
 #
 # lexical vars
@@ -42,8 +43,7 @@ GetOptions(
 #
 # check input
 #
-if (!$infile || !$nt_fas || 
-    !$pep_fas || !$outfile) {
+if (!$infile || !$nt_fas || !$pep_fas || !$outfile) {
     usage();
     exit(1);
 }
@@ -57,7 +57,7 @@ $DB_BTREE->{cachesize} = 100000;
 $DB_BTREE->{flags} = R_DUP;
 my $db_file = "orthoMCL_groups.bdb";
 #tie( %seqhash, 'AnyDBM_File', ':memory:', 0666, $DB_BTREE);
-tie( %seqhash, 'AnyDBM_File', $db_file, 0666, $DB_BTREE);
+tie %seqhash, 'AnyDBM_File', $db_file, 0666, $DB_BTREE;
 
 # set PATH for programs we need
 my $muscle = find_prog("muscle");

@@ -2,7 +2,7 @@
 
 ##TODO:
 
-use v5.14;
+use 5.014;
 use strict;
 use warnings;
 #use BerkeleyDB;
@@ -18,6 +18,9 @@ BEGIN {
 use AnyDBM_File;
 use vars qw( $DB_BTREE &R_DUP );
 use AnyDBM_File::Importer qw(:bdb);
+
+# given/when emits warnings in v5.18+
+no if $] >= 5.018, 'warnings', "experimental::smartmatch";
 
 #
 # lexical vars
@@ -41,8 +44,7 @@ GetOptions(
 #
 # check input
 #
-if (!$infile || !$nt_fas || 
-    !$pep_fas || !$outfile) {
+if (!$infile || !$nt_fas || !$pep_fas || !$outfile) {
     usage();
     exit(1);
 }
