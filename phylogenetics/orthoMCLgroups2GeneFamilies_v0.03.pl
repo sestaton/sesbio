@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-##TODO:
+##TODO: Remove Bio::SeqIO for reading sequences
 
 use 5.014;
 use strict;
@@ -57,7 +57,7 @@ $DB_BTREE->{cachesize} = 100000;
 $DB_BTREE->{flags} = R_DUP;
 my $db_file = "orthoMCL_groups.bdb";
 #tie( %seqhash, 'AnyDBM_File', ':memory:', 0666, $DB_BTREE);
-tie( %seqhash, 'AnyDBM_File', $db_file, 0666, $DB_BTREE);
+tie %seqhash, 'AnyDBM_File', $db_file, 0666, $DB_BTREE;
 
 # set PATH for programs we need
 my $muscle = find_prog("muscle");
