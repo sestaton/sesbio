@@ -32,22 +32,24 @@ if ($hmmname) { open $hmmseq, '>', $hmmname or die "\nERROR: Could not open file
 
 my $hmmer_in = Bio::SearchIO->new(-file => $infile, -format => 'hmmer');
 
-say $out join "\t", "query", "query_length", "number_of_hits", "hit_name", "hit_acc", "hit_score", "hit_significance", "hsp_length", "hsp_query_start", "hsp_query_end", "hsp_hit_start", "hsp_hit_end";
+say $out join "\t", "query", "query_length", "number_of_hits", "hit_name", 
+    "hit_acc", "hit_score", "hit_significance", "hsp_length", "hsp_query_start", 
+    "hsp_query_end", "hsp_hit_start", "hsp_hit_end";
 
-while( my $result = $hmmer_in->next_result() ) {
+while ( my $result = $hmmer_in->next_result() ) {
     
     my $query      = $result->query_name();
     my $qlen       = $result->query_length();
     my $num_hits   = $result->num_hits();
        
-    while( my $hit = $result->next_hit() ) {
+    while ( my $hit = $result->next_hit() ) {
 	
 	my $hitid    = $hit->name();
 	my $hitacc   = $hit->accession();
 	my $score    = $hit->raw_score();
 	my $signif   = $hit->significance();
 	
-	while( my $hsp = $hit->next_hsp ) {
+	while ( my $hsp = $hit->next_hsp ) {
 	   
 	    my $hsplen    = $hsp->length('total');
 	    my $hstart    = $hsp->start('hit');
