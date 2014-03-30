@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+##TODO: use different seqio method to read fasta/fastq and don't store sequences
+
 use 5.010;
 use strict;
 use warnings;
