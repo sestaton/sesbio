@@ -22,6 +22,9 @@ use AnyDBM_File;
 use vars qw( $DB_BTREE &R_DUP );
 use AnyDBM_File::Importer qw(:bdb);
 
+# given/when emits warnings in v5.18+
+no if $] >= 5.018, 'warnings', "experimental::smartmatch";
+
 #
 # lexical vars
 #
