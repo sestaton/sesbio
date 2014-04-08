@@ -104,6 +104,9 @@ use File::Temp;
 use Bio::SeqIO;
 use Pod::Usage;
 
+# given/when emits warnings in v5.18+
+no if $] >= 5.018, 'warnings', "experimental::smartmatch";
+
 #
 # Vars
 #
