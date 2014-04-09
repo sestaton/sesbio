@@ -11,9 +11,9 @@ use autodie qw(open);
 use Cwd;
 
 my $usage = "$0 -d infile(db) -q query -o outfile\n";
-my $infile; # = shift or die $usage;
-my $query; # = shift or die $usage;
-my $outfile; # = shift or die $usage;
+my $infile;
+my $query;
+my $outfile;
 my $cwd = getcwd();
 
 GetOptions(
@@ -39,7 +39,7 @@ for my $k (sort { scalar(@{$matches->{$a}}) <=> scalar(@{$matches->{$b}}) } keys
     my $num_matches = scalar @{$matches->{$k}};
     if ($num_matches > 1) { 
 	say {$out} join "\t", "$k:", $num_matches;
-	for my $hit (@{$matches->{$k}}) { ## Matches are already sorted by percent identity, so not sorting necessary.
+	for my $hit (@{$matches->{$k}}) { ## Matches are already sorted by percent identity, so no sorting necessary.
 	    say {$out} join "\t", "HitID:", $hit->[0], "Perc:", $hit->[1];
 	}
     }
