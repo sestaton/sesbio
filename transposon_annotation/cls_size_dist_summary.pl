@@ -3,12 +3,13 @@
 use strict;
 use warnings;
 use Cwd;
+use autodie qw(open);
 
 my $usage = "$0 cls_file seq_file\n";
 my $cls_file = shift or die $usage;
 my $fas_file = shift or die $usage;
 
-open(my $cls, '<', $cls_file);
+open my $cls, '<', $cls_file;
 
 my ($seqhash, $seqct) = fas2hash($fas_file);
 
@@ -17,11 +18,11 @@ my $cwd = cwd();
 write_cls_size_dist_summary($cls_file, $seqct, $cwd);
 
 #
-# subs
+# methods
 #
 sub fas2hash {
     my $fas_file = shift;
-    open(my $fas, '<', $fas_file);
+    open my $fas, '<', $fas_file;
    
     my $setct = 0;
     local $/ = '>';
@@ -32,9 +33,9 @@ sub fas2hash {
         $seqhash{$seqid} = $seq;
 	$seqct++ if defined $seq;
     }
-    close($fas);
+    close $fas;
     
-    return(\%seqhash, $seqct);
+    return (\%seqhash, $seqct);
 }
 
 sub write_cls_size_dist_summary {
@@ -46,10 +47,7 @@ sub write_cls_size_dist_summary {
     $cls_size_dist_plot .= ".png";
     my $cls_size_dist_rscript = $cls_file;
     $cls_size_dist_rscript .= ".rscript";
-    open(my $rscript, '>', $cls_size_dist_rscript);
-
-    ## 
-    ##
+    open my $rscript, '>', $cls_size_dist_rscript;
 
     say $rscript "cls=scan(file=\"$cls_file\",what=character(),sep=\"\\n\",comment.char=\">\",quiet=T)
                   cls=strsplit(cls,split=\"[ \\t]\")
@@ -77,7 +75,7 @@ text(NinClusters+NinSingles/2,clsLength[[1]]*1.05, labels=paste(NinSingles,\"sin
 axis(1,at=seq(0,NinAll,length.out=11),label=seq(0,100,by=10))
 
 tmp=capture.output(dev.off())";
-    close($rscript);
+    close $rscript;
 
 system("R --vanilla --slave --silent < $cls_size_dist_rscript 2> /dev/null");
  
