@@ -86,7 +86,7 @@ for my $k (keys %matches) { # this will calculate the number of hits per transcr
     my @filtered_matches = uniq(@{$matches{$k}});
     my $match_base_count;
     for (@filtered_matches) {
-	$match_base_count += $target_store->{$_};# for @filtered_matches;
+	$match_base_count += $target_store->{$_};
     }
     $counts{$k} = $match_base_count;
 }
@@ -96,7 +96,6 @@ say STDERR "Finished calculating the number of mapped reads per transcript.";
 my %trans_cov;
 for my $transc (keys %counts) {
     if (exists $query_store->{$transc}) {
-	## need to calc total length of bases mapped to each transcript
 	my $len_mapped = $counts{$transc};
 	my $trans_len = $query_store->{$transc};
 	my $trans_cov = $len_mapped / $trans_len;
@@ -140,7 +139,7 @@ sub store_seq_len {
     my $it = $kseq->iterator;
 
     my ($n, $seq_ct, $base_ct) = (0, 0, 0);
-    while( my $seq = $it->next_seq) {
+    while (my $seq = $it->next_seq) {
 	$seq_ct++;
 	$base_ct += length($seq->{seq});
 	$store{ $seq->{name} } = length($seq->{seq});
