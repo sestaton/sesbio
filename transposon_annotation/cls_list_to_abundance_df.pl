@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use v5.14;
+use 5.014;
 use strict;
 use warnings;
 use Getopt::Long;
