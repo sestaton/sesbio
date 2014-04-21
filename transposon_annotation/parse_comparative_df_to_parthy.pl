@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
 
+#NB: This is for staton et al. 2014
 use 5.014;
 use strict;
 use warnings;
