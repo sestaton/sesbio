@@ -76,13 +76,13 @@ while (($name, $comm, $seq, $qual) = readfq(\*$tefas, \@aux)) {
 
 	    my $intseq = substr $seqstore->{$contigname}, $lLTR_end, $int_len;
 	    $intseq =~ s/.{60}\K/\n/g;
-	    my $intid = join "_", $famname, $contigname, $int_start, $int_end, "I";
+	    my $intid = join "_", $famname, $contigname, $int_start, $int_end, "Int";
 	    say $out join "\n", ">".$intid, $intseq;
+	    # for debugging
 	    say "SEQ:    $contigname";
 	    say "SEQLEN: $element_length";
 	    say "INTLEN: $int_len";
 	    say "-" x 20; 
-	    #say join q{ }, $famname, $contigname, $int_start, $int_end, length $seqstore->{$contigname};
 	}
 	else {
 	    $notmapped_ct++;
@@ -92,6 +92,7 @@ while (($name, $comm, $seq, $qual) = readfq(\*$tefas, \@aux)) {
 close $tefas;
 close $out;
 
+# for debugging
 #say "NOT MAPPED: $notmapped_ct";
 #say "Number of elements mapped: $mapped_ct;";
 
