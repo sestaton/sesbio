@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # TODO: 
-
+use 5.010;
 use strict;
 use warnings;
 use Bio::AlignIO;
@@ -17,7 +17,7 @@ for my $hash (@gap_arr) {
     for my $key (%$hash) {
 	$pos++;
 	if (defined $hash->{$key}) {
-	    print "Looking at pos: $pos"," which contains: $hash->{$key}\n";
+	    say "Looking at pos: $pos"," which contains: $hash->{$key}";
 	}   
     }
 }
@@ -32,19 +32,19 @@ sub parse_aln {
 				   -format => 'fasta');
 				   
     while ( my $aln = $aln_in->next_aln() ) {
-	my $percentID = sprintf("%.2f",$aln->percentage_identity);
+	my $percentID = sprintf("%.2f", $aln->percentage_identity);
 	my $sim = $percentID/100;
 	my $dive = 1-$sim;
 
-	print "align length is: ",$aln->length, "\n";
-	print "Num residues is: ",$aln->no_residues, "\n";
-	print "Is flush (bool): ",$aln->is_flush, "\n";
-	print "Num sequences:   ",$aln->no_sequences, "\n";
-	print "\nPercent ident:   ",sprintf("%.2f",$aln->percentage_identity), "\n";
-	print "Similarity:      ",$sim,"\n";
-	print "Divergence:      ",$dive,"\n\n";
-	#print "Cons string(50): ",$aln->consensus_string(50), "\n";
-	#print "Cons string: ",$aln->consensus_string, "\n";
+	say "align length is: ",$aln->length;
+	say "Num residues is: ",$aln->no_residues;
+	say "Is flush (bool): ",$aln->is_flush;
+	say "Num sequences:   ",$aln->no_sequences;
+	say "\nPercent ident:   ",sprintf("%.2f", $aln->percentage_identity);
+	say "Similarity:      ",$sim;
+	say "Divergence:      ",$dive,"\n";
+	#say "Cons string(50): ",$aln->consensus_string(50);
+	#say "Cons string: ",$aln->consensus_string;
 	#print Dumper $aln->gap_col_matrix;
 	return $aln->gap_col_matrix;
     }

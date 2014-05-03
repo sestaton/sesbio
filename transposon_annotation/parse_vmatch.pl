@@ -8,7 +8,8 @@ use autodie qw(open);
 my $usage = "vmatch ... | perl $0 good_filtered_matches simple_match_stats\n";
 my $filtered_matches = shift or die $usage;
 my $simple_repeat_match_stats = shift or die $usage;
-my $ratio; # for taking as an option
+
+my $ratio; # for taking as an option (not implemented)
 my $repeat_ratio = defined($ratio) ? $ratio : "0.80";
 my ($match_ct, $simple_match_ct) = (0, 0);
 
@@ -21,13 +22,13 @@ my %complex_matches;
 {
     local $/ = '';
 
-    while(<>) {
+    while (<>) {
 	$match_ct++;
 	chomp;
 	next if /^#/;
 	my @record = split /\n/;
 	my ($match_coords, $subj, $qry) = map { split /\n/ } @record;
-	# for some reason, vmatch prints only the alignment if it's not a good match, which  means $qry is not defined 
+	# for some reason, vmatch prints only the alignment if it's not a good match, which means $qry is not defined 
         # though, I check all for other corner cases like this
 	next unless defined $match_coords && defined $subj && defined $qry; 
 	$match_coords =~ s/^\s+//;
@@ -61,7 +62,6 @@ for my $comp_match (reverse sort { $complex_matches{$a} <=> $complex_matches{$b}
 close $filtered_out;
 
 for my $repeat_match (reverse sort { $simple_matches{$a} <=> $simple_matches{$b} } keys %simple_matches) {
-    # sort, then break out when we fall below the threshold of repetitiveness to score a match
     say {$simple_stats} join "\t", $simple_matches{$repeat_match}, $repeat_match;
 }
 close $simple_stats;
@@ -90,7 +90,7 @@ sub filter_simple {
 	$di_ct = 0;
     }
 
-    return(\$mono_ratio, \$di_ratio);
+    return (\$mono_ratio, \$di_ratio);
 }
 
 
