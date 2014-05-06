@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
 
+use 5.010;
 use strict;
 use warnings;
 use Bio::DB::EUtilities;
@@ -13,26 +14,26 @@ my $factory = Bio::DB::EUtilities->new(-eutil => 'einfo',
 # or use snippets of the following for what you need
  
 # get database info
-print "Database: ",$factory->get_database,"\n"; 
-print "    Desc: ",$factory->get_description,"\n";
-print "    Name: ",$factory->get_menu_name,"\n";
-print " Records: ",$factory->get_record_count,"\n";
-print " Updated: ",$factory->get_last_update,"\n\n";
+say "Database: ",$factory->get_database; 
+say "    Desc: ",$factory->get_description;
+say "    Name: ",$factory->get_menu_name;
+say " Records: ",$factory->get_record_count;
+say " Updated: ",$factory->get_last_update,"\n";
  
 # iterate through FieldInfo and LinkInfo objects to get field and link data
 while (my $field = $factory->next_FieldInfo) {
-    print "\tField code: ",$field->get_field_code,"\n";
-    print "\t      name: ",$field->get_field_name,"\n";
-    print "\t      desc: ",$field->get_field_description,"\n";
-    print "\t     count: ",$field->get_term_count,"\n";
-    print "\tAttributes: ";
-    #print join(',', grep {$field->$_} qw(is_date
-    #           is_singletoken is_hierarchy is_hidden is_numerical)),"\n\n";
+    say "\tField code: ",$field->get_field_code;
+    say "\t      name: ",$field->get_field_name;
+    say "\t      desc: ",$field->get_field_description;
+    say "\t     count: ",$field->get_term_count;
+    say "\tAttributes: ";
+    #say join ',', grep {$field->$_} qw(is_date
+    #           is_singletoken is_hierarchy is_hidden is_numerical),"\n";
 }
  
 #while (my $link = $factory->next_LinkInfo) {
-#    print "\tLink name: ",$link->get_link_name,"\n";
-#    print "\t     desc: ",$link->get_link_description,"\n";
-#    print "\t   dbfrom: ",$link->get_dbfrom,"\n"; # same as get_database()
-#    print "\t     dbto: ",$link->get_dbto,"\n\n"; # database linked to
+#    say "\tLink name: ",$link->get_link_name;
+#    say "\t     desc: ",$link->get_link_description;
+#    say "\t   dbfrom: ",$link->get_dbfrom; # same as get_database()
+#    say "\t     dbto: ",$link->get_dbto,"\n"; # database linked to
 #}
