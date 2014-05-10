@@ -146,7 +146,7 @@ unless ($response->is_success) {
 }
 
 #
-# cpen and parse the results
+# open and parse the results
 #
 open my $out, '>', $cgp_response or die "\nERROR: Could not open file: $!\n";
 say $out $response->content;
