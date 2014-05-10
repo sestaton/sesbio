@@ -52,7 +52,6 @@ use warnings;
 # Load libraries
 use English;
 use LWP;
-use lib qw(/home/jmblab/statonse/apps/perlmod/XML-Simple-2.18/lib/);
 use XML::Simple;
 use Getopt::Long qw(:config no_ignore_case bundling);
 use File::Basename;
