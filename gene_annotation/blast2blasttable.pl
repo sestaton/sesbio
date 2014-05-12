@@ -3,7 +3,6 @@
 # Convert a blastxml or standard blast report to a blast table
 # TODO: Not currently getting top hit.
 
-
 use 5.010;
 use strict;
 use warnings;
@@ -32,7 +31,7 @@ GetOptions(
 	   't|top'         => \$tophit,
 	   'l|length=i'    => \$length_thresh,
 	   'p|percentid=f' => \$pid_thresh,
-#	   'v|verbose'     => \$verbose,
+	   'v|verbose'     => \$verbose,
 	   );
 	 
 #
@@ -44,8 +43,7 @@ if (!$infile || !$outfile || !$format){
     exit(0);
 }
 
-
-#my $allq = 0;
+my $allq = 0;
 $length_thresh //= 0;
 $pid_thresh //= 0;
 
@@ -54,12 +52,11 @@ open my $blastout, '>', $outfile or die "\nERROR: Could not open file: $!\n";
 # create SearchIO object to read in blast report and to write outfile
 my $search_in = Bio::SearchIO->new(-format => $format, -file => $infile, -tempfile => 1);
 
-
-#say $blastout "#Query\tHit\tPercent_ID\tHSP_len\tNum_mismatch\tNum_gaps\tQuery_start\tQuery_end\tHit_start\tHit_end\tE-value\tBit_score";
+#say $blastout join "\t", "#Query", "Hit", "Percent_ID", "HSP_len", "Num_mismatch", "Num_gaps", 
+#                          "Query_start", "Query_end", "Hit_start", "Hit_end", "E-value", "Bit_score";
 
 while ( my $result = $search_in->next_result ) {
     while ( my $hit = $result->next_hit ) {
-	#my $hitlen = $hit->length();
 	while ( my $hsp = $hit->next_hsp ) {
 	    my $hsplen = $hsp->length('total');
 	    if ( $hsplen >= $length_thresh && $hsp->percent_identity >= $pid_thresh ) {
@@ -76,7 +73,6 @@ while ( my $result = $search_in->next_result ) {
 	}
     }
 }
-
 close $blastout;
 
 if ($verbose) {
@@ -84,7 +80,6 @@ if ($verbose) {
 }
 
 sub usage {
-
     my $script = basename($0);
         print STDERR <<END
 USAGE: $script [-i][-o][-f][-t][-l][-p][-v]
@@ -95,13 +90,13 @@ Required:
    -o|outfile    :     A file to place the desired BLAST results.
 
 Options:
-   -t|top        :     Print the top BLAST hit for each query sequence.
+   -t|top        :     Print the top BLAST hit for each query sequence (Not Implemented).
    -l|length     :     Keep only hits above a certain length threshhold (integer).
    -p|percentid  :     Keep only hits above a certain percent identity threshhold (integer).
-   -v|verbose    :     Print information about the number of BLAST hits (ignored unless
-                       used in conjunction with --top option).
+   -v|verbose    :     Print information about the number of BLAST hits..
 
-NB: The output format is identical to the blasttable format (i.e., "-m 8" with legacy BLAST).
+NB: The output format is identical to the blasttable format 
+    (i.e., "-m 8" with legacy BLAST or -outfmt 6 with BLAST+).
 
 END
 }
