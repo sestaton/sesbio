@@ -29,29 +29,29 @@ if (!$infile || !$outfile) {
 open my $in , '<', $infile or die "\nERROR: Could not open file: $!\n";
 open my $out , '>', $outfile or die "\nERROR: Could not open file: $!\n";
 
-my $totalhits = 0;
-my $onehun2ninety = 0;
-my $eightynine2eighty = 0;
+my $totalhits           = 0;
+my $onehun2ninety       = 0;
+my $eightynine2eighty   = 0;
 my $seventynine2seventy = 0;
-my $sixtynine2sixty = 0;
-my $fiftynine2fifty = 0;
-my $lessthanfifty = 0;
+my $sixtynine2sixty     = 0;
+my $fiftynine2fifty     = 0;
+my $lessthanfifty       = 0;
 
 my $binned_annot = $outfile;
 $binned_annot =~ s/\.[^\.]*$//;
-my $onehun2ninety_annot = $binned_annot."_90-100pid_annot.txt";
-my $eightynine2eighty_annot = $binned_annot."_80-89pid_annot.txt";
+my $onehun2ninety_annot       = $binned_annot."_90-100pid_annot.txt";
+my $eightynine2eighty_annot   = $binned_annot."_80-89pid_annot.txt";
 my $seventynine2seventy_annot = $binned_annot."_70-79pid_annot.txt";
-my $sixtynine2sixty_annot = $binned_annot."_60-69pid_annot.txt";
-my $fiftynine2fifty_annot = $binned_annot."_50-59pid_annot.txt";
-my $lessthanfifty_annot = $binned_annot."_lt50pid_annot.txt";
+my $sixtynine2sixty_annot     = $binned_annot."_60-69pid_annot.txt";
+my $fiftynine2fifty_annot     = $binned_annot."_50-59pid_annot.txt";
+my $lessthanfifty_annot       = $binned_annot."_lt50pid_annot.txt";
 
-my $onehun2ninety_idlist = $binned_annot."_90-100pid_idlist.txt";
-my $eightynine2eighty_idlist = $binned_annot."_80-89pid_idlist.txt";
+my $onehun2ninety_idlist       = $binned_annot."_90-100pid_idlist.txt";
+my $eightynine2eighty_idlist   = $binned_annot."_80-89pid_idlist.txt";
 my $seventynine2seventy_idlist = $binned_annot."_70-79pid_idlist.txt";
-my $sixtynine2sixty_idlist = $binned_annot."_60-69pid_idlist.txt";
-my $fiftynine2fifty_idlist = $binned_annot."_50-59pid_idlist.txt";
-my $lessthanfifty_idlist = $binned_annot."_lt50pid_idlist.txt";
+my $sixtynine2sixty_idlist     = $binned_annot."_60-69pid_idlist.txt";
+my $fiftynine2fifty_idlist     = $binned_annot."_50-59pid_idlist.txt";
+my $lessthanfifty_idlist       = $binned_annot."_lt50pid_idlist.txt";
 
 my ($onehun2ninety_annot_hndl, $eightynine2eighty_annot_hndl, $seventynine2seventy_annot_hndl, 
     $sixtynine2sixty_annot_hndl, $fiftynine2fifty_annot_hndl, $lessthanfifty_annot_hndl);
@@ -67,6 +67,7 @@ if ($annotations) {
     open $fiftynine2fifty_annot_hndl, '>', $fiftynine2fifty_annot  or die "\nERROR: Could not open file: $!\n";
     open $lessthanfifty_annot_hndl, '>', $lessthanfifty_annot or die "\nERROR: Could not open file: $!\n";
 }
+
 if ($ids) {
     open $onehun2ninety_idlist_hndl, '>', $onehun2ninety_idlist or die "\nERROR: Could not open file: $!\n";
     open $eightynine2eighty_idlist_hndl, '>', $eightynine2eighty_idlist or die "\nERROR: Could not open file: $!\n";
@@ -121,6 +122,7 @@ if ($annotations) {
     close $fiftynine2fifty_annot_hndl;
     close $lessthanfifty_annot_hndl;
 }
+
 if ($ids) {
     close $onehun2ninety_idlist_hndl;
     close $eightynine2eighty_idlist_hndl;
@@ -131,6 +133,7 @@ if ($ids) {
 }
 
 say $out "#total_hits\t100-90\t89-80\t79-70\t69-60\t59-50\t<50";
+
 if ($graph) {
     my $rscript = $outfile."_rscript";
     my $graph_file = $rscript.".png";
@@ -149,23 +152,23 @@ quit();
 
 if ($full_report) {
     say $out join "\t", $totalhits, $onehun2ninety, $eightynine2eighty, $seventynine2seventy, 
-    $sixtynine2sixty, $fiftynine2fifty, $lessthanfifty;
+                        $sixtynine2sixty, $fiftynine2fifty, $lessthanfifty;
 
-    my $onehundred2ninety_percent = sprintf("%.2f",$onehun2ninety/$totalhits);
-    my $eightynine2eighty_percent = sprintf("%.2f",$eightynine2eighty/$totalhits);
+    my $onehundred2ninety_percent   = sprintf("%.2f",$onehun2ninety/$totalhits);
+    my $eightynine2eighty_percent   = sprintf("%.2f",$eightynine2eighty/$totalhits);
     my $seventynine2seventy_percent = sprintf("%.2f",$seventynine2seventy/$totalhits);
-    my $sixtynine2sixty_percent = sprintf("%.2f",$sixtynine2sixty/$totalhits);
-    my $fiftynine2fifty_percent = sprintf("%.2f",$fiftynine2fifty/$totalhits);
-    my $lessthanfifty_percent = sprintf("%.2f",$lessthanfifty/$totalhits);
+    my $sixtynine2sixty_percent     = sprintf("%.2f",$sixtynine2sixty/$totalhits);
+    my $fiftynine2fifty_percent     = sprintf("%.2f",$fiftynine2fifty/$totalhits);
+    my $lessthanfifty_percent       = sprintf("%.2f",$lessthanfifty/$totalhits);
 
     say $out "#100-90_percent\t89-80_percent\t79-70_percent\t69-60_percent\t59-50_percent\t<50_percent";
     say $out join "\t", $onehundred2ninety_percent, $eightynine2eighty_percent, $seventynine2seventy_percent, 
-    $sixtynine2sixty_percent, $fiftynine2fifty_percent, $lessthanfifty_percent;
+                        $sixtynine2sixty_percent, $fiftynine2fifty_percent, $lessthanfifty_percent;
 
-} else {
+} 
+else {
     say $out join "\t", $totalhits, $onehun2ninety, $eightynine2eighty, $seventynine2seventy, 
-    $sixtynine2sixty, $fiftynine2fifty, $lessthanfifty;
-
+                        $sixtynine2sixty, $fiftynine2fifty, $lessthanfifty;
 }
 
 close $in;
