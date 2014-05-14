@@ -1,5 +1,4 @@
 #!/usr/bin/env perl
-# TODO: 
 
 use 5.010;
 use strict;
@@ -25,10 +24,9 @@ if (!$infile && !$outfile) {
     exit(1);
 }
 
-my $length_threshold = defined($length) ? $length : "0";
-my $percentID_threshold = defined($percentID) ? $percentID : "80";
+my $length_threshold //= 0;
+my $percentID_threshold //= 80;
 
-#my ($file,$dir,$ext) = fileparse($infile, qr/\.[^.]*/);
 open my $in, '<', $infile or die "\nERROR: Can't open file: $infile\n";
 open my $out, '>', $outfile or die "\nERROR: Can't open file: $outfile\n";
 
@@ -48,7 +46,7 @@ close $out;
 
 exit;
 #
-# subs
+# methods
 #
 sub usage {
     my $script = basename($0);
