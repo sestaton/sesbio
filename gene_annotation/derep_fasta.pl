@@ -24,8 +24,8 @@ my $seq_out = Bio::SeqIO->new(-file => ">$outfile", -format => 'fasta');
 
 my %seqhash;
 
-while(my $seq = $seq_in->next_seq) {
-    unless(exists $seqhash{$seq->id}) {
+while (my $seq = $seq_in->next_seq) {
+    unless (exists $seqhash{$seq->id}) {
 	$seq_out->write_seq($seq);
     }
     $seqhash{$seq->id} = 1;
