@@ -117,7 +117,6 @@ if ($over && $under) {
     exit(1);
 }
 
-# create SeqIO objects to read in and to write outfiles
 my ($name, $comm, $seq, $qual);
 my @aux = undef;
 
@@ -130,10 +129,11 @@ while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
 	    $overCount++;
 	    $overTotal += length($seq);
 	    say $out join "\n", ">".$name, $seq if !defined $qual && !defined $comm;
-	    say $out join "\n", ">".$name.q{ }.$comm, $seq if !defined $qual && defined $comm;
-	    say $out join "\n", "@".$name, $seq, '+', $qual if defined $qual && !defined $comm;
-	    say $out join "\n", "@".$name.q{ }.$comm, $seq, '+', $qual if defined $qual && defined $comm; 
-	} else {	
+	    say $out join "\n", ">".$name." ".$comm, $seq if !defined $qual && defined $comm;
+	    say $out join "\n", "@".$name, $seq, "+", $qual if defined $qual && !defined $comm;
+	    say $out join "\n", "@".$name." ".$comm, $seq, "+", $qual if defined $qual && defined $comm; 
+	} 
+	else {	
 	    $underCount++;
 	    $underTotal += length($seq);
 	}
@@ -143,10 +143,11 @@ while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
 	    $underCount++;
             $underTotal += $seq->length;
 	    say $out join "\n", ">".$name, $seq if !defined $qual && !defined $comm;
-	    say $out join "\n", ">".$name.q{ }.$comm, $seq if !defined $qual && defined $comm;
-	    say $out join "\n", "@".$name, $seq, '+', $qual if defined $qual && !defined $comm;
-	    say $out join "\n", "@".$name.q{ }.$comm, $seq, '+', $qual if defined $qual && defined $comm;
-        } else {
+	    say $out join "\n", ">".$name." ".$comm, $seq if !defined $qual && defined $comm;
+	    say $out join "\n", "@".$name, $seq, "+", $qual if defined $qual && !defined $comm;
+	    say $out join "\n", "@".$name." ".$comm, $seq, "+", $qual if defined $qual && defined $comm;
+        } 
+	else {
 	    $overCount++;
             $overTotal += length($seq);
         }
@@ -167,9 +168,11 @@ if ($overCount >= 1) {
     my $overMean = sprintf("%.2f", $overTotal/$overCount); 
     say "Total number over $length bp : $overCount; Mean length: $overMean bp";
     #say "********** Sequences written to file -----------> $outfile\n";
-} else {
+} 
+else {
    say "WARNING: There are no sequences over $length";
 }
+
 if ($underCount >= 1) {
     my $underMean = sprintf("%.2f", $underTotal/$underCount); 
     say "Total number under $length bp: $underCount; Mean length: $underMean bp";
