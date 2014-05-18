@@ -18,7 +18,7 @@ GetOptions(
 
 die $usage if !$infile or !$outfile;
 
-my $seqin = Bio::SeqIO->new(-file => $infile, -format => 'genbank');
+my $seqin  = Bio::SeqIO->new(-file => $infile,     -format => 'genbank');
 my $seqout = Bio::SeqIO->new(-file => ">$outfile", -format => 'embl');
 
 while (my $seq = $seqin->next_seq) {

@@ -3,14 +3,22 @@
 use strict;
 use warnings;
 use Bio::SeqIO;
+use Getopt::Long;
 
-my $usage     = "USAGE: embl2gb.pl embl_file gb_file \n";
-my $embl_file = shift or die $usage;
-my $gb_file   = shift or die $usage;
+my $usage = "perl $0 -i seqs_anno.embl -o seqs_anno.gb\n";
+my $infile;
+my $outfile;
 
-my $seqio  = Bio::SeqIO->new(-format => 'embl',    -file => $embl_file);
-my $seqout = Bio::SeqIO->new(-format => 'genbank', -file => ">$gb_file");
+GetOptions(
+           'i|infile=s'  => \$infile,
+           'o|outfile=s' => \$outfile,
+           );
 
-while (my $seq = $seqio->next_seq) {
-  $seqout->write_seq($seq)
+die $usage if !$infile or !$outfile;
+
+my $seqin  = Bio::SeqIO->new(-file => $infile,     -format => 'embl');
+my $seqout = Bio::SeqIO->new(-file => ">$outfile", -format => 'genbank');
+
+while (my $seq = $seqin->next_seq) {
+    $seqout->write_seq($seq);
 }
