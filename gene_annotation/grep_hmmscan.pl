@@ -4,7 +4,6 @@ use 5.010;
 use strict;
 use warnings;
 use Getopt::Long;
-use Data::Dumper;
 
 my $usage = "\n$0 -i list -j hmmscan_report -o outfile\n";
 my $infile;
@@ -39,22 +38,18 @@ while (<$in>) {
 }
 close $in;
 
-#my %pfamids;
-
 while (<$bl>) {
     chomp;
     next if /^\#/;
     my ($target_name, $accession, $query_name, $accession_q, $E_value_full, $score_full, 
 	$bias_full, $E_value_best, $score_best, $bias_best, $exp, $reg, $clu, $ov, $env, 
 	$dom,$rev, $inc, $description_of_target) = split;
-    #my $query_eval = join(",",$query_name,$E_value_full,$description_of_target);
-    #$accession =~ s/\..*//;
-    #$pfamids{$query_eval} = $accession;
+
     for my $key (sort keys %ids) {
 	if ($key eq $query_name) {
-	    say $out join "\t", $target_name, $accession, $query_name, $accession_q, 
-	    $E_value_full, $score_full, $bias_full, $E_value_best, $score_best, 
-	    $bias_best, $exp, $reg, $clu, $ov, $env, $dom, $rev, $inc, $description_of_target;
+	    say $out join "\t", $target_name, $accession, $query_name, $accession_q, $E_value_full, 
+	                        $score_full, $bias_full, $E_value_best, $score_best, $bias_best, $exp, 
+	                        $reg, $clu, $ov, $env, $dom, $rev, $inc, $description_of_target;
 	}
     }
 }
