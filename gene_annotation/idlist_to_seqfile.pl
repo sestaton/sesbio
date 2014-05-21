@@ -2,8 +2,6 @@
 
 ## NB: faSomeRecords from Kent source is the fastest for this task.
 
-##TODO: write fastq if that is requested
-
 use 5.010;
 use strict;
 use warnings;
@@ -144,12 +142,13 @@ sub readfq {
 sub usage {
     my $script = basename($0);
     print STDERR<<EOF
-USAGE: $script [-id] [-fi] [-fo]
+USAGE: $script [-id] [-i] [-o] [-f]
 
 Required:
-    -id|idlist       :      An ID list of records (one per line).  
-    -fi|fasta_in     :      A fasta/q file to pull sequences from.
-    -fo|fasta_out    :      A file to write the records to.
+    -id|idlist    :      An ID list of records (one per line).  
+    -i|infile     :      A fasta/q file to pull sequences from.
+    -o|outfile    :      A file to write the records to.
+    -f|format     :      Input format, must be 'fasta' or 'fastq' (Default: fasta).
 
 EOF
 }
