@@ -1,11 +1,14 @@
 #!/bin/bash
 
+## This script is for testing my own version VelvetOptimiser
+## https://github.com/sestaton/VelvetOptimiser.git
+
 export OMP_THREAD_LIMIT=10
 export OMP_NUM_THREADS=2
 
 cd `pwd`
 
-/usr/bin/perl ~/VelvetOptimiser/VelvetOptimiser.pl -s 77 \
+perl ~/github/VelvetOptimiser/VelvetOptimiser.pl -s 77 \
 -e 89 \
 -f '-fasta -shortPaired TKS_500k_interl.fasta' \
 -t 8 \
