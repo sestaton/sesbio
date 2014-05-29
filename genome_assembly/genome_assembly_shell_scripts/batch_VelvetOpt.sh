@@ -2,8 +2,8 @@
 
 cd `pwd`
 
-OMP_NUM_THREADS=3
-OMP_THREAD_LIMIT=4
+export OMP_NUM_THREADS=3
+export OMP_THREAD_LIMIT=4
 
 velvetopt=/home/jmblab/statonse/apps/VelvetOptimiser-2.2.0/VelvetOptimiser.pl 
 
