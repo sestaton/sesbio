@@ -1,4 +1,4 @@
-#
+#!/bin/bash
 # take the raw output of mgblast which is 12 fields
 # and get the query, subject, %identity, bitscore
 cut -f 1,5,9,10 mgblast_out.txt > cut_fields.txt
