@@ -1,6 +1,6 @@
 #!/bin/bash
 
-## NB: This program as bugs and never finshes, don't use it.
+## NB: This program has bugs and never finshes, don't use it.
 
 cd `pwd`
 
