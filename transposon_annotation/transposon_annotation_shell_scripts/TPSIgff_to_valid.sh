@@ -2,7 +2,7 @@
 
 cd TPSI_gff3_files*
 
-for $filename in ./
+for $filename in ./*.gff3
 do
   sed -n '1,2 p' $filename > top2
 
