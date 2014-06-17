@@ -3,13 +3,11 @@
 ##NB: The idea here is to compare many databases along with
 ##    domain-finding methods for repeat consensi
 
-#cd /scratch/statonse/for_RepeatScout/RM_20404.TueNov300822312010
-
 # ncbi-latest
 #blastall -p blastn \
 #-d /db/ncbiblast-latest/nt \
 #-i MID21_contig00001.fasta \
-#-o ~/assemb_contigs/MID_21/MID21_BLASThits/MID21_contig00001.bln 
+#-o MID21_contig00001.bln 
 
 # Repbase
 #blastall -p blastn \
@@ -26,7 +24,7 @@
 #CGP_JMBLAB_MCU_sunflowerBACs_11-09_noX.fasta
 
 # translate for HMMER
-#perl ~/ePerl/external/bp_translate_seq.pl \
+#perl bp_translate_seq.pl \
 #consensi.fa.classified \
 #> consensi.fa.classified.faa
 
@@ -39,5 +37,5 @@
 #consensi.fa.classified.faa
 
 # parse HMMER3n
-#perl ~/ePerl/parse_hmmer3.pl -i consensi.fa.classified_hmmer3.out \
+#perl ~/github/gene_annotation/parse_hmmer3.pl -i consensi.fa.classified_hmmer3.out \
 #-o consensi.fa.classified_hmmer3.out-parsed.tab
