@@ -1,6 +1,6 @@
 #!/bin/bash
 
-## NB: This script deprecated; it preceeded the existence of Transposome (https://github.com/sestaton/Transposome),
+## NB: This script is deprecated, it preceeded the existence of Transposome (https://github.com/sestaton/Transposome),
 ##     which will generate genome coverage summaries from clustering reports automatically. Use Transposome,
 ##     it's far more convenient and accurate. 10/19/13 SES
 
