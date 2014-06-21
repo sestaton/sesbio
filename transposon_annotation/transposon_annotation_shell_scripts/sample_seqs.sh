@@ -1,5 +1,7 @@
 #!/bin/bash
 
+## NB: This script is for benchmarking Transposome methods. There is no difference in the output, so
+##     it wouldn't make sense to use both methods in practice.
 cd `pwd`
 
 ## Transposome
