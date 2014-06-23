@@ -1,5 +1,5 @@
-#library(ggplot2)
-#library(gridExtra)
+library(ggplot2)
+library(gridExtra)
 
 maize_cov_sims <- read.table("maize_coverage_stats.tsv",header=T,sep="\t")
 
