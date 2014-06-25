@@ -3,9 +3,6 @@
 #TODO: Check if it is possible to get alignments. Since they are stored in the document path of /tmp
 #      they may be generated on the fly (hence, not available on demand).
 
-#
-# library imports
-#
 use 5.010;
 use strict;
 use warnings;
@@ -45,9 +42,6 @@ my $gene_clusters;
 my $rna_clusters;
 my $cpbase_response = "CpBase_database_response.html"; # HTML
 
-#
-# set opts
-#
 GetOptions(
 	      'all'                     => \$all,
 	      'd|db=s'                  => \$db,
@@ -163,36 +157,36 @@ for my $ts ($te->tables) {
 	    say "$genomes $db genomes available in CpBase." and exit if $available;
 	}
 	else {
-	        say "\nERROR: Be advised, this command will now attempt to download $genomes assemblies. ".
-		    "It would be nicer to specify one species. Exiting now.\n" and exit if $assemblies && $all;
-		my ($organism,$locus,$sequence_length,$assembled,$annotated,$added) = @elem;
-		$organism =~ s/\s+/_/g;
+	    say "\nERROR: Be advised, this command will now attempt to download $genomes assemblies. ".
+		"It would be nicer to specify one species. Exiting now.\n" and exit if $assemblies && $all;
+	    my ($organism,$locus,$sequence_length,$assembled,$annotated,$added) = @elem;
+	    $organism =~ s/\s+/_/g;
 		    
-		if (exists $id_map->{$organism}) {
-		    if ($genus && $species && $organism =~ /\Q$epithet\E/i) {
-			my $id = $id_map->{$organism};
-			my $assem_stats = get_cp_data($id);
-			$stats{$organism} = $assem_stats;
-			my $file = $organism."_".$locus;
-			my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/$locus/files/$file";
+	    if (exists $id_map->{$organism}) {
+		if ($genus && $species && $organism =~ /\Q$epithet\E/i) {
+		    my $id = $id_map->{$organism};
+		    my $assem_stats = get_cp_data($id);
+		    $stats{$organism} = $assem_stats;
+		    my $file = $organism."_".$locus;
+		    my $endpoint = "http://chloroplast.ocean.washington.edu/CpBase_data/$locus/files/$file";
 
-			if ($type eq 'genbank') {
-			    $file = $file.".gb";
-			    $endpoint = $endpoint.".gb";
-			}
-			elsif ($type eq 'fasta') {
-			    $file = $file.".fasta";
-			    $endpoint = $endpoint.".fasta";
-			}
-			fetch_file($file, $endpoint) if $assemblies;
+		    if ($type eq 'genbank') {
+			$file = $file.".gb";
+			$endpoint = $endpoint.".gb";
 		    }
-		    elsif ($genus && $organism =~ /\Q$genus\E/i) {
-			my $id = $id_map->{$organism};
-			my $assem_stats = get_cp_data($id);
-			$stats{$organism} = $assem_stats;
+		    elsif ($type eq 'fasta') {
+			$file = $file.".fasta";
+			$endpoint = $endpoint.".fasta";
 		    }
+		    fetch_file($file, $endpoint) if $assemblies;
+		}
+		elsif ($genus && $organism =~ /\Q$genus\E/i) {
+		    my $id = $id_map->{$organism};
+		    my $assem_stats = get_cp_data($id);
+		    $stats{$organism} = $assem_stats;
 		}
 	    }
+	}
     }
 }
 
@@ -207,7 +201,7 @@ if ($statistics) {
 unlink $cpbase_response;
 
 #
-# subroutines
+# methods
 #
 sub get_species_id {
     my ($urlbase) = @_;
@@ -336,9 +330,9 @@ sub fetch_ortholog_sets {
 			    unlink $cpbase_response;
 			}
 			elsif ($alignments && 
-			              defined $genus && 
-			              $genus =~ /$g/ && 
-			              defined $species && 
+			       defined $genus && 
+			       $genus =~ /$g/ && 
+			       defined $species && 
 			       $species =~ /$sp/) {
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
@@ -346,11 +340,11 @@ sub fetch_ortholog_sets {
 			    unlink $cpbase_response;
 			}
 			elsif ($alignments && 
-			              defined $genus && 
-			              $genus =~ /$g/ && 
-			              defined $species && 
-			              $species =~ /$sp/ && 
-			              defined $gene_name && 
+			       defined $genus && 
+			       $genus =~ /$g/ && 
+			       defined $species && 
+			       $species =~ /$sp/ && 
+			       defined $gene_name && 
 			       $gene_name =~ /$elem[0]/) {
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
@@ -358,16 +352,18 @@ sub fetch_ortholog_sets {
 			    unlink $cpbase_response;
 			}
 			elsif ($alignments && 
-			              !defined $genus && 
-			              !defined $species && 
-			              defined $gene_name && 
+			       !defined $genus && 
+			       !defined $species && 
+			       defined $gene_name && 
 			       $gene_name =~ /$elem[1]/) {
 			    $gene_stats{$elem[1]}{$elem[3]} = { $elem[0] => $elem[2]};
 			    my ($file, $endpoint) = make_alignment_url_from_gene($link->text, $alphabet, $type);
 			    fetch_file($file, $endpoint);
 			    unlink $cpbase_response;
 			}
-			else { say join "\t", $genus, $g, $species, $sp; }
+			else { 
+			    say join "\t", $genus, $g, $species, $sp; 
+			}
 		    }
 		}
 	    }
