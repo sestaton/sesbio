@@ -1,6 +1,8 @@
 #!/usr/bin/env perl
 
-#NB: This is for staton et al. 2014
+##NB: Parthy is unable to handle large datasets, so be advised that running neutral
+##    simulations with that program will take forever.
+
 use 5.014;
 use strict;
 use warnings;
