@@ -3,6 +3,10 @@ sesbio
 
 Bioinformatics tools for genome analysis
 
+**ABOUT**
+
+This is a collection of mostly organized Perl scripts for working genomics data. There is no install or build process, just use them in place. See below for usage information.
+
 **INSTALLATION**
 
 All scripts require Perl version 5.10 and some use non-core Perl modules. Though, there are no dependencies that cannot be installed from CPAN. To get the scripts, simply download the zip version of the repo, or use git:
