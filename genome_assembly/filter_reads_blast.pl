@@ -42,16 +42,18 @@ my @aux = undef;
 my ($name, $comm, $seq, $qual);
 
 open my $fh, '<', $infile;
+open my $out, '>', $outfile;
 my $matches = filter_hits($blast, $matchlen, $identity);
 
 while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
     $totalseqs++;
     unless (exists $matches->{$name}) {
 	$filteredseqs++;
-	say join "\n", ">".$name, $seq;
+	say $out join "\n", ">".$name, $seq;
     }
 }
 close $fh;
+close $out;
 
 my $perc_filtered = sprintf("%0.2f", $totalseqs/$filteredseqs);
 
