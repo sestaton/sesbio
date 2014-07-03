@@ -8,25 +8,26 @@ use Getopt::Long;
 my $usage = "\n$0 -i list -j hmmscan_report -o outfile\n";
 my $infile;
 my $outfile;
-my $blast;
+my $hmmfile;
 
 GetOptions(
-           'i|infile=s'  => \$infile,
-           'j|blastfile=s' => \$blast,
-           'o|outfile=s' => \$outfile,
+           'i|infile=s'    => \$infile,
+           'j|hmmfile=s'   => \$hmmfile,
+           'o|outfile=s'   => \$outfile,
            );
 
 if (!$infile) {
     die "\nERROR: no infile found.\n",$usage;
 }
-if (!$blast) {
+if (!$hmmfile) {
     die "\nERROR: No hmmscan file found.\n",$usage;
 }
 if (!$outfile) {
     die "\nERROR: No outfile found.\n",$usage;
 }
+
 open my $in, '<', $infile or die "\nERROR: Could not open file: $infile\n";
-open my $bl, '<', $blast or die "\nERROR: Could not open file: $blast\n";
+open my $hmm, '<', $hmmfile or die "\nERROR: Could not open file: $hmmfile\n";
 
 open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
@@ -38,7 +39,7 @@ while (<$in>) {
 }
 close $in;
 
-while (<$bl>) {
+while (<$hmm>) {
     chomp;
     next if /^\#/;
     my ($target_name, $accession, $query_name, $accession_q, $E_value_full, $score_full, 
@@ -53,5 +54,5 @@ while (<$bl>) {
 	}
     }
 }
-close $bl;
+close $hmm;
 close $out;
