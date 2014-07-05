@@ -5,9 +5,9 @@ use strict;
 use warnings;
 use Bio::DB::Taxonomy;
 
-my $db = Bio::DB::Taxonomy->new(-source => 'entrez');
+my $db      = Bio::DB::Taxonomy->new(-source => 'entrez');
 my $taxonid = $db->get_taxonid('Homo sapiens');
-my $taxon = $db->get_taxon(-taxonid => $taxonid);
+my $taxon   = $db->get_taxon(-taxonid => $taxonid);
 
 say "Taxon ID is ", $taxon->id;
 say "Scientific name is ", $taxon->scientific_name;
@@ -20,7 +20,7 @@ if (defined $taxonid) {
     for (1..25) {
 	$kingdom = $db->get_Taxonomy_Node(-taxonid => $kingdom->parent_id);
     }
-    say "Kingdom is ",$kingdom->scientific_name;
+    say "Kingdom is ", $kingdom->scientific_name;
 }
 
 
