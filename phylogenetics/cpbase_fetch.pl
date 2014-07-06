@@ -43,24 +43,24 @@ my $rna_clusters;
 my $cpbase_response = "CpBase_database_response.html"; # HTML
 
 GetOptions(
-	      'all'                     => \$all,
-	      'd|db=s'                  => \$db,
-	      't|type=s'                => \$type,
-	      'g|genus=s'               => \$genus,
-	      's|species=s'             => \$species,
-	      'o|outfile=s'             => \$outfile,
-	      'stats|statistics'        => \$statistics,
-	      'available'               => \$available,
-	      'mol|alphabet=s'          => \$alphabet,
-	      'asm|assemblies'          => \$assemblies,
-	      'aln|alignments'          => \$alignments,
-	      'seq|sequences'           => \$sequences, 
-	      'gn|gene_name=s'          => \$gene_name,
-	      'gc|gene_clusters'        => \$gene_clusters,
-	      'rc|rna_clusters'         => \$rna_clusters,
-	      'h|help'                  => \$help,
-	      'm|man'                   => \$man,
-	   );
+           'all'                     => \$all,
+           'd|db=s'                  => \$db,
+	   't|type=s'                => \$type,
+           'g|genus=s'               => \$genus,
+	   's|species=s'             => \$species,
+	   'o|outfile=s'             => \$outfile,
+	   'stats|statistics'        => \$statistics,
+	   'available'               => \$available,
+	   'mol|alphabet=s'          => \$alphabet,
+	   'asm|assemblies'          => \$assemblies,
+	   'aln|alignments'          => \$alignments,
+	   'seq|sequences'           => \$sequences, 
+	   'gn|gene_name=s'          => \$gene_name,
+	   'gc|gene_clusters'        => \$gene_clusters,
+	   'rc|rna_clusters'         => \$rna_clusters,
+	   'h|help'                  => \$help,
+	   'm|man'                   => \$man,
+    );
 
 #pod2usage( -verbose => 1 ) if $help;
 #pod2usage( -verbose => 2 ) if $man;
