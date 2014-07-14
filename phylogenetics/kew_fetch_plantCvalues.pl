@@ -102,6 +102,7 @@ Print the full documentation.
 =cut      
 
 ##TODO: get return type (2C Mbp, 1C Mbp, etc...) Currently, 1C Mbp is returned 
+##      add method for donating or supporting Kew gardens, at least in the documentation
 
 #
 # INCLUDES
