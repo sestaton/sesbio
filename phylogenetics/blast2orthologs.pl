@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+## NB: This method works for three species; need to store files and species in array
+##      and take any number of species.
+
 use 5.010;
 use strict;
 use warnings;
