@@ -55,7 +55,7 @@ Print the full documentation.
 
 =cut   
 
-use 5.014;
+use 5.010;
 use strict;
 use warnings;
 use File::Basename;
@@ -113,8 +113,8 @@ while (($name, $comm, $seq, $qual) = readfq(\*$fq, \@aux)) {
 close $fq;
 close $out;
 
-say STDERR "$$fact sequences from $fasta were indexed.";
-say STDERR "$fqct sequences were matched in $fastq and written to $fastq.";
+say "$$fact sequences from $fasta were indexed.";
+say "$fqct sequences were matched in $fastq and written to $fastq.";
 
 #
 # methods
