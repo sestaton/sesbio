@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
 ##TODO: add POD; add reading from stdin and compressed files (may have to pass fh ref to new)
+##      remove use of bio::kseq, since it likely won't be available on most machines
 ##NB: For 4 line records, head -N is preferred for simplicity
 
 use 5.014;
