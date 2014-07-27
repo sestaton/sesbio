@@ -36,7 +36,7 @@ for met in ['fmin', 'slsqp', 'l_bfgs_b', 'tnc']:
         tmp[met]['I']     = model.I
         tmp[met]['m']     = model.m
         tmp[met]['lnL']   = model.lnL
-        # in case you reach two times the same likelyhood it may not be necessary
+        # in case you reach two times the same likelihood it may not be necessary
         # to go on with other optimization strategies... 
         # of course if time is not limiting it is not worth to check :)
         if round(model.lnL,1) in likelihoods:
