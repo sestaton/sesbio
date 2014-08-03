@@ -1,9 +1,11 @@
 #!/usr/bin/env perl
 
+use 5.010;
 use strict;
 use warnings;
 
-my $string = shift;
+my $usage  = "USAGE: perl $0 <string>\n";
+my $string = shift or die $usage;
 
 # Fischer-Krause ordered permutation generator
 sub permute (&@) {
@@ -19,4 +21,4 @@ sub permute (&@) {
     }
 }
 
-permute { print "@_\n" } split //, $string;
+permute { say @_ } split //, $string;
