@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use autodie qw(open);
 use Bio::Kseq;
-use List::MoreUtils qw(uniq);
+use List::MoreUtils qw(uniq); # uniq is now part of List::Utils, in core with Perl 5.20+
 use Statistics::Descriptive;
 use Getopt::Long;
 use Data::Dump qw(dd);
