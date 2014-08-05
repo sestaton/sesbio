@@ -29,20 +29,20 @@ if (!$infile || !$outfile || !$idlist) {
 
 $format //= 'fasta';
 
-if ($format !~ /fasta/i || $format !~ /fastq/i) {
-    say "\nERROR: $format not recognized. Must be 'fasta' or 'fastq'. Exiting.\n";
+unless ($format =~ /fasta/i || $format =~ /fastq/i) {
+    say "\nERROR: '$format' not recognized. Must be 'fasta' or 'fastq'. Exiting.\n";
     exit(1);
 }
 
 open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
 my $idlist_hash = id2hash($idlist);
-my $seqhash = seq2hash($infile, $format);
+my ($seqhash, $seqcount) = seq2hash($infile, $format);
 
 for my $gene (keys %$idlist_hash) {
     if (exists $seqhash->{$gene}) {
 	if ($format =~ /fasta/i) {
-	    say $out join "\n", ">".$gene, $fa_hash->{$gene};
+	    say $out join "\n", ">".$gene, $seqhash->{$gene};
 	}
 	elsif ($format =~ /fastq/i) {
 	    my ($seq, $qual) = split '~~', $seqhash->{$gene};
