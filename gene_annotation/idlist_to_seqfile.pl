@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
-## NB: faSomeRecords from Kent source is the fastest for this task.
+## NB: faSomeRecords from Kent source is the fastest for this task, but 
+##     this script works for Fastq, as well as Fasta.
 
 use 5.010;
 use strict;
