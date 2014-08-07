@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 ##NB: Parthy is unable to handle large datasets, so be advised that running neutral
-##    simulations with that program will take forever.
+##    simulations with that program is not feasible (i.e., run times of months or more).
 
 use 5.014;
 use strict;
