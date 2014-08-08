@@ -40,7 +40,7 @@ while (my $qline = <$query>) {
     $qhash{$hkey} = join "\t", $query_fields[2],$query_fields[3],$query_fields[10],$query_fields[11];
 }
 
-say $out "Query\tHit\tPID_query\tHSP_len_query\tEval_query\tBits_query\tPID_hit\tHSP_len_hit\tEval_hit\tEval_hit";
+say $out "Query\tHit\tPID_query\tHSP_len_query\tEval_query\tBits_query\tPID_hit\tHSP_len_hit\tEval_hit\tBits_hit";
 
 while (my $sline = <$subj>) {
     chomp $sline;
