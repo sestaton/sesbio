@@ -115,7 +115,6 @@ sub correct_ids {
 }
     
 sub seqid_map {
-
     my %idmap  = (
 		  'Contig112_HLAB-P189P24'   => 'Contig112_HLAB-P189P',
 		  'Contig169_HLAE-P339N08'   => 'Contig169_HLAE-P339N',
