@@ -13,7 +13,11 @@
 #
 # Author: S. Evan Staton
 # Date: 4/2/12
-# Updated: 7/2/12
+# Updated: 8/13/14
+#
+# NB: This has been updated to use HMMER2GO (https://github.com/sestaton/HMMER2GO)
+#     but it is untested. Should only take minor changes if there are
+#     bugs...be warned though.
 #==============================================================
 # TODO: Take input dir of files, process all with for loop and
 #       copy all results to output dir DONE
@@ -102,6 +106,11 @@ log `printf "\n"`
 # set the timer
 tmr=$(timer)
 
+#
+# Get Pfam -> GO mapping file
+#
+hmmer2go fetchmap -o pfam2go
+
 # 
 # Generate custom gene -> GO term mapping file from HMMscan report
 #
@@ -112,7 +121,8 @@ do
   outfile=$filebase"_parsed.txt"
   studyIDs=$filebase"_studyIDs.txt"
 
-  perl ~/ePerl/hmm2go.pl -i $file -p ~/db/pfam2go -o $outfile
+  #perl ~/ePerl/hmm2go.pl -i $file -p ~/db/pfam2go -o $outfile
+  hmmer2go mapterms -i $file -p pfam2go -o $outfile
 
   cut -f1 $outfile > $studyIDs
  
@@ -135,12 +145,14 @@ do
   gaffile=$filebase"_parsed_GOterm_mapping.gaf"
   popnIDs=$filebase"_parsed_populationIDs.txt"
 
-  perl ~/ePerl/hmm2go.pl -i $file -p ~/db/pfam2go -o $outfile --map
+  #perl ~/ePerl/hmm2go.pl -i $file -p ~/db/pfam2go -o $outfile --map
+  hmmer2go mapterms -i $file -p pfam2go -o $outfile --map
 
   #
   # Generate gaf file to use with Ontologizer
   #
-  perl ~/ePerl/generate_GO_association.pl -i $gomapfile -o $gaffile -s $species -g ~/db/GO.terms_alt_ids
+  #perl ~/ePerl/generate_GO_association.pl -i $gomapfile -o $gaffile -s $species -g ~/db/GO.terms_alt_ids
+  hmmer2go map2gaf -i $gomapfile -o $gafffile -s $species
 
   #
   # Generate population gene list
