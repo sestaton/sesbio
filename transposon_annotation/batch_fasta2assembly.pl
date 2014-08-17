@@ -1,30 +1,13 @@
-#!/usr/bin/perl -w 
-#_______________________________________________________________________+
-#                                                                       |
-# batch_fasta2assembly.pl - convert cluster fasta to assembly                       
-#_______________________________________________________________________+
-#                                                                       |
-# Description: 
-#                                                                       |
-# Author: S. Evan Staton                                                |
-# Contact: statonse<at>uga.edu                                          |
-# Started: 12.1.10                                                      |                                                
-# Updated:                                                      
-#                                                                       |
-# Suggested usage:                                                      |
+#!/usr/bin/env perl
 
-#_______________________________________________________________________+
 # TODO: 
 
 use strict;
+use warnings;
 use Getopt::Long; 
 use File::Copy;
-use lib qw(/home/jmblab/statonse/apps/perlmod/IO-Compress-2.030/lib);
 use IO::Compress::Bzip2 qw(bzip2 $Bzip2Error);
 
-#--------------- +
-# VARIABLE SCOPE |
-#----------------+
 my $usage = "batch_fasta2assembly.pl -i /path/to/dir/of/fasta/files <options>
 
 \tThe files in the input directory must end with .fasta for this
@@ -47,11 +30,7 @@ my $all;
 my $quiet;
 my $verbose;
 
-#----------+
-# OPTIONS  |
-#----------+
-# 
-GetOptions(#
+GetOptions(
 	   "i|indir=s"    => \$in_dir,
 	   "clean"        => \$clean,
 	   "compress"     => \$compress,
@@ -61,16 +40,15 @@ GetOptions(#
 	   "v|verbose"    => \$verbose,
 	    );
 
-#--------------------------+
-# batch_
-#--------------------------+
 if ($in_dir) {
     if ($verbose) {
 	print "\n============= Starting assemblies ...\n";
     }
-} else {
+} 
+else {
     die "\nERROR: No input directory was given!\n\n",$usage,"\n";
 } 
+
 if (!$large && !$all) {
     die "\nERROR: The options --large or --all must be specified!\n\n",$usage,"\n";
 }
@@ -109,7 +87,7 @@ unless (-e $Metrics) {
     mkdir($Metrics) || die "Could not create the output directory:\n$Metrics\n";
 }
 
-foreach my $ind_file (@fasta_files) {
+for my $ind_file (@fasta_files) {
     my $infile = $ind_file;
     $ind_file =~ s/\.fasta$//;
 
@@ -117,7 +95,8 @@ foreach my $ind_file (@fasta_files) {
     if ($quiet) {
 	my $assemb_cmd = "runAssembly -o $proj_dir -cpu 2 $infile 2>&1 > /dev/null";
 	system($assemb_cmd); #print "\n";
-    } else {
+    } 
+    else {
 	my $assemb_cmd = "runAssembly -o $proj_dir -cpu 2 $infile";
 	system($assemb_cmd); print "\n";
     }
@@ -186,6 +165,4 @@ foreach my $ind_file (@fasta_files) {
 if ($verbose) {
     print "\n\n", "============= batch_fasta2assemb Finished ============= ", "\n\n";
 }
-exit;
 
-#
