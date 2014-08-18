@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use v5.12;
+use 5.010;
 use strict;
 use warnings;
 use autodie qw(open);
@@ -21,7 +21,7 @@ sub summarize_clusters {
     {
         local $/ = '>';
         
-        open(my $in, '<', $cls_file);   
+        open my $in, '<', $cls_file;   
         while (my $line = <$in>) {
             $line =~ s/>//g;
             next if !length($line);
@@ -30,7 +30,7 @@ sub summarize_clusters {
 	    $seqtot += $seqnum;
 	    say join "\t", $id, $seqnum;
         }
-        close($in);
+        close $in;
 	say join "\t", "Total clustered reads in $cls_file: ", $seqtot;
     }
 }
