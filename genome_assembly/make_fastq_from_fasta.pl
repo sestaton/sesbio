@@ -31,4 +31,6 @@ open my $out, '>', $outfile;
 	say $out join "\n", "@".$seqid, $seq, "+", "I" x length($seq);
     }
 }
+close $in;
+close $out;
 
