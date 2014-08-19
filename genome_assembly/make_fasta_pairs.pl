@@ -1,11 +1,10 @@
 #!/usr/bin/env perl
 
+use 5.010;
 use strict;
 use warnings;
 use autodie qw(open);
 use Getopt::Long;
-use feature 'say';
-use Data::Dump qw(dd);
 
 my $usage = "\n$0 -i in_fas -o outfile\n\n";
 my $infile;
@@ -18,12 +17,12 @@ GetOptions(
 
 die $usage if !$infile or !$outfile;
 
-open(my $in, '<', $infile);
-open(my $out, '>', $outfile);
+open my $in, '<', $infile;
+open my $out, '>', $outfile;
 
 my %seqhash;
 my $totalct = 0;
-my $dupct = 0;
+my $dupct   = 0;
 
 {
     local $/ = '>';
@@ -42,6 +41,8 @@ my $dupct = 0;
 	$seqhash{$seqid} = $seq;
     }
 }
+close $in;
+close $out;
 
 say "\n=====> $dupct pairs found in $totalct total reads.\n";
 
