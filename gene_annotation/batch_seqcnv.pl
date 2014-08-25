@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+##NB: This was written to work with the PAGIT pipeline, which involves
+##    going between formats to transfer annotations.
+
 use 5.010;
 use strict;
 use warnings;
@@ -28,7 +31,7 @@ for my $file (@embl_files) {
     my $out = $file;
     $out =~ s/\.embl$//;
     $out .= ".gb";
-    my $seqio = Bio::SeqIO->new(-file => $file, -format => 'EMBL');
+    my $seqio  = Bio::SeqIO->new(-file => $file,   -format => 'EMBL');
     my $seqout = Bio::SeqIO->new(-file => ">$out", -format => 'genbank');
     while (my $seq = $seqio->next_seq) {
 	$seqout->write_seq($seq);
