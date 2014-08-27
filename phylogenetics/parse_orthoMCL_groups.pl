@@ -4,7 +4,6 @@
 ##      with the former being the nucleotide sequence of the genes. Use blast2orthologs.pl
 ##      as a guide for creating that file (or data structure). Use the nucleotide/peptide
 ##      alignments for calculating evolutionary rates. Need to trim alignments...
-##      suppress warnings for given/when if v5.18+
 
 use 5.010;
 use strict;
@@ -63,22 +62,22 @@ my $db_file = "orthoMCL_groups.bdb";
 tie %seqhash, 'AnyDBM_File', $db_file, 0666, $DB_BTREE;
 
 # set PATH for programs we need
-my $muscle = find_prog("muscle");
+my $muscle  = find_prog("muscle");
 my $pal2nal = find_prog("pal2nal");
-my $raxml = find_prog("raxml");
+my $raxml   = find_prog("raxml");
 
-my $nt_seq_in = Bio::SeqIO->new(-file => $nt_fas, -format => 'fasta');
+my $nt_seq_in  = Bio::SeqIO->new(-file => $nt_fas,  -format => 'fasta');
 my $pep_seq_in = Bio::SeqIO->new(-file => $pep_fas, -format => 'fasta');
 
 while (my $nt_seq = $nt_seq_in->next_seq()) {
     my $seqname = $nt_seq->id;
-    my $seq = $nt_seq->seq;
+    my $seq     = $nt_seq->seq;
     $seqhash{$seqname} = [ $seq ];
 }
 
 while (my $pep_seq = $pep_seq_in->next_seq()) {
     my $pepname = $pep_seq->id;
-    my $pepseq = $pep_seq->seq;
+    my $pepseq  = $pep_seq->seq;
     if (exists $seqhash{$pepname}) {
 	push @{$seqhash{$pepname}}, $pepseq;
     }
@@ -123,11 +122,11 @@ for my $cluster (sort keys %$clusters) {
 undef %seqhash;
 untie %seqhash;
 
-my $count = scalar @stats;
-my $mean = mean(@stats);
+my $count  = scalar @stats;
+my $mean   = mean(@stats);
 my $median = median(@stats);
-my $min = min(@stats);
-my $max = max(@stats);
+my $min    = min(@stats);
+my $max    = max(@stats);
 
 open my $report, ">", $outfile or die "\nERROR: Could not open file: $outfile\n";
 say $report "=-=" x 25;
@@ -199,7 +198,7 @@ sub align {
     $pep_aln .= ".aln";
 
     my ($gene_aln_out, $gene_aln_err, @gene_aln_res) = capture { system("$muscle -in $gene_file -out $gene_aln -quiet"); };
-    my ($pep_aln_out, $pep_aln_err, @pep_aln_res) = capture { system("$muscle -in $pep_file -out $pep_aln -quiet"); };
+    my ($pep_aln_out, $pep_aln_err, @pep_aln_res)    = capture { system("$muscle -in $pep_file -out $pep_aln -quiet"); };
     return ($gene_aln, $pep_aln);
 }
 
