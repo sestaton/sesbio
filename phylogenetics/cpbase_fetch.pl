@@ -16,6 +16,8 @@ use Pod::Usage;
 use WWW::Mechanize;
 use HTML::TableExtract;
 use LWP::UserAgent;
+use Bio::DB::Taxonomy;
+
 use Data::Dump qw(dd);
 
 # given/when emits warnings in v5.18+
@@ -41,6 +43,7 @@ my $sequences;
 my $gene_name;
 my $gene_clusters;
 my $rna_clusters;
+my $lineage;
 my $cpbase_response = "CpBase_database_response.html"; # HTML
 
 GetOptions(
@@ -59,6 +62,7 @@ GetOptions(
 	   'gn|gene_name=s'          => \$gene_name,
 	   'gc|gene_clusters'        => \$gene_clusters,
 	   'rc|rna_clusters'         => \$rna_clusters,
+           'l|taxonomic_lineage'     => \$lineage,
 	   'h|help'                  => \$help,
 	   'm|man'                   => \$man,
     );
@@ -71,6 +75,8 @@ usage() and exit(0) if $help;
 ## set defaults for search
 $type //= 'fasta';
 $alphabet //= 'dna';
+
+get_lineage_for_taxon($cpbase_response, $available) and exit(0) if $lineage;
 
 if ($statistics) {
     if ($db || $gene_clusters || $rna_clusters || $assemblies || $alignments || $sequences) {
@@ -516,6 +522,73 @@ sub fetch_rna_clusters {
     #return \%rna_cluster_stats;
 }
 
+sub get_lineage_for_taxon {
+    my ($cpbase_response, $available) = @_;
+
+    my %taxa;
+    my $ua = LWP::UserAgent->new;
+    my $urlbase = "http://chloroplast.ocean.washington.edu/tools/cpbase/run";
+    my $response = $ua->get($urlbase);
+
+    unless ($response->is_success) {
+	die "Can't get url $urlbase -- ", $response->status_line;
+    }
+
+    open my $out, '>', $cpbase_response or die "\nERROR: Could not open file: $!\n";
+    say $out $response->content;
+    close $out;
+
+    my $entrezdb = Bio::DB::Taxonomy->new( -source => 'entrez' );
+    my $te = HTML::TableExtract->new( attribs => { border => 1 } );
+    $te->parse_file($cpbase_response);
+
+    for my $ts ($te->tables) {
+	for my $row ($ts->rows) {
+	    my @elem = grep { defined } @$row;
+	    if ($available) {
+		if ($elem[0] =~ /(\d+) Genomes/i) {
+		    $genomes = $1;
+		    unlink $cpbase_response;
+		    say "$genomes genomes available in CpBase." and exit(0);
+		}
+	    }
+	    my ($organism, $locus, $sequence, $length, $assembled, $annotated, $added) = @elem;
+	    my ($genus, $species) = split /\s+/, $organism;
+	    next unless defined $species && length($species) > 3;
+	    next if $species eq 'hybrid';
+	    my $taxonid = $entrezdb->get_taxonid("$genus $species");
+	    if ( defined $taxonid ) {
+		my $node = $entrezdb->get_Taxonomy_Node(-taxonid => $taxonid);
+		next unless defined $node;
+		my $sf = $node;
+		my $tr = $node;  
+		for ( 1..4 ) { 
+		    try { 
+			$sf = $entrezdb->get_Taxonomy_Node(-taxonid => $sf->parent_id);
+		    }
+		    catch {
+			say "$genus $species $taxonid is causing issues: $_";
+		    };
+		}
+		for ( 1..2 ) { 
+		    $tr = $entrezdb->get_Taxonomy_Node(-taxonid => $tr->parent_id);
+		}
+		#say join "\t", $sf->scientific_name, $tr->scientific_name, $genus, $species; 
+		$taxa{$sf->scientific_name}{$tr->scientific_name} = join "|", $genus, $species;
+	    } 
+	}
+    }
+
+    #dd \%taxa;
+    for my $order (sort keys %taxa) {
+	for my $family (sort keys %{$taxa{$order}} ) {
+	    my ($gen, $sp) = split /\|/, $taxa{$order}{$family};
+	    say join "\t", $order, $family, $gen, $sp;
+	}
+    }
+    exit;
+}
+
 sub fetch_file {
     my ($file, $endpoint) = @_;
 
@@ -534,37 +607,44 @@ sub usage {
     my $script = basename( $0, () );
     print STDERR <<END
 
-USAGE: perl $script [-g] [-s] [-d] [-asm] [-aln] [-gn] [-gc] [-rc] [-t] [-mol] [-stats] [--available] [-h] [-m]
+USAGE: perl $script [-l] [-g] [-s] [-d] [-asm] [-aln] [-gn] [-gc] [-rc] [-t] [-mol] [-stats] [--available] [-h] [-m]
+
+Options for metadata from CpBase:
+  l|taxonomic_lineage :      Return the order, family, genus and species (tab separated) of all entries.
+                             NB: For some taxa, the order and family returned are actually different taxonomic ranks,
+                                 and this will have to be resolved on a per species basis. This has to do with the
+                                 Entrez data returned from NCBI, though there may be a general solution.
+  available           :      Print the number of species available in CpBase and exit.
 
 Options for chlorplast assemblies:
-  d|db              :      The database to search.
-                           Must be one of: viridiplantae, non_viridiplanate, 'red lineage', rhodophyta, or stramenopiles.
-  all               :      Download files of the specified type for all species in the database.
-  g|genus           :      The name of a genus query.
-  s|species         :      The name of a species to query.
-  asm|assemblies    :      Specifies that the chlorplast genome assemblies should be fetched.
-  t|type            :      Format of the sequence file to fetch. Options are: genbank or fasta (Default: fasta).
-  stats|statistics  :      Get statistics for the specified species.
-  available         :      Print the number of species available in the database and exit.
+  d|db                :      The database to search.
+                             Must be one of: viridiplantae, non_viridiplanate, 'red lineage', rhodophyta, or stramenopiles.
+  all                 :      Download files of the specified type for all species in the database.
+  g|genus             :      The name of a genus query.
+  s|species           :      The name of a species to query.
+  asm|assemblies      :      Specifies that the chlorplast genome assemblies should be fetched.
+  t|type              :      Format of the sequence file to fetch. Options are: genbank or fasta (Default: fasta).
+  stats|statistics    :      Get statistics for the specified species.
+  available           :      Print the number of species available in the database and exit.
 
 Options for chloroplast orthologs:
-  all               :      Download files of the specified type for all species in the database.
-  aln|alignments    :      Download ortholog alignments for a gene, or all genes.
-  t|type            :      Format of the alignment file to fetch. Options are: clustalw or fasta (Default: fasta).
-  gn|gene_name      :      The name of a specific gene to fetch ortholog cluster stats or alignments for.
-  gc|gene_clusters  :      Fetch gene cluster information.
-  mol|alphabet      :      The type of alignments to return. Options are: DNA or protein (Default: DNA).
-  stats|statistics  :      Get statistics for the specified species.
+  all                 :      Download files of the specified type for all species in the database.
+  aln|alignments      :      Download ortholog alignments for a gene, or all genes.
+  t|type              :      Format of the alignment file to fetch. Options are: clustalw or fasta (Default: fasta).
+  gn|gene_name        :      The name of a specific gene to fetch ortholog cluster stats or alignments for.
+  gc|gene_clusters    :      Fetch gene cluster information.
+  mol|alphabet        :      The type of alignments to return. Options are: DNA or protein (Default: DNA).
+  stats|statistics    :      Get statistics for the specified species.
 
 Options for RNA orthologs:
-  all               :      Download files of the specified type for all species in the database.
-  rc|rna_clusters   :      Download RNA clusters for the specified genes.
-  seq|sequences     :      Download RNA cluster ortholog sequences for each gene (if --all) or specific genes (if --gene_name).
-  t|type            :      Format of the alignment file to fetch. Options are: clustalw or fasta (Default: fasta).
-  mol|alphabet      :      The type of alignments to return. Options are: DNA or protein (Default: DNA).
-  stats|statistics  :      Get statistics for the specified species.
-  h|help            :      Print a help statement.
-  m|man             :      Print the full manual. 
+  all                 :      Download files of the specified type for all species in the database.
+  rc|rna_clusters     :      Download RNA clusters for the specified genes.
+  seq|sequences       :      Download RNA cluster ortholog sequences for each gene (if --all) or specific genes (if --gene_name).
+  t|type              :      Format of the alignment file to fetch. Options are: clustalw or fasta (Default: fasta).
+  mol|alphabet        :      The type of alignments to return. Options are: DNA or protein (Default: DNA).
+  stats|statistics    :      Get statistics for the specified species.
+  h|help              :      Print a help statement.
+  m|man               :      Print the full manual. 
 
 END
 }
