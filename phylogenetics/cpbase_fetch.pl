@@ -1,7 +1,8 @@
 #!/usr/bin/env perl
 
-#TODO: Check if it is possible to get alignments. Since they are stored in the document path of /tmp
-#      they may be generated on the fly (hence, not available on demand).
+##TODO: Check if it is possible to get alignments. Since they are stored in the document path of /tmp
+##      they may be generated on the fly (hence, not available on demand).
+##      Generate statistics from higher taxonomic levels
 
 use 5.010;
 use strict;
@@ -70,6 +71,14 @@ usage() and exit(0) if $help;
 ## set defaults for search
 $type //= 'fasta';
 $alphabet //= 'dna';
+
+if ($statistics) {
+    if ($db || $gene_clusters || $rna_clusters || $assemblies || $alignments || $sequences) {
+	say "\nERROR: The 'stats' option only works when given a genus and species name and no other options.";
+	usage();
+	exit(1);
+    }
+}
 
 ##TODO add handling of option for getting all alignments
 if ($gene_clusters && $gene_name && $alignments) {
