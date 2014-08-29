@@ -16,8 +16,7 @@ use Pod::Usage;
 use WWW::Mechanize;
 use HTML::TableExtract;
 use LWP::UserAgent;
-use Bio::DB::Taxonomy;
-
+use XML::LibXML;
 use Data::Dump qw(dd);
 
 # given/when emits warnings in v5.18+
@@ -538,7 +537,6 @@ sub get_lineage_for_taxon {
     say $out $response->content;
     close $out;
 
-    my $entrezdb = Bio::DB::Taxonomy->new( -source => 'entrez' );
     my $te = HTML::TableExtract->new( attribs => { border => 1 } );
     $te->parse_file($cpbase_response);
 
@@ -556,37 +554,96 @@ sub get_lineage_for_taxon {
 	    my ($genus, $species) = split /\s+/, $organism;
 	    next unless defined $species && length($species) > 3;
 	    next if $species eq 'hybrid';
-	    my $taxonid = $entrezdb->get_taxonid("$genus $species");
-	    if ( defined $taxonid ) {
-		my $node = $entrezdb->get_Taxonomy_Node(-taxonid => $taxonid);
-		next unless defined $node;
-		my $sf = $node;
-		my $tr = $node;  
-		for ( 1..4 ) { 
-		    try { 
-			$sf = $entrezdb->get_Taxonomy_Node(-taxonid => $sf->parent_id);
-		    }
-		    catch {
-			say "$genus $species $taxonid is causing issues: $_";
-		    };
-		}
-		for ( 1..2 ) { 
-		    $tr = $entrezdb->get_Taxonomy_Node(-taxonid => $tr->parent_id);
-		}
+	    my $taxonid = fetch_taxonid($genus, $species);
+	    if (defined $taxonid) {
+		my ($lineage, $order, $family) = get_lineage_from_taxonid($taxonid);
 		#say join "\t", $sf->scientific_name, $tr->scientific_name, $genus, $species; 
-		$taxa{$sf->scientific_name}{$tr->scientific_name} = join "|", $genus, $species;
+		#$taxa{$sf->scientific_name}{$tr->scientific_name} = join "|", $genus, $species;
+		#say join " ", $lineage, $species;
+		say join "\t", $order, $family, $genus, $species if defined $order && defined $family;
 	    } 
 	}
     }
 
     #dd \%taxa;
-    for my $order (sort keys %taxa) {
-	for my $family (sort keys %{$taxa{$order}} ) {
-	    my ($gen, $sp) = split /\|/, $taxa{$order}{$family};
-	    say join "\t", $order, $family, $gen, $sp;
+    #for my $order (sort keys %taxa) {
+	#for my $family (sort keys %{$taxa{$order}} ) {
+	#    my ($gen, $sp) = split /\|/, $taxa{$order}{$family};
+	#    say join "\t", $order, $family, $gen, $sp;
+	#}
+    #}
+    exit;
+}
+
+sub get_lineage_from_taxonid {
+    my ($id) = @_;
+    my $esumm = "esumm_$id.xml"; 
+ 
+    my $ua = LWP::UserAgent->new;
+    my $urlbase  = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=$id";
+    my $response = $ua->get($urlbase);
+
+    unless ($response->is_success) {
+	die "Can't get url $urlbase -- ", $response->status_line;
+    }
+
+    open my $out, '>', $esumm or die "\nERROR: Could not open file: $!\n";
+    say $out $response->content;
+    close $out;
+
+    my $parser = XML::LibXML->new;
+    my $doc    = $parser->parse_file($esumm);
+    my ($order, $family, $lineage);
+
+    for my $node ( $doc->findnodes('//TaxaSet/Taxon') ) {
+	($lineage) = $node->findvalue('Lineage/text()');
+	if ($lineage =~ /viridiplantae/i) {
+	    ($family)  = map  { s/\;$//; $_; }
+	                 grep { /(\w+aceae)/ } 
+	                 map  { split /\s+/  } $lineage;
+	
+	    ($order)  = map  { s/\;$//; $_; }
+	                grep { /(\w+ales)/ }
+	                map  { split /\s+/  } $lineage;
+
+	    return ($lineage, $order, $family);
+	}
+	else {
+	    say $lineage;
+	    return $lineage;
 	}
     }
-    exit;
+    
+    unlink $esumm;
+}
+
+sub fetch_taxonid {
+    my ($genus, $species) = @_;
+
+    my $esearch = "esearch_$genus"."_"."$species.xml";
+    my $ua = LWP::UserAgent->new;
+    my $urlbase  = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=taxonomy&term=$genus%20$species";
+    my $response = $ua->get($urlbase);
+
+    unless ($response->is_success) {
+	die "Can't get url $urlbase -- ", $response->status_line;
+    }
+
+    open my $out, '>', $esearch or die "\nERROR: Could not open file: $!\n";
+    say $out $response->content;
+    close $out;
+
+    my $id;
+    my $parser = XML::LibXML->new;
+    my $doc    = $parser->parse_file($esearch);
+    
+    for my $node ( $doc->findnodes('//eSearchResult/IdList') ) {
+	($id) = $node->findvalue('Id/text()');
+    }
+    
+    unlink $esearch;
+    
+    return $id;
 }
 
 sub fetch_file {
