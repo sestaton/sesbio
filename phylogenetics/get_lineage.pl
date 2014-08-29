@@ -32,8 +32,8 @@ for my $node ( $doc->findnodes('//TaxaSet/Taxon') ) {
     my ($family)  = map  { s/\;$//; $_; } 
 	            grep { /(\w+aceae)/ } 
                     map  { split /\s+/  } $lineage;
-    say $family;
-    say $lineage;
+    say "Family: $family";
+    say "Full taxonomic lineage: $lineage";
 }
 
 unlink $esumm;
