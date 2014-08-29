@@ -5,7 +5,7 @@
 use 5.010;
 use strict;
 use warnings;
-use LWP::Simple;
+use LWP::UserAgent;
 use XML::LibXML;
 
 my $id      = 4232; # Helianthus annuus
