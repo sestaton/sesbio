@@ -557,9 +557,6 @@ sub get_lineage_for_taxon {
 	    my $taxonid = fetch_taxonid($genus, $species);
 	    if (defined $taxonid) {
 		my ($lineage, $order, $family) = get_lineage_from_taxonid($taxonid);
-		#say join "\t", $sf->scientific_name, $tr->scientific_name, $genus, $species; 
-		#$taxa{$sf->scientific_name}{$tr->scientific_name} = join "|", $genus, $species;
-		#say join " ", $lineage, $species;
 		say join "\t", $order, $family, $genus, $species if defined $order && defined $family;
 	    } 
 	}
