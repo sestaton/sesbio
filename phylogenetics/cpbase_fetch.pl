@@ -562,13 +562,6 @@ sub get_lineage_for_taxon {
 	}
     }
 
-    #dd \%taxa;
-    #for my $order (sort keys %taxa) {
-	#for my $family (sort keys %{$taxa{$order}} ) {
-	#    my ($gen, $sp) = split /\|/, $taxa{$order}{$family};
-	#    say join "\t", $order, $family, $gen, $sp;
-	#}
-    #}
     exit;
 }
 
@@ -595,9 +588,9 @@ sub get_lineage_from_taxonid {
     for my $node ( $doc->findnodes('//TaxaSet/Taxon') ) {
 	($lineage) = $node->findvalue('Lineage/text()');
 	if ($lineage =~ /viridiplantae/i) {
-	    ($family)  = map  { s/\;$//; $_; }
-	                 grep { /(\w+aceae)/ } 
-	                 map  { split /\s+/  } $lineage;
+	    ($family) = map  { s/\;$//; $_; }
+	                grep { /(\w+aceae)/ } 
+	                map  { split /\s+/  } $lineage;
 	
 	    ($order)  = map  { s/\;$//; $_; }
 	                grep { /(\w+ales)/ }
@@ -606,6 +599,7 @@ sub get_lineage_from_taxonid {
 	    return ($lineage, $order, $family);
 	}
 	else {
+	    ## need method to get order/family from non-viridiplantae
 	    say $lineage;
 	    return $lineage;
 	}
