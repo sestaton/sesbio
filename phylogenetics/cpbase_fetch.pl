@@ -596,16 +596,15 @@ sub get_lineage_from_taxonid {
 	                grep { /(\w+ales)/ }
 	                map  { split /\s+/  } $lineage;
 
-	    return ($lineage, $order, $family);
 	}
 	else {
 	    ## need method to get order/family from non-viridiplantae
 	    say $lineage;
-	    return $lineage;
 	}
     }
-    
     unlink $esumm;
+
+    return ($lineage, $order, $family);
 }
 
 sub fetch_taxonid {
