@@ -36,21 +36,6 @@ Perl 5.16.0 (on Mac OS X 10.6.8 (Snow Leopard))
 
 =back
 
-=head1 LICENSE
-
-Copyright (C) 2013 S. Evan Staton
-
-This program is distributed under the MIT (X11) License: http://www.opensource.org/licenses/mit-license.php
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
-associated documentation files (the "Software"), to deal in the Software without restriction, 
-including without limitation the rights to use, copy, modify, merge, publish, distribute, 
-sublicense, and/or sell copies of the Software, and to permit persons to whom the Software 
-is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies 
-or substantial portions of the Software.
-
 =head1 AUTHOR 
 
 S. Evan Staton                                                
@@ -180,7 +165,7 @@ say $gff "##sequence-region ",$seqid," 1 ",$seqlen;
 
 my $merct = 0;
 
-while(my $match = <$mers>) {
+while (my $match = <$mers>) {
     chomp $match;
     my ($offset, $count) = split /\t/, $match;
     $offset =~ s/\s//g;
@@ -204,7 +189,8 @@ sub findprog {
     chomp $path;
     if ( (! -e $path) && (! -x $path) ) {
 	die "\nERROR: Cannot find $prog binary. Exiting.\n";
-    } else {
+    } 
+    else {
 	return $path;
     }
 }
@@ -230,8 +216,8 @@ sub return_seq {
 	die "\nERROR: $seqct sequences present in $infile when only 1 sequence is expected. Exiting.\n";
     } 
     else {
-	for (keys %seq) {
-	    say "\n========> Running meryl on sequence: $_" unless $quiet;
+	for my $id (keys %seq) {
+	    say "\n========> Running meryl on sequence: $id" unless $quiet;
 	}
     }
 }
