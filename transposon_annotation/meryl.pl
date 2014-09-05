@@ -145,7 +145,7 @@ if (!$infile || !$outfile || !$index) {
 }
 
 $k //= 20;
-my $meryl = findprog('meryl');
+my $meryl   = findprog('meryl');
 my $mapMers = findprog('mapMers-depth');
 
 if ($search) {
@@ -181,13 +181,13 @@ unlink $matches;
 
 exit;
 #
-# Subs
+# methods
 #
 sub findprog {
     my $prog = shift;
     my $path = capture("which $prog 2> /dev/null");
     chomp $path;
-    if ( (! -e $path) && (! -x $path) ) {
+    if ( ! -e $path && ! -x $path ) {
 	die "\nERROR: Cannot find $prog binary. Exiting.\n";
     } 
     else {
