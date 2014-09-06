@@ -1,5 +1,12 @@
 #!/usr/bin/env perl
 
+# This script creates input files in the format required
+# by the Helitron-finding program Helsearch.
+
+# Usage: Copy all your Fasta files to a directory, run this script with
+#        that directory as the only argument and this script
+#        will format the files for input to Helsearch.
+
 use strict;
 use warnings;
 use File::Basename;
