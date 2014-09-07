@@ -3,6 +3,7 @@
 cd `pwd`
 
 hmmscan=/usr/local/hmmer/latest/bin/hmmscan
+cpu=4
 
 for file in ./*.faa
 do
@@ -12,5 +13,5 @@ do
   domtblout=$filebase"_hmmscan-pfamA.domtblout"
   tblout=$filebase"_hmmscan-pfamA.tblout"
 
-  $hmmscan -o $outfile --tblout $tblout --domtblout $domtblout --acc --noali --cpu 4 /db/pfam/latest/Pfam-A.hmm $file
+  $hmmscan -o $outfile --tblout $tblout --domtblout $domtblout --acc --noali --cpu $cpu /db/pfam/latest/Pfam-A.hmm $file
  done
