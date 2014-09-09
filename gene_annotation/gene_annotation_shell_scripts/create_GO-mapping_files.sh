@@ -3,7 +3,7 @@
 #=============================================================
 # Name: create_GO-mapping_files.sh
 #
-# Purpose: This is a pipeline script to take HMMscan
+# Purpose: This is a pipeline script to take HMMER2GO
 #          output and generate a GO term association file
 #          for each gene. Also, a population and study set
 #          of gene IDs is created for use with Ontologizer.
@@ -19,8 +19,7 @@
 #     but it is untested. Should only take minor changes if there are
 #     bugs...be warned though.
 #==============================================================
-# TODO: Take input dir of files, process all with for loop and
-#       copy all results to output dir DONE
+# TODO: 
 
 function usage() {
 cat <<EOF 
