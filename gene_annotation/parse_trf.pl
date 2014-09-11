@@ -1,7 +1,12 @@
 #!/usr/bin/env perl
 
-##TODO: join steps: 1) mask simple repeats, 2) hard mask, 3) filter N percent, 4) filter by length (optionally),
-##                  5), run TRF, 6) parse (here)
+##TODO: join steps: 1) mask simple repeats, 
+##                  2) hard mask, 
+##                  3) filter N percent, 
+##                  4) filter by length (optionally),
+##                  5) run TRF, 
+##                  6) parse (here)
+
 use 5.010;
 use strict;
 use warnings;
@@ -18,8 +23,6 @@ my $trf = Bio::Tools::TandemRepeatsFinder->new( -file => $infile );
 my (@copy_num, @period_size, %monomers);
 
 while ( my $feat = $trf->next_result ) {
-
-    ## available tags:
 
     ## Doesn't work
     #my @tags = $feat->get_tag_values();
@@ -38,6 +41,8 @@ while ( my $feat = $trf->next_result ) {
     my ($entropy) = $feat->get_tag_values('entropy');
     my ($consensus_sequence) = $feat->get_tag_values('consensus_sequence');
     my ($repeat_sequence) = $feat->get_tag_values('repeat_sequence');
+
+    # these values generate no results with the latest TRF
     #my ($run_parameters) = $feat->get_tag_values('run_parameters');
     #my ($sequence_description) = $feat->get_tag_values('sequence_description');
 
