@@ -6,7 +6,6 @@ use warnings;
 use Bio::Tools::SeqPattern;
 use Bio::SeqIO;
 use Bio::PrimarySeq;
-use Data::Dumper;
 
 my $usage = "\n$0 pepfile ntfile\n\n";
 my $pep   = shift or die $usage;
