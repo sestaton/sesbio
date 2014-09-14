@@ -1,3 +1,5 @@
+#!/usr/bin/env perl
+
 ## this is a dead simple demonstration of how to get
 ## overlaps for an interval range
 
@@ -13,6 +15,7 @@ while (<DATA>) {
     $tree->insert($ints[1],$ints[2],$ints[3]);
 }
 
+# this is the interval range: 10-30
 my $res = $tree->fetch(10, 30);
 say "Found: ",scalar(@$res)," overlaps.";
 dd $res;
