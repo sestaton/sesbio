@@ -13,5 +13,6 @@ do
   domtblout=$filebase"_hmmscan-pfamA.domtblout"
   tblout=$filebase"_hmmscan-pfamA.tblout"
 
-  $hmmscan -o $outfile --tblout $tblout --domtblout $domtblout --acc --noali --cpu $cpu /db/pfam/latest/Pfam-A.hmm $file
- done
+  $hmmscan -o $outfile --tblout $tblout --domtblout $domtblout \
+      --acc --noali --cpu $cpu /db/pfam/latest/Pfam-A.hmm $file
+done
