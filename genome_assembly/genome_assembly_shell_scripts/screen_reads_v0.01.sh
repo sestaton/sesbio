@@ -3,8 +3,10 @@
 
 # -- screening searches: large contaminant hit expected; that is, 
 #    at least 60% of the query should get a hit of at least 96% identity
-#megablast -d ~/db/screendb -i SRR349656_prinseq_trimmed.fasta -p 96 -W18 -JF -F "m D" -X30 -D3 -a 8 | grep -v "^#" | sort -k1,1 -k12,12 -nr > $tabout
-#blastall -p blastn -i -d 
+#
+# megablast -d ~/db/screendb -i SRR349656_prinseq_trimmed.fasta \
+# -p 96 -W18 -JF -F "m D" -X30 -D3 -a 8 | grep -v "^#" | sort -k1,1 -k12,12 -nr > $tabout
+
 
 usage() {
 cat <<EOF
@@ -50,6 +52,7 @@ fastaext=$(echo ${1##*.})
 
 bl=$fasta"_bl_screendb_tmp.mbln"
 filtered=$fasta"_filteredall.fas"
+fh=$HOME/github/sesbio/genome_assembly/genome_assembly_shell_scripts/filter_hits.sh
 
 #for i in {1..$2}
 for i in $(seq $2)
@@ -59,8 +62,9 @@ do
   tmpbl=$bl"."$i
   t=$(date)
   echo "Running megablast on $1"."$i at $t"
-  megablast -d ~/db/screendb -i $1"."$i -p 96 -W18 -JF -F "m D" -X30 -D3 -a 8 | grep -v "^#" | sort -k1,1 -k12,12 -nr > $tmpbl
-  ~/bash_scripts/filter_hits.sh $1"."$i $tmpbl
+  megablast -d ~/db/screendb -i $1"."$i \
+      -p 96 -W18 -JF -F "m D" -X30 -D3 -a 8 | grep -v "^#" | sort -k1,1 -k12,12 -nr > $tmpbl
+  bash $fh $1"."$i $tmpbl
   cd ../
   cat $i"_bl"/*filtered.$i >> $filtered
   rm -rf $i"_bl"
