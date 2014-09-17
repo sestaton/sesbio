@@ -36,41 +36,38 @@ say $out join "\t", "query", "query_length", "number_of_hits", "hit_name",
     "hit_acc", "hit_score", "hit_significance", "hsp_length", "hsp_query_start", 
     "hsp_query_end", "hsp_hit_start", "hsp_hit_end";
 
-while ( my $result = $hmmer_in->next_result() ) {
-    
-    my $query      = $result->query_name();
-    my $qlen       = $result->query_length();
-    my $num_hits   = $result->num_hits();
+while ( my $result = $hmmer_in->next_result ) {    
+    my $query    = $result->query_name;
+    my $qlen     = $result->query_length;
+    my $num_hits = $result->num_hits;
        
-    while ( my $hit = $result->next_hit() ) {
-	
-	my $hitid    = $hit->name();
-	my $hitacc   = $hit->accession();
-	my $score    = $hit->raw_score();
-	my $signif   = $hit->significance();
+    while ( my $hit = $result->next_hit ) {
+	my $hitid  = $hit->name;
+	my $hitacc = $hit->accession;
+	my $score  = $hit->raw_score;
+	my $signif = $hit->significance;
 	
 	while ( my $hsp = $hit->next_hsp ) {
-	   
-	    my $hsplen    = $hsp->length('total');
-	    my $hstart    = $hsp->start('hit');
-	    my $hstop     = $hsp->end('hit');
-	    my $qstart    = $hsp->start('query');
-	    my $qstop     = $hsp->end('query');
-	    my $qstring   = $hsp->query_string;
-	    my $hstring   = $hsp->hit_string;
+	    my $hsplen  = $hsp->length('total');
+	    my $hstart  = $hsp->start('hit');
+	    my $hstop   = $hsp->end('hit');
+	    my $qstart  = $hsp->start('query');
+	    my $qstop   = $hsp->end('query');
+	    my $qstring = $hsp->query_string;
+	    my $hstring = $hsp->hit_string;
 
 	    my $seqid = ">".$query."|".$hitid."_".$qstart."-".$qstop;
 	     
-	    say $out join "\t", $query, $qlen, $num_hits, $hitid, $hitacc, $score, $signif, $hsplen, $qstart, $qstop, $hstart, $hstop;
+	    say $out join "\t", $query, $qlen, $num_hits, $hitid, $hitacc, 
+	        $score, $signif, $hsplen, $qstart, $qstop, $hstart, $hstop;
 		
 	    if ($seqfile) {
 		say $seq join "\n", $seqid, $qstring;
 		
 	    }
 	    if ($hmmname) {
-		if ($hmmname =~ /$hitid/) {
-		    say $hmmseq join "\n", $seqid, $qstring;
-		}
+		say $hmmseq join "\n", $seqid, $qstring
+		    if $hmmname =~ /$hitid/;
 	    }
 	}
     }
@@ -81,7 +78,7 @@ close $hmmseq if $hmmname;
 
 exit;
 #
-# Subs
+# methods
 #
 sub usage {
     my $script = basename($0);
