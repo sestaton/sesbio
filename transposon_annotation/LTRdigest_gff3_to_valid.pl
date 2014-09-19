@@ -1,31 +1,4 @@
 #!/usr/bin/env perl
-#--------------------------------------------------------------+
-# cnv_LTRdigest_gff3_to_valid.pl - Convert to standard gff3    |
-#--------------------------------------------------------------+
-# DESCRIPTION:  The LTRdigest GFF3 may work alone but will     |
-# likely cause problems when used with annotations from        |
-# other sources so, just convert it.                           |
-#                                                              |
-# AUTHOR: S. Evan Staton                                       |
-# CONTACT: statonse<at>uga.edu                                 |
-# STARTED: 12.2.10                                             |
-# UPDATED: 12.3.10                                             |
-#                                                              |
-# USAGE: cnv_LTRdigest_gff3_to_valid.pl -i in.gff3 -o out.gff3 |       
-#                                                              |
-#                                                              |
-#--------------------------------------------------------------+
-# TODO: Change some of the terms to a standard such as
-# that used by the cnv_ltrfinder2gff.pl (DAWGPAWS)
-#
-# Don't need options right now but will leave them in case I 
-# decide to work on changing some of the terms, which could be
-# an option. Specifically, change feature "protein_match" to
-# "mature_protein_region" and "pfamname" to "Name." These chages
-# are necessary to get the ltr_simple glyph to display elements
-# correctly. Also add (perhaps optionally) SO terms. 
-#
-# Convert directory of files instead of one at a time.
 
 use 5.010;
 use strict;
@@ -93,13 +66,3 @@ sub get_contig {
 
 close $in;
 close $out;
-
-#----------------+
-# CHANGELOG      |
-#----------------+
-# 12/2/10
-# - Started working on sequence-region line. Not printing
-# regions in correct order
-#
-# 12/2/10
-# - Basic conversion is working correctly. 
