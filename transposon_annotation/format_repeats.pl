@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+# This script formats a repeat database for input to 
+# Transposome: https://github.com/sestaton/Transposome
+
 use 5.012;
 use strict;
 use warnings;
