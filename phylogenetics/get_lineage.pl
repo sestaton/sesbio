@@ -1,7 +1,11 @@
 #!/usr/bin/env perl
 
-##TODO: Build lineage info based on....(the number of entries?)
-  
+## Given an epithet, this script will build the taxonomic lineage using
+## NCBI's EUtilities (esearch and efetch)
+
+## TODO: Build lineage info based on....(the number of entries?). It is not so
+## simple for all species because of naming schemes in different kingdoms.
+
 use 5.010;
 use strict;
 use warnings;
