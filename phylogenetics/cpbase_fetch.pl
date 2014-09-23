@@ -85,6 +85,13 @@ if ($statistics) {
     }
 }
 
+##This is a reminder for the TODO below; just say this option isn't implemented and exit
+if ($alignments && !$gene_name || !$gene_clusters) {
+    say "ERROR: Currently only alignments for a specific gene cluster or gene name ".
+	"may be returned. Exiting.";
+    exit(1);
+}
+
 ##TODO add handling of option for getting all alignments
 if ($gene_clusters && $gene_name && $alignments) {
     my $gene_stats = fetch_ortholog_sets($gene_name, $alignments, $alphabet, $type);
