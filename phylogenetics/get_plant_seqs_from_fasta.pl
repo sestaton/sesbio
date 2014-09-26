@@ -2,7 +2,11 @@
 
 ## Take a fasta file with species names in the header,
 ## and pull out only the plant species.
-
+##
+## NB: This script was used as part of a project to discover centromeric repeats,
+##     and it allows you to look at only those derived from plants.
+##     The input data to this script was the supplemental fasta file
+##     from: http://genomebiology.com/2013/14/1/R10
 use 5.010;
 use strict;
 use warnings;
@@ -12,7 +16,7 @@ use Bio::DB::Taxonomy;
 my $usage   = "USAGE: $0 seqs.fasta plant_seqs.fasta\n";
 my $infile  = shift or die $usage;
 my $outfile = shift or die $usage;
-my $seqio   = Bio::SeqIO->new(-file => $infile, -format => 'fasta');
+my $seqio   = Bio::SeqIO->new(-file => $infile,     -format => 'fasta');
 my $seqout  = Bio::SeqIO->new(-file => ">$outfile", -format => 'fasta');
 my $db      = Bio::DB::Taxonomy->new(-source => 'entrez');
 
