@@ -1,7 +1,5 @@
 #!/usr/bin/env perl
 
-# TODO: make the threshold an option
-
 use 5.010;
 use strict;
 use warnings;
