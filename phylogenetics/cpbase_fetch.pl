@@ -1,7 +1,9 @@
 #!/usr/bin/env perl
 
 ##TODO: Check if it is possible to get alignments. Since they are stored in the document path of /tmp
-##      they may be generated on the fly (hence, not available on demand).
+##      they may be generated on the fly (hence, not available on demand). It appears that are not available.
+##      Need to confirm this an remove the alignments option.
+##
 ##      Generate statistics from higher taxonomic levels
 
 use 5.010;
