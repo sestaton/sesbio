@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+## NB: The input file is a cluster file from Transposome,
+##     or RepeatExplorer.
 use 5.010;
 use strict;
 use warnings;
