@@ -1,7 +1,5 @@
 #!/usr/bin/env perl
 
-# TODO: make the threshold an option
-
 use 5.010;
 use strict;
 use warnings;
@@ -23,12 +21,14 @@ my $infile;
 my $five_prime_outfile;
 my $three_prime_outfile;
 my $threshold;
+my $merlength;
 
 GetOptions(
            'i|infile=s'                   => \$infile,
            'a|five_prime_outfile=s'       => \$five_prime_outfile,
 	   'b|three_prime_outfile=s'      => \$three_prime_outfile,
            't|threshold=i'                => \$threshold,
+           'l|merlength=i'                => \$merlength,
            );
 
 #
@@ -58,10 +58,11 @@ tie( %fseqhash, 'AnyDBM_File', ':memory:', 0666, $DB_BTREE);
 my @aux = undef;
 my ($name, $seq, $qual);
 $threshold //= 100;
+$merlength //= 25;
 
 while (($name, $seq, $qual) = readfq(\*$in, \@aux)) {
-    my $radapter = substr($seq, -25, 25);
-    my $fadapter = substr($seq, 0, 25);
+    my $radapter = substr($seq, -$merlength, $merlength);
+    my $fadapter = substr($seq, 0, $merlength);
     $rseqhash{$radapter}++;
     $fseqhash{$fadapter}++;        
 }
@@ -143,7 +144,7 @@ sub readfq {
 sub usage {
     my $script = basename($0);
     print STDERR<<EOF
-USAGE: $script [-i] [-a] [-b] [-t]  [-h] [-m]
+USAGE: $script [-i] [-a] [-b] [-t] [-l] [-h] [-m]
 
 Required:
     -i|infile               :       File of reads (Fasta for Fastq format).
@@ -152,6 +153,7 @@ Required:
     
 Options:
     -t|threshold            :       Set the lower threshold of counts for matches to report (Default: 100).
+    -l|merlength            :       The length to search on either end of a read for adapters (Default: 25).
     -h|help                 :       Print a usage statement.
     -m|man                  :       Print the full documentation.
 

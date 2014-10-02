@@ -1,5 +1,9 @@
 #!/usr/bin/env perl
 
+## NB: This takes a GFF and a reference FASTA file,
+##     and the result will be be a file of only the internal coding regions,
+##     not the LTRs.
+
 use 5.010;
 use strict;
 use warnings;

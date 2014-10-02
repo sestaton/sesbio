@@ -62,7 +62,6 @@ use File::Basename;
 use LWP::UserAgent;
 use Time::HiRes qw(gettimeofday);
 use HTML::TreeBuilder;
-use Data::Dump qw(dd);
 use IPC::System::Simple qw(system);
 use Try::Tiny;
 use Pod::Usage;
@@ -227,13 +226,16 @@ sub fetch_files {
     }
 
     my $endpoint = $urlbase.$data_dir.$file;
-    my $exit_code;
-    try {
-	$exit_code = system([0..5], "wget -O $file $endpoint");
+    my $ua = LWP::UserAgent->new;
+    my $response = $ua->get($endpoint);
+            
+    unless ($response->is_success) {
+	die "Can't get url $urlbase -- ", $response->status_line;
     }
-    catch {
-	say "\nERROR: wget exited abnormally with exit code $exit_code. Here is the exception: $_\n";
-    };
+            
+    open my $out, '>', $file or die "\nERROR: Could not open file: $!\n";
+    say $out $response->content;
+    close $out;
 }
 
 sub usage {

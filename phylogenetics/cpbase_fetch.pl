@@ -1,7 +1,9 @@
 #!/usr/bin/env perl
 
 ##TODO: Check if it is possible to get alignments. Since they are stored in the document path of /tmp
-##      they may be generated on the fly (hence, not available on demand).
+##      they may be generated on the fly (hence, not available on demand). It appears that are not available.
+##      Need to confirm this an remove the alignments option.
+##
 ##      Generate statistics from higher taxonomic levels
 
 use 5.010;
@@ -83,6 +85,13 @@ if ($statistics) {
 	usage();
 	exit(1);
     }
+}
+
+##This is a reminder for the TODO below; just say this option isn't implemented and exit
+if ($alignments && !$gene_name || !$gene_clusters) {
+    say "ERROR: Currently only alignments for a specific gene cluster or gene name ".
+	"may be returned. Exiting.";
+    exit(1);
 }
 
 ##TODO add handling of option for getting all alignments
