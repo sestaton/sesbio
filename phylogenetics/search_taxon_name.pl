@@ -2,7 +2,6 @@
 
 ## Demonstrate two ways to get taxon information from NCBI
 ## through BioPerl.
-## TODO: Make sure to use the same ID!
 
 use 5.010;
 use strict;
@@ -15,7 +14,7 @@ sub db_taxon {
     require Bio::DB::Taxonomy;
 
     my $db      = Bio::DB::Taxonomy->new(-source => 'entrez');
-    my $taxonid = $db->get_taxonid('Homo sapiens');
+    my $taxonid = $db->get_taxonid('Helianthus annuus');
     my $taxon   = $db->get_taxon(-taxonid => $taxonid);
 
     say "Taxon ID is ", $taxon->id;
@@ -36,7 +35,7 @@ sub db_taxon {
 sub db_eutils {
     require Bio::DB::EUtilities;
  
-    my $id = 527031;
+    my $id = 4232;
  
     my $factory = Bio::DB::EUtilities->new(-eutil => 'esummary',
 					   -email => 'mymail@foo.bar',
