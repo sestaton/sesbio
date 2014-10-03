@@ -11,23 +11,23 @@ use LWP::UserAgent;
 use XML::LibXML;
 use HTML::TableExtract;
 use Getopt::Long;
-use Data::Dump qw(dd);
 
 my $usage = "$0 -t term term term\n";
 my @keywords;
+my $outfile;
 
 GetOptions(
 	   't|term=s{1,}' => \@keywords,
+           'o|outfile=s'  => \$outfile,
 	   );
 
-die $usage if !@keywords;
+die $usage if !@keywords || !$outfile;
 
-search_by_keyword(\@keywords);
+search_by_keyword(\@keywords, $outfile);
 
 sub search_by_keyword {
-    my ($keywords) = @_;
+    my ($keywords, $outfile) = @_;
 
-    #dd $keywords and exit;
     my $keyword = join "+", @$keywords;
 
     my $ua = LWP::UserAgent->new;
@@ -39,16 +39,18 @@ sub search_by_keyword {
     }
 
     my $pfamxml = "pfam_search_$keyword".".xml";
-    open my $out, '>', $pfamxml or die "ERROR: Could not open file: $!";
-    say $out $response->content;
-    close $out;
+    open my $pfout, '>', $pfamxml;
+    say $pfout $response->content;
+    close $pfout;
 
     my ($resultnum, $dbnum) = get_search_results($keyword, $pfamxml);
 
     if ($resultnum > 1) {
 	my $dirname = $keyword; # use expressive variable names
+
+	open my $out, '>', $outfile;
 	say "Found $resultnum HMMs for $keyword in $dbnum databases. HMMs can be found in the directory: $dirname.";
-	say "Accession\tID\tDescription\tPfam";
+	say $out "Accession\tID\tDescription\tPfam";
 	make_path($dirname, {verbose => 0, mode => 0771,});
 	my $te = HTML::TableExtract->new( headers => [qw(Accession ID Description Pfam Seq_Info Interpro)] );
 	$te->parse_file($pfamxml);
@@ -57,9 +59,10 @@ sub search_by_keyword {
 	    for my $row ($ts->rows) {
 		my @elem = grep { defined } @$row;
 		#my ($accession, $id, $descripton, $pfam, $seqinfo, $interpro) = @elem;
-		fetch_hmm($dirname, \@elem);
+		fetch_hmm($dirname, \@elem, $out);
 	    }
 	}
+	close $out;
     }
     unlink $pfamxml;
 }
@@ -84,7 +87,7 @@ sub get_search_results {
 }
 
 sub fetch_hmm {
-    my ($dir, $elem) = @_;
+    my ($dir, $elem, $out) = @_;
 
     my ($accession, $id, $descripton, $pfam, $seqinfo, $interpro) = @$elem;
     my $ua = LWP::UserAgent->new;
@@ -95,9 +98,9 @@ sub fetch_hmm {
         die "Can't get url $urlbase -- ", $response->status_line;
     }
 
-    say join "\t", @$elem[0..3];
+    say $out join "\t", @$elem[0..3];
     my $hmmfile = File::Spec->catfile($dir, $accession.".hmm");
-    open my $out, '>', $hmmfile or die "ERROR: Could not open file: $!";
-    say $out $response->content;
-    close $out;
+    open my $hmmout, '>', $hmmfile;
+    say $hmmout $response->content;
+    close $hmmout;
 }
