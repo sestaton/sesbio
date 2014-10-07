@@ -10,7 +10,8 @@ cgp_fetch.pl -f familyname -e email -o resultsfile
 
 =head1 DESCRIPTION
                                                                    
-(...)
+This client will fetch raw EST sequences or EST assemblies from the Compositae
+Genome Project Database (cgpdb.ucdavis.edu).
 
 =head1 DEPENDENCIES
 
@@ -62,7 +63,6 @@ use File::Basename;
 use LWP::UserAgent;
 use Time::HiRes qw(gettimeofday);
 use HTML::TreeBuilder;
-use IPC::System::Simple qw(system);
 use Try::Tiny;
 use Pod::Usage;
 
