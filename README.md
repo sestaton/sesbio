@@ -9,11 +9,16 @@ This is a collection of (mostly) Perl scripts for working with genomics data. Th
 
 **INSTALLATION**
 
-All scripts require Perl version 5.10 and some use non-core Perl modules. Though, there are no dependencies that cannot be installed from CPAN. To get the scripts, simply download the zip version of the repo, or use git:
+To get the scripts, simply download the zip version of the repo, or use git:
 
     git clone https://github.com/sestaton/sesbio.git
 
-After that, you can use the scripts in place and run `git pull` in the base directory to keep things up to date. Send me a message or file an issue if you have feature requests or run into any issues.
+Then install the Perl dependencies:
+
+    cd sesbio
+    cpanm --installdeps .
+
+After that, you can use the scripts in place or move them to where is most convenient. Run `git pull` in the base directory to keep things up to date. Send me a message or file an issue if you have feature requests or run into any issues.
 
 **USAGE**
 
