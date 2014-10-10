@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.014;
+use 5.012;
 use strict;
 use warnings;
 use open qw(:encoding(UTF-8) :std);
@@ -70,7 +70,7 @@ for my $k (keys %list) {
 }
 
 #
-# subs
+# methods
 #
 sub mk_key { join "\N{INVISIBLE SEPARATOR}", map { $_ // " " } @_ }
 
