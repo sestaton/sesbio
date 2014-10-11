@@ -103,7 +103,7 @@ my $reads;
 my $sample_cov;
 my $num_subsamples;    # Take this at the command line, the # of samples to take
 my $consed;
-my $trimfile; # = "/iob_home/jmblab/statonse/db/pIndigo_BAC536.fasta";   
+my $trimfile; # = "/home/jmblab/statonse/db/pIndigo_BAC536.fasta";   
 
 GetOptions(#Required arguments 
 	   'i|infile=s'         => \$infile,
@@ -122,8 +122,8 @@ GetOptions(#Required arguments
 
 # Start the program or die with a usage statement and specific error message
 # check for infile
-if (!$infile) {
-    say "\nERROR: No input was given.";
+if (!$infile || !$prefix) {
+    say "\nERROR: No input file or prefix were given.";
     usage();
     exit(0);
 }
@@ -140,11 +140,6 @@ if ($prefix) {
     $prefix if $sample;
     say "============= Generating assembly for project name: ",
     $prefix if !$sample;
-}
-else {
-    say "\nERROR: A job name prefix was not given at the command line.";
-    usage();
-    exit(0);
 }
 
 #check for sample_cov
