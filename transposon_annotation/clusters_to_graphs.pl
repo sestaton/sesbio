@@ -20,7 +20,7 @@ exit;
 # methods
 #
 sub clusters2graphs {
-    my ($cls_file, $hitsort) = @_;
+    my ($cls_file, $hitsort, $cores) = @_;
 
     #unless ($gl_dir =~ /\/$/) {
     #    $gl_dir .= "/";
