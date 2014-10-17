@@ -19,7 +19,6 @@ GetOptions(
 	   'id|idlist=s' => \$idlist,
 	   'i|infile=s'  => \$infile,
 	   'o|outfile=s' => \$outfile,
-           'f|format=s'  => \$format,
 	   );
 
 # check @ARGV
@@ -28,29 +27,26 @@ if (!$infile || !$outfile || !$idlist) {
     exit(1);
 }
 
-$format //= 'fasta';
-
-unless ($format =~ /fasta/i || $format =~ /fastq/i) {
-    say "\nERROR: '$format' not recognized. Must be 'fasta' or 'fastq'. Exiting.\n";
-    exit(1);
-}
+my @aux = undef;
+my ($name, $comm, $seq, $qual);
 
 open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
-my $idlist_hash = id2hash($idlist);
-my ($seqhash, $seqcount) = seq2hash($infile, $format);
+my $fh  = get_fh($infile);
+my $ids = id2hash($idlist);
 
-for my $gene (keys %$idlist_hash) {
-    if (exists $seqhash->{$gene}) {
-	if ($format =~ /fasta/i) {
-	    say $out join "\n", ">".$gene, $seqhash->{$gene};
+while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
+    $seq =~ s/.{60}\K/\n/g;
+    if (exists $ids->{$name}) {
+	if (defined $qual) {
+	    say $out join "\n", "@".$name, $seq, "+", $qual;
 	}
-	elsif ($format =~ /fastq/i) {
-	    my ($seq, $qual) = split '~~', $seqhash->{$gene};
-	    say $out join "\n", "@".$gene, $seq, "+", $qual;
+	else {
+	    say $out join "\n", ">".$name, $seq;
 	}
     }
 }
+close $fh;
 close $out;
 
 exit;
@@ -61,36 +57,34 @@ sub id2hash {
     my $idlist = shift;
     open my $fh, '<', $idlist or die "\nERROR: Could not open file: $!\n";
 
-    my %hash;
+    my %ids;
     while (<$fh>) {
 	chomp;
-	$hash{$_} = 1;
+	#s/\s+/_/g;
+	$ids{$_} = 1;
     }
     close $fh;
-    return \%hash;
+    return \%ids;
 }
 
-sub seq2hash {
-    my ($infile, $format) = @_;
-    open my $fh, '<', $infile or die "\nERROR: Could not open file: $infile\n";
+sub get_fh {
+    my ($file) = @_;
 
-    my @aux = undef;
-    my ($name, $comm, $seq, $qual);
-    my %seqhash;
-    my $seqct = 0;
-    
-    while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
-	$seqct++;
-	if ($format =~ /fasta/i) {
-	    $seqhash{$name} = $seq;
-	}
-	elsif ($format =~ /fastq/i) {
-	    $seqhash{$name} = join "~~", $seq, $qual;
-	}
+    my $fh;
+    if ($file =~ /\.gz$/) {
+        open $fh, '-|', 'zcat', $file or die "\nERROR: Could not open file: $file\n";
     }
-    
-    close $fh;
-    return \%seqhash, \$seqct;
+    elsif ($file =~ /\.bz2$/) {
+        open $fh, '-|', 'bzcat', $file or die "\nERROR: Could not open file: $file\n";
+    }
+    elsif ($file =~ /^-$|STDIN/) {
+	open $fh, '< -' or die "\nERROR: Could not open STDIN\n";
+    }
+    else {
+        open $fh, '<', $file or die "\nERROR: Could not open file: $file\n";
+    }
+
+    return $fh;
 }
 
 sub readfq {
@@ -143,13 +137,12 @@ sub readfq {
 sub usage {
     my $script = basename($0);
     print STDERR<<EOF
-USAGE: $script [-id] [-i] [-o] [-f]
+USAGE: $script [-id] [-i] [-o]
 
 Required:
     -id|idlist    :      An ID list of records (one per line).  
     -i|infile     :      A fasta/q file to pull sequences from.
     -o|outfile    :      A file to write the records to.
-    -f|format     :      Input format, must be 'fasta' or 'fastq' (Default: fasta).
 
 EOF
 }
