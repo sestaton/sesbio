@@ -10,22 +10,8 @@ kew_fetch_plantCvalues.pl -f familyname -e email -o resultsfile
 
 =head1 DESCRIPTION
                                                                    
-A web client to fetch C-values for a plant family from the Kew 
-Royal Botanic Gardens database. Returns a file sorted by ascending 
-genome size for each species in the database as in the example shown
-below. The data in each column are family, subfamily, tribe, genus, 
-species, chromosome number, ploidy level, and genome size (listed as 
-1C (Mbp) estimates). Note that some species have no ploidy level or 
-chromosome number estimate as in the first two species in the example 
-below. This is because these values are not listed in the Kew database. 
-Also note that the subfamily and tribe for some species is not listed, 
-as with the third and fourth species below, because these species are 
-not in the NCBI Entrez Taxonomy database. Please note that neither of 
-these features are because of an error with this script, but rather a 
-reflection of what information is present in each database. In addition,
-the subfamily and tribe may actually be incorrect because these values
-are missing from NCBI so the taxonomic rank that is expected to be subfamily
-and tribe is printed.
+This is a  web client to fetch C-values for a plant family from the Kew Royal Botanic Gardens database (http://data.kew.org/cvalues/) that 
+returns a file sorted by ascending genome size for each species in the database as in the example shown below. The data in each column are family, subfamily, tribe, genus, species, chromosome number, ploidy level, and genome size (listed as 1C (Mbp) estimates). Note that some species have no ploidy level or chromosome number estimate as in the first two species in the example below. This is because these values are not listed in the Kew database. Also note that the subfamily and tribe for some species is not listed, as with the third and fourth species below, because these species are not in the NCBI Entrez Taxonomy database. Please note that neither of these features are because of an error with this script, but rather a reflection of what information is present in each database. In addition,the subfamily and tribe may actually be incorrect because these values are missing from NCBI so the taxonomic rank that is expected to be subfamily and tribe is printed.
 
 ASTERACEAE      Cichorioideae   Hypochaeridinae Leontodon       longirostris                    391
 ASTERACEAE      Asteroideae     Senecioninae    Pericallis      appendiculata   60      6       533
@@ -103,6 +89,8 @@ Print the full documentation.
 
 ##TODO: get return type (2C Mbp, 1C Mbp, etc...) Currently, 1C Mbp is returned 
 ##      add method for donating or supporting Kew gardens, at least in the documentation
+##
+##      remove use of bio-db-taxonomy
 
 #
 # INCLUDES
