@@ -85,7 +85,7 @@ while (my $pep_seq = $pep_seq_in->next_seq()) {
 
 #dd %seqhash;
 
-my $clusters = parse_groups($infile, %seqhash);
+my $clusters = parse_groups($infile);
 
 for my $cluster (sort keys %$clusters) {
     my $cluster_size = scalar @{$clusters->{$cluster}};
