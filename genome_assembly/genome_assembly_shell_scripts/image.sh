@@ -1,5 +1,9 @@
 #!/bin/bash
 
+## NB: The abacus command below is run prior to running image,
+##     though the command you see is for a different run (which is
+##     why filenames don't match). The command is there for reference.
+
 cd `pwd`
 
 abacus=/usr/local/bioinfo/pagit/PAGIT/ABACUS/abacus.pl
