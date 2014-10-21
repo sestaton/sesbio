@@ -1,10 +1,8 @@
 #!/usr/bin/env perl
 
-use utf8;
-use 5.012;
+use 5.010;
 use strict;
 use warnings;
-use warnings FATAL => "utf8";
 use open qw(:std :utf8);
 use autodie qw(open);
 use Getopt::Long;
