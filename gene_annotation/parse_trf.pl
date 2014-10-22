@@ -6,6 +6,7 @@
 ##                  4) filter by length (optionally),
 ##                  5) run TRF, 
 ##                  6) parse (here)
+##NB: running trf without the html output results in one output file
 
 use 5.010;
 use strict;
@@ -24,7 +25,7 @@ my (@copy_num, @period_size, %monomers);
 
 while ( my $feat = $trf->next_result ) {
 
-    ## Doesn't work
+    ## Doesn't work, perhaps it did with a previous version of TRF?
     #my @tags = $feat->get_tag_values();
     #say join " ", @tags;
 
