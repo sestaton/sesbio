@@ -23,44 +23,63 @@ if (!$infile) {
 
 my ($name, $comm, $seq, $qual, $header, $seqstr);
 my @aux = undef;
-my $dbfile = 'seqs.db';
+my $dbfile = "seqs.db";
+my $dsn    = "dbi:SQLite:dbname=$dbfile";
+my $user   = "";
+my $pass   = "";
+my $lookup = "SOLEXA6:1:1:1124:20817#0/1";
 
 my $fh = get_fh($infile);
 
-my $dbh = DBI->connect( "DBI:SQLite:dbname=$dbfile", "", "",
-			{ PrintError => 0 , RaiseError => 1 } );
+my $dbh = DBI->connect( $dsn, $user, $pass, { 
+    PrintError       => 0, 
+    RaiseError       => 1,
+    AutoCommit       => 1,
+    FetchHashKeyName => 'NAME_lc'
+} );
+
 $dbh->do("DROP TABLE IF EXISTS seqs");
-$dbh->do("CREATE TABLE seqs(gene_name VARCHAR(50) PRIMARY KEY, sequence TEXT)");
+
+my $sql = <<'END_SQL';
+CREATE TABLE seqs (
+    header VARCHAR(100) PRIMARY KEY, 
+    seqstr TEXT
+)
+END_SQL
+
+$dbh->do($sql);
 
 while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
     $header = mk_key($name, $comm) if defined $comm && $comm ne '';
     $header = $name if !defined $comm || $comm eq '' ;
     $seqstr = mk_key($seq, $qual) if defined $qual;
     $seqstr = $seq if !defined $qual;
-    $dbh->do("INSERT INTO genes VALUES('$header','$seqstr')")
+    $dbh->do('INSERT INTO seqs (header, seqstr) VALUES (?, ?)',
+	     undef,
+	     $header, $seqstr);
 }
 
-my $sbh = DBI->connect( "DBI:SQLite:dbname=$dbfile", "", "" );
+my $sbh = DBI->connect( $dsn, $user, $pass );
 
-my $sth = $sbh->prepare("SELECT * FROM seqs");
-$sth->execute();
+my $sth = $sbh->prepare("SELECT * FROM seqs WHERE header = ?");
+$sth->execute($lookup);
 
 while (my $row = $sth->fetchrow_hashref()) {
-    if ($row->{gene_name} =~ /~~/ && $row->{sequence} =~ /~~/) {
-	my ($id, $com) = mk_vec($row->{gene_name});
-	my ($nt, $ql)  = mk_vec($row->{sequence});
+    if ($row->{header} =~ /~~/ && $row->{seqstr} =~ /~~/) {
+	my ($id, $com) = mk_vec($row->{header});
+	my ($nt, $ql)  = mk_vec($row->{seqstr});
 	say join "\n", "@".$id.q{ }.$com, $nt, "+", $ql;
     }
-    elsif ($row->{gene_name} =~ /~~/ && $row->{sequence} !~ /~~/) {
-        my ($id, $com) = mk_vec($row->{gene_name});
-	say join "\n", ">".$id.q{ }.$com, $row->{sequence};
+    elsif ($row->{header} =~ /~~/ && $row->{seqstr} !~ /~~/) {
+        my ($id, $com) = mk_vec($row->{header});
+	say join "\n", ">".$id.q{ }.$com, $row->{seqstr};
     }
-    elsif ($row->{gene_name} !~ /~~/ && $row->{sequence} =~ /~~/) {
-	my ($nt, $ql)  = mk_vec($row->{sequence});
-	say join "\n", "@".$row->{gene_name}, $nt, "+", $ql;
+    elsif ($row->{header} !~ /~~/ && $row->{seqstr} =~ /~~/) {
+	my ($nt, $ql) = mk_vec($row->{seqstr});
+	say join "\n", "@".$row->{header}, $nt, "+", $ql;
     }
     else {
-	say join "\n", ">".$row->{gene_name}, $row->{sequence};
+	say join "\n", ">".$row->{header}, $row->{seqstr};
     }
 }
 
