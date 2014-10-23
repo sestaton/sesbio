@@ -21,10 +21,10 @@ $ftp->cwd($dir)
     or die "Cannot change working directory ", $ftp->message;
 
 my @faafiles = grep /\.faa.gz$/, $ftp->ls();
-my @sorted = map  { $_->[0] }
-             sort { $a->[1] <=> $b->[1] }
-             map  { [ $_, /(\d+)/ ] }
-             @faafiles;
+my @sorted   = map  { $_->[0] }
+               sort { $a->[1] <=> $b->[1] }
+               map  { [ $_, /(\d+)/ ] }
+                    @faafiles;
 
 for my $file (@sorted) {
     $ftp->binary();
