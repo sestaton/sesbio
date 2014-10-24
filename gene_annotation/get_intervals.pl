@@ -10,13 +10,15 @@ use Set::IntervalTree;
 use Data::Dump qw(dd);
 
 my $tree = Set::IntervalTree->new;
+
 while (<DATA>) {
     my @ints = split;
-    $tree->insert($ints[1],$ints[2],$ints[3]);
+    $tree->insert($ints[1], $ints[2], $ints[3]);
 }
 
-# this is the interval range: 10-30
+# this gets the interval range: 10-30
 my $res = $tree->fetch(10, 30);
+
 say "Found: ",scalar(@$res)," overlaps.";
 dd $res;
 
