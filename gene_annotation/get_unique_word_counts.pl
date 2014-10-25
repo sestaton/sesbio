@@ -3,15 +3,14 @@
 use 5.010;
 use strict;
 use warnings;
-#use Data::Dumper;
 use Getopt::Long;
 
 my $usage = "\nUSAGE: $0 -i in -o out <--stats>
 
 This script takes as input a list of words that may be separated by spaces;
-the words are evaluated by unique lines
+the words are evaluated by unique lines.
 
-Will also read from a Unix pipe.\n";
+Input may be a file or from stdin.\n";
 
 my $infile;
 my $outfile;
@@ -34,7 +33,6 @@ open my $unique_words, '>', $outfile or die "\nERROR: Cannot open file: $outfile
 #
 # comments must be removed or they will be counted
 #
-
 @names = map +(split "\n")[0], <$words> if $infile;
 @names = map +(split "\n")[0], <STDIN> if !$infile;
 
@@ -43,7 +41,7 @@ my @unique_names = grep { ! $seen{$_} ++ } @names;   # preserves the order of el
 close $words if $infile;
 
 my $unique = @unique_names;
-my $total = @names;
+my $total  = @names;
 
 if ($statistics) {
     say "\nThere are: ", $total, " total words.";
@@ -54,10 +52,9 @@ count_unique(@names);
 
 exit;
 #
-# subs
+# methods
 #
 sub count_unique {
-
     my @array = @_;
     my %count;
     map { $count{$_}++ } @array;
@@ -65,9 +62,9 @@ sub count_unique {
     if ($outfile) {
 	map { say $unique_words join "\t", $_, ${count{$_}} } sort keys %count;
 	close $unique_words;
-    } else {
+    } 
+    else {
 	map { say join "\t", $_, ${count{$_}} } sort keys %count;
     }
-
 }
 
