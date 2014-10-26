@@ -5,14 +5,7 @@ use strict;
 use warnings;
 use File::Basename;
 use Getopt::Long;
-use Data::Dumper;
-BEGIN {
-  @AnyDBM_File::ISA = qw( DB_File SQLite_File )
-      unless @AnyDBM_File::ISA == 1; # if loaded already, AnyDBM_File::ISA has a length of one;
-}
-use AnyDBM_File;
-use vars qw( $DB_BTREE &R_DUP );
-use AnyDBM_File::Importer qw(:bdb);
+#use Data::Dump;
 
 #
 # lexical vars
@@ -49,11 +42,6 @@ open my $fout, '>', $five_prime_outfile or die "ERROR: Could not open file: $fiv
 open my $rout, '>', $three_prime_outfile or die "ERROR: Could not open file: $three_prime_outfile\n";
 
 my (%rseqhash, %fseqhash);
-$DB_BTREE->{cachesize} = 100000;
-$DB_BTREE->{flags} = R_DUP;
-tie( %rseqhash, 'AnyDBM_File', ':memory:', 0666, $DB_BTREE);
-tie( %fseqhash, 'AnyDBM_File', ':memory:', 0666, $DB_BTREE);
-
 
 my @aux = undef;
 my ($name, $seq, $qual);
@@ -80,12 +68,9 @@ for my $rkey (reverse sort { $rseqhash{$a} <=> $rseqhash{$b} } keys %rseqhash) {
 close $fout;
 close $rout;
 
-untie %fseqhash;
-untie %rseqhash;
-
 exit;
 #
-# Subs
+# methods
 #
 sub readfq {
     my ($fh, $aux) = @_;
