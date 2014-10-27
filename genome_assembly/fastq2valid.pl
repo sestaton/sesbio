@@ -1,13 +1,12 @@
 #!/usr/bin/env perl
 
-##TODO: add POD
+##NB: This is to fix sequences for prinseq. This issue is that prinseq won't 
+##    accept sequences that start with a dot character.
 
-## This is to fix sequences for prinseq
-
-use 5.014;
+use 5.010;
 use strict;
 use warnings;
-use autodie;
+use autodie qw(open);
 use File::Basename;
 use Getopt::Long;
 use Bio::Kseq;
@@ -50,9 +49,6 @@ while (my $nseq = $nt_it->next_seq) {
 }
 close $out;
 
-#
-#
-#
 sub usage {
     my $script = basename($0);
     print STDERR<<EOF
