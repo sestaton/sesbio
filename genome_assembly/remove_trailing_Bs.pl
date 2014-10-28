@@ -2,7 +2,7 @@
 
 ##TODO: Add POD, help/man options.
 
-use 5.014;
+use 5.010;
 use strict;
 use warnings;
 use autodie;
