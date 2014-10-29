@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+## Take a blasttable and convert it to MSP format for RECON.
+## Optionally, read from stdin so no intermediate file is created.
+
 use strict;
 use warnings;
 
@@ -12,7 +15,7 @@ while (<>) {
     my @f = split;
     die "This blast report is not formatted correctly. Exiting.\n"
 	unless @f == 12;
-    next if $f[0] eq $f[1];
+    next if $f[0] eq $f[1]; # remove self hits
     printf("%06d %03d %05d %05d %s %05d %05d %s \n", 
 	   $f[11], $f[2], $f[6], $f[7], $f[0], $f[8], $f[9], $f[1]);
 }
