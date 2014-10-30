@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-## NB: This takes a GFF and a reference FASTA file,
+## NB: This takes a GFF of LTR retrotransposons and a reference FASTA file,
 ##     and the result will be be a file of only the internal coding regions,
 ##     not the LTRs.
 
@@ -119,6 +119,7 @@ sub correct_ids {
 }
     
 sub seqid_map {
+    # this is necessary because LTRdigest truncates the ref names in the GFF
     my %idmap  = (
 		  'Contig112_HLAB-P189P24'   => 'Contig112_HLAB-P189P',
 		  'Contig169_HLAE-P339N08'   => 'Contig169_HLAE-P339N',
@@ -234,10 +235,10 @@ sub usage {
 USAGE: $script -i -a annotation_file -r ref_fasta -t te_fasta -o outfile
 
 Required:
-     'a|annot_file=s'  :   Tab-delimited annotation file ("*tabout.csv") produced by LTRdigest.
-     'r|ref_fasta=s'   :   File of reference sequences used for identifying LTR sequences.
-     't|te_fasta=s'    :   File of full-length LTR sequences identified by LTRdigest.
-     'o|outfile=s'     :   File to write internal LTR element regions to.
+     '-a|annot_file'   :   Tab-delimited annotation file ("*tabout.csv") produced by LTRdigest.
+     '-r|ref_fasta'    :   File of reference sequences used for identifying LTR sequences.
+     '-t|te_fasta'     :   File of full-length LTR sequences identified by LTRdigest.
+     '-o|outfile'      :   File to write internal LTR element regions to.
 
 Options:
     -h|help            :   Print a usage statement.
