@@ -1,19 +1,10 @@
 #!/usr/bin/env perl
 
-# TODO: return col matrix for each seq (for multifasta) DONE
-
-#       extract the sequence around the gap to look at direct repeats flanking indels DONE
-#       (this is not a general procedures so maybe leave in a dedicated script)
-
-#       May not be calculating stats correctly for a MSE DONE 
-
-#       Write flanking gap seqs to separate file for each input seq in alignment
-
-#       Take search space as option as well as PID for flanking gap
-#        sequence matches
-
-#       Printing the pairwise alignments is still messed up so we are just going to bypass that routine for now
+# TODO: - Write flanking gap seqs to separate file for each input seq in alignment
+#       - Take search space as option as well as PID for flanking gap  sequence matches
+#       - Printing the pairwise alignments is still messed up so we are just going to bypass that routine for now
 #
+
 use 5.010;
 use strict;
 use warnings;
@@ -27,10 +18,8 @@ use Statistics::Descriptive;
 use Getopt::Long;
 use File::Basename;
 use File::Temp;
-#-------------- NOT YET INSTALLED
-use Text::LevenshteinXS;       # This is exactly what I want: For string comparison to get the edit distance (num deletions, insertions)
-use String::Approx;            # This may also be useful: For string matching
-#---------------------------------
+#use Text::LevenshteinXS;       # This is exactly what I want: For string comparison to get the edit distance (num deletions, insertions)
+#use String::Approx;            # This may also be useful: For string matching
 #use Data::Dumper
 
 my $aln_file;
@@ -68,9 +57,7 @@ say $stats_out_tmp "#LTR_retro_name\tTotal_num_gap_sites\tNum_diff_gap_sizes\tPe
 my ($seqs_in_aln,$count) = split_aln($aln_file);
 
 for my $fas (@$seqs_in_aln) {
-
-    my $aln_in = Bio::AlignIO->new(-fh => \*$fas,       # we are passing an open filehandle, not a filename
-				   -format => 'fasta');
+    my $aln_in = Bio::AlignIO->new(-fh => \*$fas, -format => 'fasta');
 
     my ($fname, $fpath, $fsuffix) = fileparse($fas, qr/\.[^.]*/);
     my $seq_out = $fname;
@@ -84,7 +71,7 @@ for my $fas (@$seqs_in_aln) {
 		$pos++; 
 		if ($hash->{$key} eq '1') { # gap columns are coded as '1'
 		    $gap++;
-		    push(@indels,$pos); 
+		    push @indels, $pos; 
 		}   
 	    }
 	}
@@ -103,8 +90,8 @@ for my $fas (@$seqs_in_aln) {
 	    # What we want to do is search 20 bp on either side of the gap. 
 	    # This is based on the 1-15 direct repeats found in Arabidopsis... (Devos et al. 2002)
 	    # Sunflower may be different, so we search 20 bp.
-	    my $upstream_spos = $indel_spos - 20;
-	    my $upstream_epos = $indel_spos - 1;
+	    my $upstream_spos   = $indel_spos - 20;
+	    my $upstream_epos   = $indel_spos - 1;
 	    my $downstream_spos = $indel_epos + 1;
 	    my $downstream_epos = $indel_epos + 20;
         
@@ -118,11 +105,10 @@ for my $fas (@$seqs_in_aln) {
 	    }
 	    
 	    for my $seq ($aln->each_seq) { # $seq "isa" a Bio::LocatableSeq object (which is a part of Bio::PrimarySeq)
-
-		my $upstr_seq = $seq->subseq($upstream_spos,$upstream_epos);
-		my $downstr_seq = $seq->subseq($downstream_spos,$downstream_epos);
+		my $upstr_seq   = $seq->subseq($upstream_spos,   $upstream_epos);
+		my $downstr_seq = $seq->subseq($downstream_spos, $downstream_epos);
 		
-		my $upstr_id = $seq->id."_upstr-del-".$del."_".$upstream_spos."-".$upstream_epos;
+		my $upstr_id   = $seq->id."_upstr-del-".$del."_".$upstream_spos."-".$upstream_epos;
 		my $downstr_id = $seq->id."_downstr-del-".$del."_".$downstream_spos."-".$downstream_epos;
 		
 		my $upstream_seqobj = Bio::Seq->new(-seq      => $upstr_seq,
@@ -134,14 +120,11 @@ for my $fas (@$seqs_in_aln) {
 						      -alphabet =>'dna');
 		
 		# Here is where we do the comparison
-		blast_compare($indel_len,$upstream_seqobj,$downstream_seqobj,$cwd,$each_out);
+		blast_compare($indel_len, $upstream_seqobj, $downstream_seqobj, $cwd, $each_out);
 		
 		#//////// could call a sub or just do the Levenshtein distance($upstr_seq, $downstr_seq) here \\\\\\\\\
-		
-	    }       
-	    
+	    }       	    
 	}
-	
     }
     $pos = 0;
     $del = 0;
@@ -161,7 +144,7 @@ unlink $statstmp;
 
 exit;
 #
-# Subroutines
+# methods
 #
 sub split_aln {
     my ($input) = @_;
@@ -184,7 +167,7 @@ sub split_aln {
     my $seq_out = Bio::SeqIO->new(-file   => ">$fname", 
                                   -format => 'fasta');
 
-    push(@split_files,$fname);
+    push @split_files, $fname;
     while (my $seq = $seq_in->next_seq) {
         if ($count % 1 == 0 && $count > 0) {
             $fcount++;
@@ -203,7 +186,7 @@ sub split_aln {
         $count++;
     }
 
-    return (\@split_files,$count);
+    return (\@split_files, $count);
 }
 
 sub get_indel_range {
@@ -229,35 +212,30 @@ sub get_indel_range {
             $gap_range = [ $indel ];
         }
     }
-    return(\@indel_lengths,\@indel_ranges);
+    return (\@indel_lengths, \@indel_ranges);
 }
 
 sub blast_compare {
-    my ($indel_len,$upstream_seqobj,$downstream_seqobj,$cwd,$each_out) = @_;
+    my ($indel_len, $upstream_seqobj, $downstream_seqobj, $cwd, $each_out) = @_;
 	
-    my $bl2_out = File::Temp->new(TEMPLATE => "bl2seq_out_XXXX",
-				  DIR      => $cwd);
+    my $bl2_out = File::Temp->new(TEMPLATE => "bl2seq_out_XXXX", DIR => $cwd);
     my $bl2_out_fname = $bl2_out->filename;
 
     my @params = (-F => 'F', -p => 'blastn', -W => 4, -o => $bl2_out_fname);
     my $factory = Bio::Tools::Run::StandAloneBlast->new(@params);
 								    		
-    $factory->bl2seq($upstream_seqobj,$downstream_seqobj);
+    $factory->bl2seq($upstream_seqobj, $downstream_seqobj);
     
-    my $bl2seq_report = Bio::SearchIO->new(-file => $bl2_out_fname,
-					   -format => 'blast');
+    my $bl2seq_report = Bio::SearchIO->new(-file => $bl2_out_fname, -format => 'blast');
     
-    while( my $result = $bl2seq_report->next_result ) {
-	
+    while ( my $result = $bl2seq_report->next_result ) {
 	my $query      = $result->query_name();
 	my $qlen       = $result->query_length();
 	
-	while( my $hit = $result->next_hit ) {
-	    
+	while ( my $hit = $result->next_hit ) {
 	    my $hitid    = $hit->name();
 	    
-	    while( my $hsp = $hit->next_hsp ) {
-		
+	    while ( my $hsp = $hit->next_hsp ) {		
 		my $hsplen    = $hsp->length('total');
 		my $hstart    = $hsp->start('hit');
 		my $hstop     = $hsp->end('hit'); 
@@ -268,8 +246,7 @@ sub blast_compare {
 		my $homstring = $hsp->homology_string; 
 		my $hpid      = $hsp->percent_identity;
 		
-		if( $hsplen > 2 && $hpid >= $dr_pid ) {    # $dr_pid ("direct repeat % identity") is 10 or 2/20
-
+		if ( $hsplen > 2 && $hpid >= $dr_pid ) {    # $dr_pid ("direct repeat % identity") is 10 or 2/20
 		    my $qustr = $upstream_seqobj->seq;
                     my $hitstr = $downstream_seqobj->seq;
 		
@@ -297,18 +274,13 @@ sub blast_compare {
 		    say $each_out "Hit string        : $hitstr\n";
 		    
 		}
-		
 	    }
-	    
 	}
-	
     }
-
-    
 }
 
 sub get_stats {
-    my ($fas,$pos,$gap,$indel_lengths,$fname) = @_;
+    my ($fas, $pos, $gap, $indel_lengths, $fname) = @_;
 
     my $gap_stats = $fname."_gap_stats.txt";
     open my $statsout, '>', $gap_stats or die "\nERROR: Could not open file: $gap_stats\n";
@@ -390,12 +362,12 @@ sub collate_gap_stats {
     my $grand_gap_size_min   = sprintf("%.2f",$min_gap_size_stats->mean);
     my $grand_gap_size_max   = sprintf("%.2f",$max_gap_size_stats->mean);
 
-    my $grand_gap_char_sd       = sprintf("%.2f",$total_gap_char_stats->standard_deviation);
-    my $grand_gap_size_sd       = sprintf("%.2f",$gap_size_stats->standard_deviation);
-    my $grand_gap_char_perc_sd  = sprintf("%.2f",$gap_char_perc_stats->standard_deviation);
-    my $grand_gap_size_mean_sd  = sprintf("%.2f",$mean_gap_size_stats->standard_deviation);
-    my $grand_gap_size_min_sd   = sprintf("%.2f",$min_gap_size_stats->standard_deviation);
-    my $grand_gap_size_max_sd   = sprintf("%.2f",$max_gap_size_stats->standard_deviation);
+    my $grand_gap_char_sd      = sprintf("%.2f",$total_gap_char_stats->standard_deviation);
+    my $grand_gap_size_sd      = sprintf("%.2f",$gap_size_stats->standard_deviation);
+    my $grand_gap_char_perc_sd = sprintf("%.2f",$gap_char_perc_stats->standard_deviation);
+    my $grand_gap_size_mean_sd = sprintf("%.2f",$mean_gap_size_stats->standard_deviation);
+    my $grand_gap_size_min_sd  = sprintf("%.2f",$min_gap_size_stats->standard_deviation);
+    my $grand_gap_size_max_sd  = sprintf("%.2f",$max_gap_size_stats->standard_deviation);
 
     say $gap_stats_fh_out "\nFamily_name\tTotal_fam_gap_count\tMean_fam_gap_count ".
                           "(stddev)\tMean_fam_gap_size (stddev)\tMean_fam_gap_perc ".
