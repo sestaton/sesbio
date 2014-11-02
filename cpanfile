@@ -12,3 +12,4 @@ requires 'BioPerl',                 '1.006901';
 requires 'Capture::Tiny',           '0.21';
 requires 'Set::IntervalTree',       '0.10';
 requires 'XML::LibXML';
+requires 'Try::Tiny';
