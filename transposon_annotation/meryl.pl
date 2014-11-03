@@ -98,10 +98,7 @@ Print a usage statement.
 Print the full documentation.
 
 =cut 
-##TODO: 1) Clean up POD                            DONE
-##      2) Add readfq sub and remove bioperl dep   DONE
-##      3) add IPCSS and TryTiny                   DONE
-##      4) test all of the changes to the code
+##TODO: 1) test all of the changes to the code
 
 use 5.010;
 use strict;
