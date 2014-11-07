@@ -37,7 +37,7 @@ while (my $qline = <$query>) {
     next if $qline =~ /^#/;
     my @query_fields = split /\t/, $qline;
     my $hkey = join ",", $query_fields[0],$query_fields[1];
-    $qhash{$hkey} = join "\t", $query_fields[2],$query_fields[3],$query_fields[10],$query_fields[11];
+    $qhash{$hkey} = join "~~", $query_fields[2],$query_fields[3],$query_fields[10],$query_fields[11];
 }
 
 say $out "Query\tHit\tPID_query\tHSP_len_query\tEval_query\tBits_query\tPID_hit\tHSP_len_hit\tEval_hit\tBits_hit";
@@ -48,10 +48,11 @@ while (my $sline = <$subj>) {
     my @subj_fields = split /\t/, $sline;
     while (my ($qid, $qhit) = each %qhash) {
 	my ($qq, $qh) = split /\,/, $qid;
-	my ($qpid, $qaln_len, $qeval, $qbits) = split /\t/, $qhit;
+	my ($qpid, $qaln_len, $qeval, $qbits) = split /\~\~/, $qhit;
 	if ($qq =~ /$subj_fields[1]/ && $qh =~ /$subj_fields[0]/) {
 	    $recip_hit++;
-	    say $out join "\t", $qq,$qh,$qpid,$qaln_len,$qeval,$qbits,$subj_fields[2],$subj_fields[3],$subj_fields[10],$subj_fields[11];
+	    say $out join "\t", $qq,$qh,$qpid,$qaln_len,$qeval,$qbits,$subj_fields[2],
+	                        $subj_fields[3],$subj_fields[10],$subj_fields[11];
 	}
     }
 }

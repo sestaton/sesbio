@@ -16,7 +16,7 @@ my $usage = "\nhelsearch_prepare.pl indir\n";
 my $indir = shift or die "\nERROR: No input directory found!\n",$usage;
 
 opendir my $dir, $indir or die "\nERROR: Could not open directory: $indir\n";
-my @fastas = grep /\.fasta$/, readdir $dir;
+my @fastas = grep /\.fa*/, readdir $dir;
 closedir $dir;
 
 chdir $indir;
