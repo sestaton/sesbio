@@ -195,7 +195,7 @@ sub findprog {
 sub return_seq {
     my $infile = shift;
 
-    my $in, '<', $infile;
+    open my $in, '<', $infile;
     my %seq;  
     my $seqct = 0;
 
