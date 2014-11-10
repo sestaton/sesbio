@@ -3,7 +3,7 @@
 # TODO: - Write flanking gap seqs to separate file for each input seq in alignment
 #       - Take search space as option as well as PID for flanking gap  sequence matches
 #       - Printing the pairwise alignments is still messed up so we are just going to bypass that routine for now
-#
+#       - Remove use of BioPerl; add global alignment methods
 
 use 5.010;
 use strict;
