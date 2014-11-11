@@ -142,6 +142,6 @@ sub run_cmd {
         $exit_value = system([0..5], @$cmd);
     }
     catch {
-        say "\nERROR: 'name' exited with exit value: $exit_value. Here is the exception: $_\n";
+        say "\nERROR: '$name' exited with exit value: $exit_value. Here is the exception: $_\n";
     };
 }
