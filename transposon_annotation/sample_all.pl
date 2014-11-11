@@ -114,6 +114,7 @@ sub join_pairs {
     my ($fname, $fpath, $fsuffix) = fileparse($forward, qr/\.[^.]*/);
     my $name = $fname;
     $name =~ s/R1(?:_)//;
+    $name =~ s/fp_//;
 
     my $ifile  = File::Spec->catfile($fpath, $name."_paired_interl".$fsuffix);
     my @pairfq = "pairfq joinpairs -f $forward -r $reverse -o $ifile";
