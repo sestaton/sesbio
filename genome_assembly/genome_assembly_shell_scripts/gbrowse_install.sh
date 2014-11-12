@@ -69,38 +69,40 @@ sudo apt-get install libdb-dev graphviz libgd2-xpm-dev libxml2-dev zlib1g-dev
 
 ## Setup Perl environment
 \curl -L http://install.perlbrew.pl | bash
-
 echo "source ~/perl5/perlbrew/etc/bashrc" >> ~/.bashrc
 source ~/.bashrc
 
 # Install Perl
-perlbrew install perl-5.18.1 -Dusethreads
+perlbrew install perl-5.20.1 -Dusethreads
+perlbrew switch perl-5.20.1
 perlbrew install-cpanm
+perl -V
 
 ## Install Bioperl deps
-cpanm Algorithm::Munkres Array::Compare Clone Convert::Binary::C Error GD Graph
-cpanm GraphViz HTML::Entities HTML::HeadParser HTML::TableExtract HTTP::Request::Common
-cpanm LWP::UserAgent List::MoreUtils Math::Random PostScript::TextBlock SOAP::Lite SVG
-cpanm SVG::Graph Set::Scalar Sort::Naturally Spreadsheet::ParseExcel Storable XML::Parser
-cpanm XML::Parser::PerlSAX XML::SAX XML::SAX::Writer XML::Simple XML::Twig XML::Writer YAML
+cpanm Algorithm::Munkres Array::Compare Clone Convert::Binary::C DB_File Error GD Graph \
+GraphViz HTML::Entities HTML::HeadParser HTML::TableExtract HTTP::Request::Common \
+LWP::UserAgent List::MoreUtils Math::Random PostScript::TextBlock SOAP::Lite SVG \
+SVG::Graph Set::Scalar Sort::Naturally Spreadsheet::ParseExcel Storable XML::Parser \
+XML::Parser::PerlSAX XML::SAX XML::SAX::Writer XML::Simple XML::Twig XML::Writer YAML
 
 ## Install Bioperl
-#git clone git@github.com:bioperl/bioperl-live.git
-#cd bioperl-live
-#perl Build.PL && ./Build && ./Build install
-#cd
-cpanm git@github.com:bioperl/bioperl-live.git
+cpanm -n BioPerl
 
 ## Install GBrowse deps
-cpanm Bio::Graphics CGI::Session Digest::MD5 ExtUtils::CBuilder File::Temp
-cpanm Text::ParseWords IO::String JSON LWP Statistics::Descriptive Time::HiRes
+cpanm Bio::Graphics CGI::Session Digest::MD5 ExtUtils::CBuilder File::Temp \
+Text::ParseWords IO::String JSON LWP Statistics::Descriptive Time::HiRes \
 Digest::SHA Date::Parse Term::ReadKey parent
 
-## Install SAMtools <--- not tested
-git clone git@github.com:samtools/samtools.git
-cd samtools && make && make install
+## Install SAMtools AND Bio-SAMTools
+wget http://sourceforge.net/projects/samtools/files/samtools/0.1.18/samtools- 0.1.18.tar.bz2
+tar xjf samtools-0.1.18.tar.bz2 && cd samtools-0.1.18
+make CFLAGS=-fPIC
 export SAMTOOLS=`pwd`
-cd
+cd ..
+
+wget https://cpan.metacpan.org/authors/id/L/LD/LDS/Bio-SamTools-1.39.tar.gz
+tar xzf Bio-SamTools-1.39.tar.gz && cd Bio-SamTools-1.39
+perl Build.PL && ./Build test && ./Build install
 
 ##\\\\\\\\\\\\\\\\ Install Kent source /////////////////////////////////////
 sudo apt-get install mysql-server-5.0 apache2 libmysqlclient15-dev libpng12-dev libssl-dev openssl mysql-client-5.5  mysql-client-core-5.5
@@ -137,13 +139,13 @@ cd
 #\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 ## Install GBrowse recs
-cpanm Capture::Tiny Bio::Das Bio::DB::Sam Bio::DB::BigFile Crypt::SSLeay
-cpanm DB_File::Lock DBI DBD::mysql DBD::Pg DBD::SQLite Digest::SHA FCGI File::NFSLock
-cpanm GD::SVG Math::BigInt Net::OpenID::Consumer Net::SMTP::SSL Template
-cpanm VM::EC2 Parse::Apache::ServerStatus
+cpanm Capture::Tiny Bio::Das Bio::DB::Sam Bio::DB::BigFile Crypt::SSLeay \
+DB_File::Lock DBI DBD::mysql DBD::Pg DBD::SQLite Digest::SHA FCGI File::NFSLock \
+GD::SVG Math::BigInt Net::OpenID::Consumer Net::SMTP::SSL Template \
+VM::EC2 Parse::Apache::ServerStatus
 
 ## Install GBrowse
 #git clone git@github.com:GMOD/GBrowse.git
 #cd GBrowse
 #perl Build.PL && ./Build && ./Build install
-cpanm git@github.com:GMOD/GBrowse.git
+cpanm git@github.com:GMOD/GBrowse.git # cpanm Bio::Graphics::Browser
