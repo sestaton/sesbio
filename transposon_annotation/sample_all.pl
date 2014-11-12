@@ -1,19 +1,22 @@
 #!/usr/bin/env perl
 
-use 5.020;
+## Read a directory that contains many sub-directories of quality trimmed files,
+## pair the reads, and randomly sample the files. Do it all in parallel!
+
+use 5.010;
 use strict;
 use warnings;
+use Cwd;
+use Getopt::Long;
+use Try::Tiny;
 use File::Find;
 use File::Spec;
 use File::Basename;
-use IPC::System::Simple qw(system);
-use Try::Tiny;
-use Getopt::Long;
-use POSIX qw(strftime);
-use Time::HiRes qw(gettimeofday);
 use Parallel::ForkManager;
-use Cwd;
-use List::MoreUtils qw(each_array);
+use IPC::System::Simple qw(system);
+use POSIX               qw(strftime);
+use Time::HiRes         qw(gettimeofday);
+use List::MoreUtils     qw(each_array);
 
 my %opt;
 
