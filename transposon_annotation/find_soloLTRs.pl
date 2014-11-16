@@ -1,7 +1,10 @@
 #!/usr/bin/env perl
 
-## TODO: Create GFF of solo LTRs
-##       If a directory of models is given, just search with the models
+## TODO: - Create GFF of solo LTRs
+##       - If a directory of models is given, just search with the models
+##       - Improve file and path handling
+##       - Add better command execution
+##       - Consider removing shell commands
 
 ## USAGE: Just create exemplar for each fam and use that as input,
 ##        otherwise the number of files will explode with this script
@@ -37,9 +40,8 @@ my $header;
 my $calibrate;
 
 GetOptions(# Required arguments
-	   'i|indir=s'         => \$in_dir,                    # indir (for now)
-           'f|fasdir=s'        => \$fas_dir,                   # make this the alignment report       
-
+	   'i|indir=s'         => \$in_dir, 
+           'f|fasdir=s'        => \$fas_dir,
 	   'hmm_path=s'        => \$hmm_path,
 	   'p|percentident=f'  => \$percentID_threshold,
  	   'quiet'             => \$quiet,
@@ -204,9 +206,9 @@ if ($report) {
 
 exit;
 
-#--------------------------
-# SUBROUTINES
-#--------------------------
+#
+# methods
+#
 sub find_hmmer {
     my $hmm_path = shift;
 
