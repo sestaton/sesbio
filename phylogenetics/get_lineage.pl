@@ -9,7 +9,7 @@
 use 5.010;
 use strict;
 use warnings;
-use LWP::UserAgent;
+use HTTP::Tiny;
 use XML::LibXML;
 
 my $id      = 4232; # Helianthus annuus
@@ -34,16 +34,15 @@ sub _get_lineage_for_id {
     my ($id) = @_;
     my $esumm = "esumm_$id.xml"; 
  
-    my $ua = LWP::UserAgent->new;
     my $urlbase  = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=$id";
-    my $response = $ua->get($urlbase);
+    my $response = HTTP::Tiny->new->get($urlbase);
 
-    unless ($response->is_success) {
-	die "Can't get url $urlbase -- ", $response->status_line;
+    unless ($response->{success}) {
+        die "Can't get url $urlbase -- Status: ", $response->{status}, " -- Reason: ", $response->{reason};
     }
 
     open my $out, '>', $esumm or die "\nERROR: Could not open file: $!\n";
-    say $out $response->content;
+    say $out $response->{content};
     close $out;
 
     my $parser = XML::LibXML->new;
@@ -64,17 +63,16 @@ sub _get_lineage_for_id {
 sub _fetch_id_for_name {
     my ($genus, $species) = @_;
 
-    my $esearch = "esearch_$genus"."_"."$species.xml";
-    my $ua = LWP::UserAgent->new;
+    my $esearch  = "esearch_$genus"."_"."$species.xml";
     my $urlbase  = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=taxonomy&term=$genus%20$species";
-    my $response = $ua->get($urlbase);
+    my $response = HTTP::Tiny->new->get($urlbase);
 
-    unless ($response->is_success) {
-	die "Can't get url $urlbase -- ", $response->status_line;
+    unless ($response->{success}) {
+        die "Can't get url $urlbase -- Status: ", $response->{status}, " -- Reason: ", $response->{reason};
     }
 
     open my $out, '>', $esearch or die "\nERROR: Could not open file: $!\n";
-    say $out $response->content;
+    say $out $response->{content};
     close $out;
 
     my $id;
@@ -85,7 +83,7 @@ sub _fetch_id_for_name {
 	($id) = $node->findvalue('Id/text()');
     }
     
-    unlink $esearch;
+    #unlink $esearch;
     
     return $id;
 }
