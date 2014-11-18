@@ -11,20 +11,20 @@ my $infile = shift or die $usage;
 
 my $pos = 0;
 
-my @gap_arr = parse_aln($infile);
+my $gap_arr = parse_aln($infile);
 
-for my $hash (@gap_arr) {
+for my $hash (@$gap_arr) {
     for my $key (%$hash) {
 	$pos++;
 	if (defined $hash->{$key}) {
-	    say "Looking at pos: $pos"," which contains: $hash->{$key}";
+	    say "Looking at pos: $pos"," which contains: ", $hash->{$key};
 	}   
     }
 }
 
 exit;
 #
-# Subs
+# methods
 #
 sub parse_aln {
     my $aln_file = shift;
@@ -46,7 +46,7 @@ sub parse_aln {
 	#say "Cons string(50): ",$aln->consensus_string(50);
 	#say "Cons string: ",$aln->consensus_string;
 	#print Dumper $aln->gap_col_matrix;
-	return $aln->gap_col_matrix;
+	return \$aln->gap_col_matrix;
     }
 }
 
