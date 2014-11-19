@@ -1,5 +1,9 @@
 #!/usr/bin/env perl
 
+## This script combines annotations from Transposome, and this
+## may be useful for looking at variation from different random
+## read samples at the same level of coverage.
+
 use 5.010;
 use strict;
 use warnings;

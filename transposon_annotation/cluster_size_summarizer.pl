@@ -1,7 +1,9 @@
 #!/usr/bin/env perl
 
-## NB: The input file is a cluster file from Transposome,
+## NB: The input file is a cluster file (ending in ".cls") from Transposome,
 ##     or RepeatExplorer.
+## TODO: make this part of transposome.
+
 use 5.010;
 use strict;
 use warnings;
@@ -13,7 +15,6 @@ my $infile = shift or die $usage;
 summarize_clusters($infile);
 
 exit;
-
 
 sub summarize_clusters {
     my $cls_file = shift;
