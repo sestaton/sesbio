@@ -85,6 +85,7 @@ Generate the directories and files for launching Consed after assembly.
 
 #
 # TODO: Add example usage to POD
+#       Add try/catch, ipcss, and method for handling commands
 #
 use 5.010;
 use strict;
@@ -202,7 +203,7 @@ mkdir $results_dir
 if ($sample) {
     chdir $results_dir ;
     my $it = 0;    # initialize count of subsample iterations
-    for ( $it = 1; $it <= $num_subsamples; $it++ ) {
+    for ( $it = 1; $it <= $num_subsamples; $it++ ) { # this is not very Perlish, use range instead
 	
 	my $its = ($it);
 	say "\n============> Generating subsample ", $its,
