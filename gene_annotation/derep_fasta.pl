@@ -19,7 +19,7 @@ GetOptions(
 
 die $usage if !$infile or !$outfile;
 
-my $seq_in  = Bio::SeqIO->new(-file => $infile, -format => 'fasta');
+my $seq_in  = Bio::SeqIO->new(-file => $infile,     -format => 'fasta');
 my $seq_out = Bio::SeqIO->new(-file => ">$outfile", -format => 'fasta');
 
 my %seqhash;
@@ -30,5 +30,3 @@ while (my $seq = $seq_in->next_seq) {
     }
     $seqhash{$seq->id} = 1;
 }
-
-exit;
