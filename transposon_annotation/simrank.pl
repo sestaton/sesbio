@@ -5,7 +5,7 @@ use 5.010;
 use strict;
 use warnings;
 use String::Simrank;
-use Data::Dump qw(dd dump);
+use Data::Dump;
 use Getopt::Long;
 use autodie qw(open);
 use Cwd;
@@ -33,7 +33,7 @@ my $matches = $sr->match_oligos({ query => $query,
 				  minpct => 50,
 				  reverse => 1,});
 
-#print $out dump($matches); ## for debug
+#dd $matches; ## for debug
 
 for my $k (sort { scalar(@{$matches->{$a}}) <=> scalar(@{$matches->{$b}}) } keys %$matches) {
     my $num_matches = scalar @{$matches->{$k}};
