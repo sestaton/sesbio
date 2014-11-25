@@ -6,7 +6,10 @@ use 5.010;
 use strict;
 use warnings;
 
+my $min_length = shift;
 my %pair;
+
+$min_length //= 1000;
 
 while (<>) {
     chomp;
@@ -17,8 +20,8 @@ while (<>) {
     #say "$i[0] => $j[0]";
     unless ($i[0] eq $j[0]) {
 	my $p = join "||", $f[0], $f[1];
-	unless (exists $pair{$p}) { # only keep unique matches
-	    if ($f[3] > 1000) {     # find alignments over 1kb
+	unless (exists $pair{$p}) {        # only keep unique matches
+	    if ($f[3] > $min_length) {     # find alignments over 1kb
 		say join "\t", @f;
 	    }
 	}
