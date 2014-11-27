@@ -1,3 +1,5 @@
+#!/usr/bin/env perl
+
 # Needleman-Wunsch  Algorithm 
 
 # usage statement
@@ -15,7 +17,7 @@ my $GAP      = -1; # -1 for any gap
 my @matrix;
 $matrix[0][0]{score}   = 0;
 $matrix[0][0]{pointer} = "none";
-for(my $j = 1; $j <= length($seq1); $j++) {
+for (my $j = 1; $j <= length($seq1); $j++) {
     $matrix[0][$j]{score}   = $GAP * $j;
     $matrix[0][$j]{pointer} = "left";
 }
@@ -25,8 +27,8 @@ for (my $i = 1; $i <= length($seq2); $i++) {
 }
 
 # fill
-for(my $i = 1; $i <= length($seq2); $i++) {
-    for(my $j = 1; $j <= length($seq1); $j++) {
+for (my $i = 1; $i <= length($seq2); $i++) {
+    for (my $j = 1; $j <= length($seq1); $j++) {
         my ($diagonal_score, $left_score, $up_score);
 
         # calculate match score
@@ -53,7 +55,8 @@ for(my $i = 1; $i <= length($seq2); $i++) {
                 $matrix[$i][$j]{score}   = $left_score;
                 $matrix[$i][$j]{pointer} = "left";
             }
-        } else {
+        } 
+        else {
             if ($up_score >= $left_score) {
                 $matrix[$i][$j]{score}   = $up_score;
                 $matrix[$i][$j]{pointer} = "up";
