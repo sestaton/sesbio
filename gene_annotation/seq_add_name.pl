@@ -44,18 +44,15 @@ if (!$infile || !$outfile ||
     exit(1);
 }
 
-$format = defined($format) ? $format : 'fasta';
+$format //= 'fasta';
 
 #
 # create SeqIO objects
 #
-my $seq_in  = Bio::SeqIO->new(-format => $format, 
-			      -file => $infile); 
+my $seq_in  = Bio::SeqIO->new( -format => $format, -file => $infile ); 
+my $seq_out = Bio::SeqIO->new( -format => $format, -file => ">$outfile" ); 
 
-my $seq_out = Bio::SeqIO->new(-format => $format,
-                              -file => ">$outfile"); 
-
-while( my $seq = $seq_in->next_seq() ) {
+while ( my $seq = $seq_in->next_seq() ) {
     if ($start) {
 	my $seqID = $name."_".$seq->id; 
 	$seq->id($seqID);
@@ -72,7 +69,7 @@ while( my $seq = $seq_in->next_seq() ) {
 
 exit;
 #
-# subs
+# methods
 #
 sub usage {
     my $script = basename($0);
