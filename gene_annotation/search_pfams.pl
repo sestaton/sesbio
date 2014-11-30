@@ -12,7 +12,7 @@ use XML::LibXML;
 use HTML::TableExtract;
 use Getopt::Long;
 
-my $usage = "$0 -t term term term\n";
+my $usage = "$0 -t term term term -o results.txt\n";
 my @keywords;
 my $outfile;
 
