@@ -15,6 +15,7 @@ my $five_prime_outfile;
 my $three_prime_outfile;
 my $threshold;
 my $merlength;
+my $help;
 
 GetOptions(
            'i|infile=s'                   => \$infile,
@@ -22,14 +23,15 @@ GetOptions(
 	   'b|three_prime_outfile=s'      => \$three_prime_outfile,
            't|threshold=i'                => \$threshold,
            'l|merlength=i'                => \$merlength,
+           'h|help'                       => \$help,
            );
 
 #
 # Check @ARGV
 # TODO: Add POD and other useful options (help, man)
-#usage() and exit(0) if $help;
 
 #pod2usage( -verbose => 2 ) if $man;
+usage() and exit(0) if $help;
 
 if (!$infile  || !$five_prime_outfile || !$three_prime_outfile) {
     print "\nERROR: Command line not parsed correctly. Check input.\n\n";
@@ -74,7 +76,7 @@ exit;
 #
 sub readfq {
     my ($fh, $aux) = @_;
-    @$aux = [undef, 0] if (!defined(@$aux));
+    @$aux = [undef, 0] if (!@$aux);
     return if ($aux->[1]);
     if (!defined($aux->[0])) {
         while (<$fh>) {
@@ -89,18 +91,11 @@ sub readfq {
             return;
         }
     }
-    ################################ SES mod 5/17/12
-    my $name;
-    if (/^.?(\S+\s\S+)/) {          # Illumina 1.8+
-	$name = $1;
-    }
-    elsif (/^.?(\S+)/) {            # Illumina 1.3+
-	$name = $1;
-    } else {
-	$name = '';                 # ?
-    }
-    #my $name = /^.(\S+)/? $1 : ''; # Heng Li's original regex
-    ################################
+    my ($name, $comm);
+    defined $_ && do {
+        ($name, $comm) = /^.(\S+)(?:\s+)(\S+)/ ? ($1, $2) : 
+	                 /^.(\S+)/ ? ($1, '') : ('', '');
+    };
     my $seq = '';
     my $c;
     $aux->[0] = undef;
@@ -112,14 +107,14 @@ sub readfq {
     }
     $aux->[0] = $_;
     $aux->[1] = 1 if (!defined($aux->[0]));
-    return ($name, $seq) if ($c ne '+');
+    return ($name, $comm, $seq) if ($c ne '+');
     my $qual = '';
     while (<$fh>) {
         chomp;
         $qual .= $_;
         if (length($qual) >= length($seq)) {
             $aux->[0] = undef;
-            return ($name, $seq, $qual);
+            return ($name, $comm, $seq, $qual);
         }
     }
     $aux->[1] = 1;
