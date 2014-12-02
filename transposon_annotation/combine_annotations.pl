@@ -8,7 +8,6 @@ use 5.010;
 use strict;
 use warnings;
 use autodie qw(open);
-use Data::Dump qw(dd);
 use Statistics::Descriptive;
 use Getopt::Long;
 
@@ -18,7 +17,7 @@ my %res;
 
 GetOptions( 'i|infiles=s{1,}' => \@files );
 
-if (scalar @files <= 1) {
+if (@files < 1) {
     say "\nERROR: Command line not parsed correctly. Incorrect number of parameters passed. Exiting.\n";
     say $usage;
     exit(1);
@@ -40,8 +39,6 @@ for my $file (@files) {
     }
     close $in;
 }
-
-#dd %res and exit;
 
 say join "\t", "Superfamily", "Family", "Mean", "SD";
 
