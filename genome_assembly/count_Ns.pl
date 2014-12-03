@@ -29,12 +29,13 @@ while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
         say join "\t", $name, $seqlength, $n_count, $n_ratio, $n_perc;
     }
 }
+close $in;
 
 my $len_ave     = sprintf("%.0f",$total/$seq_ct);
 my $n_ratio_ave = sprintf("%.2f",$n_ratio_t/$seq_ct);
 my $n_perc_ave  = sprintf("%.2f",$n_perc_t/$seq_ct);
 
-say "\nAverage length, N-ratio and N-percent for $in :   $len_ave\t$n_ratio_ave\t$n_perc_ave";
+say "\nAverage length, N-ratio and N-percent for $infile:   $len_ave\t$n_ratio_ave\t$n_perc_ave";
 
 #
 # methods
