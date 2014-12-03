@@ -36,6 +36,9 @@ while (my $qline = <$query>) {
     chomp $qline;
     next if $qline =~ /^#/;
     my @query_fields = split /\t/, $qline;
+    die "\nERROR: The input must be a tab-delimited BLAST report. Exiting.\n"
+	unless @query_fields == 12;
+
     my $hkey = join ",", $query_fields[0],$query_fields[1];
     $qhash{$hkey} = join "~~", $query_fields[2],$query_fields[3],$query_fields[10],$query_fields[11];
 }
@@ -46,6 +49,9 @@ while (my $sline = <$subj>) {
     chomp $sline;
     next if $sline =~ /^#/;
     my @subj_fields = split /\t/, $sline;
+    die"\nERROR: The input must be a tab-delimited BLAST report. Exiting.\n"
+	unless @subj_fields == 12;
+
     while (my ($qid, $qhit) = each %qhash) {
 	my ($qq, $qh) = split /\,/, $qid;
 	my ($qpid, $qaln_len, $qeval, $qbits) = split /\~\~/, $qhit;
