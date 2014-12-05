@@ -1,7 +1,10 @@
 #!/usr/bin/env perl
 
 ## Demonstrate two ways to get taxon information from NCBI
-## through BioPerl.
+## through BioPerl. The Bio::DB::Taxonomy method will have to be
+## modified for each species because of the different levels of the
+## taxonomy and the way it is traversed here. It should probably be
+## avoided because of this reason unless other options don't exist.
 
 use 5.010;
 use strict;
