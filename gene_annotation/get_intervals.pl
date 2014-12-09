@@ -7,13 +7,13 @@ use 5.010;
 use strict;
 use warnings;
 use Set::IntervalTree;
-use Data::Dump qw(dd);
+use Data::Dump;
 
 my $tree = Set::IntervalTree->new;
 
 while (<DATA>) {
     my @ints = split;
-    $tree->insert($ints[1], $ints[2], $ints[3]);
+    $tree->insert(@ints[1..3]);
 }
 
 # this gets the interval range: 10-30
