@@ -55,9 +55,6 @@ use Pod::Usage;
 use Time::HiRes qw(gettimeofday);
 use File::Basename;
 
-#
-# VARIABLE SCOPE  
-#
 my $infile;
 my $outfile;
 my $help;
@@ -71,23 +68,23 @@ GetOptions(# Required
            "-m|man"          => \$man,
            ) || pod2usage( "Try 'basename($0) --man' for more information." );
 
-&usage if $help;
+usage() and exit(0) if $help;
 pod2usage( -verbose => 2 ) if $man;
 
 if (!$infile || !$outfile) {
     print "\nERROR: No input was given.\n";
-    &usage;
-    exit(0);
+    usage();
+    exit(1);
 }
 
 # counters
 my $seqct = 0;
 my $t0 = gettimeofday();
 
-open(my $FQ,'<',$infile) or die "\nERROR: Could not open file: $infile\n"; 
-open(my $FA,'>',$outfile) or die "\nERROR: Could not open file: $outfile\n";
+open my $FQ,'<',$infile or die "\nERROR: Could not open file: $infile\n"; 
+open my $FA,'>',$outfile or die "\nERROR: Could not open file: $outfile\n";
 
-while(my $h = <$FQ>) {
+while (my $h = <$FQ>) {
     $seqct++;
     $h =~ s/\@/\>/;
     my $s = <$FQ>;
@@ -96,8 +93,8 @@ while(my $h = <$FQ>) {
     print $FA $h.$s;
 }
 
-close($FQ);
-close($FA);
+close $FQ;
+close $FA;
 
 my $t1 = gettimeofday();
 my $elapsed = $t1 - $t0;
@@ -106,9 +103,8 @@ my $time = sprintf("%.2f",$elapsed/60);
 print "\n$seqct reads converted to Fasta in file $outfile in $time minutes.\n\n";
 
 exit;
-
 #
-# subs
+# methods
 #
 sub usage {
     my $script = basename($0);
