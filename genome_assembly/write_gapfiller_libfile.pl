@@ -10,6 +10,7 @@ use strict;
 use warnings;
 use Cwd;
 use File::Find;
+use File::Basename;
 use List::MoreUtils qw(natatime);
 use Getopt::Long;
 
@@ -18,17 +19,21 @@ my $tool;
 my $insert_size;
 my $deviation;
 my $orientation;
+my $help;
 
 GetOptions(
 	   'l|libname:s'     => \$libname,
 	   't|tool:s'        => \$tool,
+           'i|insertsize:i'  => \$insert_size,
 	   'd|deviation:f'   => \$deviation,
 	   'o|orientation:s' => \$orientation,
+           'h|help'          => \$help,
 	   );
 
-$libname     //= 'lib200';
+usage() and exit(0) if $help;
+usage() and exit(1) if !$insert_size || !$libname;
+
 $tool        //= 'bwa';
-$insert_size //= '200';
 $deviation   //= '0.25';
 $orientation //= 'FR';
 
@@ -44,4 +49,23 @@ my @sorted = sort @files;
 my $it = natatime 2, @sorted;
 while (my @vals = $it->()) {
     say join q{ }, $libname, $tool, @vals, $insert_size, $deviation, $orientation;
+}
+
+sub usage {
+    my $script = basename($0);
+    print STDERR <<END;
+
+USAGE: $script -l lib200 -i 200
+
+Required:
+    -l|libname        :    A library name to be used for the gap filling run.
+    -i|insertsize     :    The insert size of the reads.
+
+Options:
+    -t|tool           :   The name of the toolto use for alignment (Default: bwa).
+    -d|deviation      :   The allowed amount of variation between the reads (Default: 0.25).
+    -o|orientation    :   The orientation of the reads(Default: FR).
+    -h|help           :    Print usage statement.
+
+END
 }
