@@ -18,7 +18,8 @@ my ($name, $comm, $seq, $qual);
 
 while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
     unless (exists $seqs{$name}) {
-	say $out join "\n", ">".$name, $seq;
+	say $out join "\n", ">".$name.q{ }.$comm, $seq if defined $comm;
+	say $out join "\n", ">".$name, $seq if !defined $comm;
     }
     $seqs{$name} = 1;
 }
