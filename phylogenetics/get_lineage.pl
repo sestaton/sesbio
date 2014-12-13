@@ -35,15 +35,7 @@ sub _get_lineage_for_id {
     my $esumm = "esumm_$id.xml"; 
  
     my $urlbase  = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=$id";
-    my $response = HTTP::Tiny->new->get($urlbase);
-
-    unless ($response->{success}) {
-        die "Can't get url $urlbase -- Status: ", $response->{status}, " -- Reason: ", $response->{reason};
-    }
-
-    open my $out, '>', $esumm or die "\nERROR: Could not open file: $!\n";
-    say $out $response->{content};
-    close $out;
+    my $response = _fetch_file($urlbase, $esumm);
 
     my $parser = XML::LibXML->new;
     my $doc    = $parser->parse_file($esumm);
@@ -65,15 +57,8 @@ sub _fetch_id_for_name {
 
     my $esearch  = "esearch_$genus"."_"."$species.xml";
     my $urlbase  = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=taxonomy&term=$genus%20$species";
-    my $response = HTTP::Tiny->new->get($urlbase);
 
-    unless ($response->{success}) {
-        die "Can't get url $urlbase -- Status: ", $response->{status}, " -- Reason: ", $response->{reason};
-    }
-
-    open my $out, '>', $esearch or die "\nERROR: Could not open file: $!\n";
-    say $out $response->{content};
-    close $out;
+    my $reponse = _fetch_file($urlbase, $esearch);
 
     my $id;
     my $parser = XML::LibXML->new;
@@ -83,7 +68,23 @@ sub _fetch_id_for_name {
 	($id) = $node->findvalue('Id/text()');
     }
     
-    #unlink $esearch;
+    unlink $esearch;
     
     return $id;
+}
+
+sub _fetch_file {
+    my ($url, $file) = @_;
+
+    my $response = HTTP::Tiny->new->get($url);
+
+    unless ($response->{success}) {
+        die "Can't get url $url -- Status: ", $response->{status}, " -- Reason: ", $response->{reason};
+    }
+
+    open my $out, '>', $file or die "\nERROR: Could not open file: $!\n";
+    say $out $response->{content};
+    close $out;
+
+    return $response;
 }
