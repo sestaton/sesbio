@@ -20,21 +20,6 @@
  EMBOSS v6.2+ must be installed (the latest is v6.4 as of this writing), 
  as well as BioPerl v1.6.1+ (the latest is v1.6.9 as of this writing).
 
-=head1 LICENSE
-
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 =head1 AUTHOR 
 
 S. Evan Staton                                                
@@ -71,18 +56,12 @@ Print the full documentation.
 
 =cut      
 
-#
-# INCLUDES    
-#
 use strict;
 use warnings;
 use Getopt::Long;
 use Bio::Factory::EMBOSS;
 use Pod::Usage;
 
-#
-# VARIABLE SCOPE  
-#
 my $infile;
 my $outfile;
 my $help;
@@ -99,19 +78,15 @@ GetOptions(# Required
 pod2usage( -verbose => 1 ) if $help;
 pod2usage( -verbose => 2 ) if $man;
 
-#
-# CHECK @ARGV
-#
 if (!$infile || !$outfile) {
     print "\nERROR: No input was given.\n";
     pod2usage( -verbose => 1 );
 }
     
-#                       
-# USE EMBOSS FOR CONVERSION
-#
+
 my $factory = Bio::Factory::EMBOSS->new;
 my $seqret = $factory->program('seqret'); 
+
 # $seqret is a Bio::Tools::Run::EMBOSSApplication object
 $seqret->run({-sequence => $infile,
 	      -sformat1 => 'fastq-illumina',
