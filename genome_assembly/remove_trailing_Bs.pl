@@ -52,24 +52,16 @@ while (my $nseq = $nt_it->next_seq) {
 	my $no_b_seq  = substr($seq,0,$good_len);
 	my $no_b_seq_len = length($no_b_seq);
 	if ($no_b_seq_len >= $length) {
-	    say $out "@".$nseq->{name};
-	    say $out $no_b_seq;
-	    say $out "+";
-	    say $out $no_b_qual;
+	    say $out join "\n", "@".$nseq->{name}, $no_b_seq, "+", $no_b_qual;
 	}
     }
     else {
-	say $out "@".$nseq->{name};
-	say $out $seq;
-	say $out "+";
-	say $out $qual;
+	say $out join "\n", "@".$nseq->{name}, $seq, "+", $qual;
     }
 }
 close $out;
 
-#
-# subs
-#
+# methods
 sub usage {
     my $script = basename($0);
     print STDERR<<EOF
