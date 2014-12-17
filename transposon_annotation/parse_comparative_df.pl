@@ -1,11 +1,11 @@
 #!/usr/bin/env perl
 
-use 5.014;
+use 5.010;
 use strict;
 use warnings;
 use Statistics::Descriptive;
-use autodie qw(open);
-use Data::Dump qw(dd);
+use autodie    qw(open);
+#use Data::Dump qw(dd);
 
 my $cvalh = {
     'Phoebanthus_tenuifolius'          => 4267295897,
@@ -42,7 +42,7 @@ my @all_stats;
 my $statsall = Statistics::Descriptive::Full->new;
 for my $sp (keys %fams) {
     if (exists $cvalh->{$sp}) {
-	my @fam_perc = map { ($_ / $cvalh->{$sp}) * 100  } 
+	my @fam_perc = map  { ($_ / $cvalh->{$sp}) * 100  } 
 	               grep { $_ } @{$fams{$sp}};
 
 	my $stat = Statistics::Descriptive::Full->new;
