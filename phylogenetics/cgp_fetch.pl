@@ -128,14 +128,14 @@ if ($species) {
 #
 # create the UserAgent
 # 
-my $ua = LWP::UserAgent->new;
+my $ua   = LWP::UserAgent->new;
 my $tree = HTML::TreeBuilder->new;
 
 #
 # perform the request
 #
 ##TODO: get recent RNA-Seq data: http://cgpdb.ucdavis.edu/sequence_archive/
-my $urlbase = 'http://cgpdb.ucdavis.edu/asteraceae_assembly/';
+my $urlbase  = 'http://cgpdb.ucdavis.edu/asteraceae_assembly/';
 my $response = $ua->get($urlbase);
 
 #
@@ -150,7 +150,7 @@ unless ($response->is_success) {
 #
 open my $out, '>', $cgp_response or die "\nERROR: Could not open file: $!\n";
 say $out $response->content;
-close $out; exit;
+close $out;# exit;
 $tree->parse_file($cgp_response);
 
 ##TODO parse tag 'b' and check available; also, fetch by category such as mono vs multi sp.
