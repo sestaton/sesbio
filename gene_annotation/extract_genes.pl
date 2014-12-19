@@ -32,7 +32,7 @@ close $in;
 #dd \%genes;
 my $seq = seq_to_str($opt{fasta});
 
-for my $gene (keys %genes) {
+for my $gene (sort keys %genes) {
     my ($start, $end) = split /\-/, $genes{$gene};
     my $length = $end - $start;
 
