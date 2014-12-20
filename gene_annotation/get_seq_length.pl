@@ -4,46 +4,19 @@
 use 5.010;
 use strict;
 use warnings;
-use Getopt::Long;
        
-#
-# Vars
-#
-my $usage = "\nUSAGE: perl $0 -i infile -o outfile
-
-The outfile will contain a summary of all the contig lengths formatted as:
-
-read_name\tlength(bp)
-
-";
-
-my $infile; 
-my $outfile;
-
-GetOptions(
-          'i|infile=s'  => \$infile,
-          'o|outfile=s' => \$outfile,
-          );
-
-if (!$infile || !$outfile) {
-    die "\nERROR: Command line not parsed correctly. Exiting.\n",$usage;
-}
+my $usage  = "USAGE: $0 seqs.fq.gz";
+my $infile = shift or die "ERROR: No sequence file given.\n", $usage;
 
 my @aux = undef;
 my ($name, $comm, $seq, $qual);
-
-open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
 my $fh = get_fh($infile);
 
 while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
     say join "\t", $name, length($seq);
 }
-
 close $fh;
-close $out;
-
-exit;
 
 #
 # methods
