@@ -13,7 +13,7 @@ my $percentID;
 
 GetOptions(
 	   'i|infile=s'         => \$infile,                    
-           'o|outfile=s'        => \$outfile,                   # make this the alignment report       
+           'o|outfile=s'        => \$outfile,
 	   'l|length=i'         => \$length,
 	   'p|percentid=i'      => \$percentID,
 	  );
@@ -24,19 +24,18 @@ if (!$infile && !$outfile) {
     exit(1);
 }
 
-my $length_threshold //= 0;
-my $percentID_threshold //= 80;
+my @matches;
+my $total    = 0;
+$length    //= 0;
+$percentID //= 80;
 
 open my $in, '<', $infile or die "\nERROR: Can't open file: $infile\n";
 open my $out, '>', $outfile or die "\nERROR: Can't open file: $outfile\n";
 
-my @matches;
-my $total = 0;
-
 while (<$in>) {
     chomp;
     my @hits = split /\t/, $_;
-    if ( ($hits[3] >= $length_threshold) && ($hits[2] >= $percentID_threshold) ) {
+    if ( ($hits[3] >= $length) && ($hits[2] >= $percentID) ) {
 	$total += $hits[3];
     }
 }
