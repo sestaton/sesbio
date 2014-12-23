@@ -59,8 +59,7 @@ my $results = timethese($count, {
     },
     'transposome_seqio' => sub {
 	my $seqio = Transposome::SeqIO->new( file => $infile );
-	my $fh = $seqio->get_fh;
-	while (my $seq = $seqio->next_seq($fh)) {
+	while (my $seq = $seqio->next_seq) {
 	    $seqct++ if defined $seq;
 	}
     },
