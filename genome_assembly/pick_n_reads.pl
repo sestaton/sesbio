@@ -105,6 +105,8 @@ while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
 	say $out join "\n", "@".$name.q{ }.$comm, $seq, '+', $qual if defined $qual && defined $comm; 
     }
 }
+close $fh;
+close $out;
 
 exit;
 #
