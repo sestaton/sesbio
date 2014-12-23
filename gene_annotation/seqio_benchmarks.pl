@@ -50,7 +50,7 @@ my $seqct = 0;
 my @aux = undef;
 my ($id, $comm, $seq, $qual);
 
-cmpthese($count, {
+my $results = timethese($count, {
     'biome_seqio' => sub {
         my $seqio = Biome::SeqIO->new( file => $infile, format => 'fasta' );
         while (my $seq = $seqio->next_Seq) {
@@ -87,6 +87,8 @@ cmpthese($count, {
 	close $in;
     },
 });
+
+cmpthese( $results );
 
 #
 # subs
