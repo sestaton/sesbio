@@ -19,6 +19,8 @@ my $tool;
 my $insert_size;
 my $deviation;
 my $orientation;
+my $match;
+my $negate;
 my $help;
 
 GetOptions(
@@ -27,6 +29,8 @@ GetOptions(
            'i|insertsize:i'  => \$insert_size,
 	   'd|deviation:f'   => \$deviation,
 	   'o|orientation:s' => \$orientation,
+           'm|match:s'       => \$match,
+           'n|negate:s'      => \$negate,
            'h|help'          => \$help,
 	   );
 
@@ -36,12 +40,15 @@ usage() and exit(1) if !$insert_size || !$libname;
 $tool        //= 'bwa';
 $deviation   //= '0.25';
 $orientation //= 'FR';
+$match       //= 'HA0001';
+$negate      //= 'HA0001_620J2AAXX_1_1_trimmed101.fq';
 
 my $cwd = getcwd();
 my @files;
-# there is one negated file because it is unpaired, which won't work with GapFiller
+
+# if any file is unpaired it should be negated because these won't work with GapFiller
 find( sub { 
-    push @files, $_ if -f and /^HA0001/ && /\.fq$/ && /[^HA0001_620J2AAXX_1_1_trimmed101.fq]/;
+    push @files, $_ if -f and /^$match/ && /\.fq$/ && /[^$negate]/;
       }, $cwd);
  
 my @sorted = sort @files;
