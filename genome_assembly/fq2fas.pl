@@ -2,7 +2,7 @@
 
 =head1 NAME 
                                                                        
-fq2fas.pl - Convert a Fastq file to Fasta
+fq2fas.pl - Convert a FASTQ file to FASTA
 
 =head1 SYNOPSIS    
 
@@ -10,7 +10,7 @@ fq2fas.pl -i seqs.fastq -o seqs.fasta
 
 =head1 DESCRIPTION
                                                                    
-Takes a Fastq file (any variant) and returns a Fasta file.
+Takes a FASTQ file (any variant) and returns a FASTA file.
 
 =head1 AUTHOR 
 
@@ -26,11 +26,11 @@ statonse at gmail dot com
 
 =item -i, --infile
 
-The Fastq file from an Illumina instrument (encoding is irrelevant).
+The FASTQ file from an Illumina instrument (encoding is irrelevant).
 
 =item -o, --outfile
 
-A file to place the converted Fasta reads.
+A file to place the converted FASTA reads.
 
 =back
 
@@ -81,20 +81,20 @@ if (!$infile || !$outfile) {
 my $seqct = 0;
 my $t0 = gettimeofday();
 
-open my $FQ,'<',$infile or die "\nERROR: Could not open file: $infile\n"; 
-open my $FA,'>',$outfile or die "\nERROR: Could not open file: $outfile\n";
+open my $fq, '<', $infile or die "\nERROR: Could not open file: $infile\n"; 
+open my $fa, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
-while (my $h = <$FQ>) {
+while (my $h = <$fq>) {
     $seqct++;
-    $h =~ s/\@/\>/;
-    my $s = <$FQ>;
-    my $h2 = <$FQ>;
-    my $q = <$FQ>;
-    print $FA $h.$s;
+    $h     =~ s/^\@/>/;
+    my $s  = <$fq>;
+    my $h2 = <$fq>;
+    my $q  = <$fq>;
+    print $fa $h.$s;
 }
 
-close $FQ;
-close $FA;
+close $fq;
+close $fa;
 
 my $t1 = gettimeofday();
 my $elapsed = $t1 - $t0;
@@ -109,15 +109,17 @@ exit;
 sub usage {
     my $script = basename($0);
   print STDERR <<END
+
 USAGE: $script -i s_1_sequence.fastq -o s_1_sequence.fasta 
 
 Required:
-    -i|infile       :    Fastq file of reads.
-    -o|outfile      :    File to place the converted Fasta reads.
+    -i|infile       :    FASTQ file of reads.
+    -o|outfile      :    File to place the converted FASTA reads.
 
 Options:
     -h|help         :    Print usage statement.
     -m|man          :    Print full documentation.
+
 END
 }
     
