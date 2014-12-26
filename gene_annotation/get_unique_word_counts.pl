@@ -30,9 +30,7 @@ say $usage and exit(0) if $help;
 open my $words, '<', $infile or die "\nERROR: Cannot open file: $infile\n" if $infile;
 open my $unique_words, '>', $outfile or die "\nERROR: Cannot open file: $outfile\n" if $outfile;
 
-#
 # comments must be removed or they will be counted
-#
 @names = map +(split "\n")[0], <$words> if $infile;
 @names = map +(split "\n")[0], <STDIN> if !$infile;
 
