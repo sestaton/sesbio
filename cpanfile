@@ -13,4 +13,5 @@ requires 'Capture::Tiny',           '0.21';
 requires 'Set::IntervalTree',       '0.10';
 requires 'String::Simrank';
 requires 'XML::LibXML';
+requires 'XML::Twig';
 requires 'Try::Tiny';
