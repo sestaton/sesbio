@@ -1,10 +1,10 @@
 #!/usr/bin/env perl
 
-# TODO: 
 use 5.010;
 use strict;
 use warnings;
 use Bio::AlignIO;
+#use Data::Dump;
 
 my $usage = "\nUSAGE: get_aln_stats.pl infile\n\n";
 my $infile = shift or die $usage;
@@ -28,8 +28,7 @@ exit;
 #
 sub parse_aln {
     my $aln_file = shift;
-    my $aln_in = Bio::AlignIO->new(-file   => $aln_file,
-				   -format => 'fasta');
+    my $aln_in = Bio::AlignIO->new(-file   => $aln_file, -format => 'fasta');
 				   
     while ( my $aln = $aln_in->next_aln() ) {
 	my $percentID = sprintf("%.2f", $aln->percentage_identity);
@@ -45,7 +44,7 @@ sub parse_aln {
 	say "Divergence:      ",$dive,"\n";
 	#say "Cons string(50): ",$aln->consensus_string(50);
 	#say "Cons string: ",$aln->consensus_string;
-	#print Dumper $aln->gap_col_matrix;
+	#dd \$aln->gap_col_matrix;
 	return \$aln->gap_col_matrix;
     }
 }
