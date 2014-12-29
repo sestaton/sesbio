@@ -58,9 +58,6 @@ Print the full documentation.
 
 =cut      
 
-#
-# Includes
-#
 use 5.010;
 use strict;
 use warnings;
@@ -69,9 +66,6 @@ use Getopt::Long;
 use Pod::Usage;
 use Time::HiRes qw(gettimeofday);
 
-#
-# Vars
-#
 my $qseq;
 my $fastq;
 my $chastity;
@@ -91,7 +85,7 @@ GetOptions(
 pod2usage( -verbose => 2 ) if $man;
 
 #
-# Check @ARGVs
+# Check @ARGV
 #
 usage() and exit(0) if $help;
 
@@ -101,9 +95,6 @@ if (!$qseq || !$fastq) {
     exit(1);
 }
 
-#
-# Counters
-#
 my $t0 = gettimeofday();
 my $readnum = 0;
 my $filterednum = 0;
@@ -155,14 +146,14 @@ my $time = sprintf("%.2f",$elapsed/60);
 
 if ($chastity) {
     say "\n========== Done. $readnum reads total. $filterednum Chastity filtered reads converted in $time minutes.";
-} else {
+} 
+else {
     say "\n========== Done. $readnum reads converted in $time minutes.";
 }
 
 exit; 
-
 #
-# Subs
+# Methods
 #
 sub usage {
     my $script = basename($0);
