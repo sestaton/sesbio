@@ -6,22 +6,19 @@ use warnings;
 use autodie qw(open);
 use Cwd;
 
-my $usage = "$0 cls_file gl_dir\n";
+my $usage    = "$0 cls_file gl_dir\n";
 my $cls_file = shift or die $usage;
-my $gl_dir = shift or die $usage;
+my $gl_dir   = shift or die $usage;
 
 GL2summary($gl_dir, $cls_file);
 
-#
-# subs
-#
+# methods
 sub GL2summary {
     my ($gl_dir, $cls_file) = @_;
 
     unless ($gl_dir =~ /\/$/) {
         $gl_dir .= "/";
     }
-    ## open it, write it, then unlink it
 
     ## edit these filenames to something better
     my $gl2summary_plot = $cls_file;
@@ -100,5 +97,3 @@ tmp=lapply(pngFiles,unlink)  # remove all png files";
     system("R --vanilla --slave --silent < $gl2summary_rscript 2> /dev/null");
     #unlink($rscript); ## keep for debugging
 }
-
-
