@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-## This takes the TE community abundance list that is input to Parthy or Ecolpy
+## This takes the TE community abundance list that is input to Parthy or Ecolopy
 ## and returns an integer fraction of the abundance values to make simulations tractable.
 
 use 5.010;
