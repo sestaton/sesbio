@@ -1,10 +1,10 @@
 #!/usr/bin/env perl
 
-use v5.12;
+use 5.010;
 use strict;
 use warnings;
 use autodie qw(open);
-use Data::Dump qw(dd dump);
+use Data::Dump;
 use List::Util qw(sum);
 use Getopt::Long;
 
