@@ -92,9 +92,6 @@ Print the full documentation.
 ##
 ##      remove use of bio-db-taxonomy
 
-#
-# INCLUDES
-#
 use 5.010;
 use strict;
 use warnings;
@@ -110,9 +107,6 @@ use Time::HiRes qw(gettimeofday);
 # given/when emits warnings in v5.18+
 no if $] >= 5.018, 'warnings', "experimental::smartmatch";
 
-#
-# VARIABLE SCOPE
-#
 my $family;
 my $email;
 my $outfile;
@@ -249,36 +243,33 @@ say "Fetched $records records in $time m:s.";
 
 exit;
 #
-# Subroutines
+# Methods
 #
 sub usage {
-
     my $script = basename( $0, () );
     print STDERR <<END
 
 $script --db Angiosperm --family Asteraceae --email name\@domain.com -o myresults.txt
 
 Required Arguments:
-  d|db            :       The database to query. Type $script --man for more details.
-  f|family        :       Name of the plant family to search.
-  e|email         :       Valid email to attach to the request.
-  o|outfile       :       File to place the results.
+  -d|db            :       The database to query. Type $script --man for more details.
+  -f|family        :       Name of the plant family to search.
+  -e|email         :       Valid email to attach to the request.
+  -o|outfile       :       File to place the results.
 
 Options:
-  h|help          :       Print a help statement.
-  m|man           :       Print the full manual. 
+  -h|help          :       Print a help statement.
+  -m|man           :       Print the full manual. 
 
 END
 
 }
 
 sub geturlfordb {
-    
     my ($database, $em, $fam) = @_;
     my $url = URI->new('http://data.kew.org/cvalues/CvalServlet');
     
     if ($database =~ m/angiosperm/i) {
-
 	$url->query_form(
 			 'generatedby'         => $database,  
 			 'querytype'           => "-1",    
@@ -312,7 +303,6 @@ sub geturlfordb {
 	return $url;
     }
     if ($database =~ m/gymnosperm/i) {
-	
 	$url->query_form(
 			 'generatedby'         => $database,
 			 'querytype'           => "-1",
@@ -346,7 +336,6 @@ sub geturlfordb {
 	return $url;
     }
     if ($database =~ m/pteridophyte/i) {
-
 	$url->query_form(
 			 'generatedby'         => $database,
 			 'querytype'           => "-1",
@@ -382,7 +371,6 @@ sub geturlfordb {
 	return $url;
     }
     if ($database =~ m/bryophyte/i) {
-	
 	$url->query_form(
 			 'generatedby'         => $database,
 			 'querytype'           => "-1",
@@ -415,7 +403,6 @@ sub geturlfordb {
 	return $url;
     }
     if ($database =~ m/algae/i) {
-	
 	$url->query_form(
 			 'generatedby'         => $database,
 			 'querytype'           => "-1",
@@ -448,5 +435,4 @@ sub geturlfordb {
 			 );
 	return $url;
     }
-
 }
