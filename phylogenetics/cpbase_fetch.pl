@@ -1,10 +1,11 @@
 #!/usr/bin/env perl
 
 ##TODO: Check if it is possible to get alignments. Since they are stored in the document path of /tmp
-##      they may be generated on the fly (hence, not available on demand). It appears that are not available.
-##      Need to confirm this an remove the alignments option.
+##      they may be generated on the fly (hence, not available on demand). 
+##      Update: It appears that are not available. Need to confirm this and remove the alignments option.
 ##
 ##      Generate statistics from higher taxonomic levels
+##      Try to remove Mechanize, libwww and LibXML usage to reduce dependencies
 
 use 5.010;
 use strict;
@@ -24,9 +25,6 @@ use Data::Dump qw(dd);
 # given/when emits warnings in v5.18+
 no if $] >= 5.018, 'warnings', "experimental::smartmatch";
 
-#
-# lexical vars
-#
 my $db;
 my $all;
 my $type;
@@ -133,16 +131,13 @@ my $epithet;
 $epithet = $genus."_".$species if $genus && $species;
 my %stats;
 
-#
+
 # counters
-#
 my $t0 = gettimeofday();
 my $records = 0;
 my $genomes;
 
-#
 # Set the CpBase database to search and type
-#
 given ($db) {
     when (/algae/i) {             $db = "Algae"; }
     when (/red lineage/i) {       $db = "Red_Lineage"; }
