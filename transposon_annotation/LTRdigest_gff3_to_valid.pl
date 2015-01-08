@@ -3,6 +3,7 @@
 use 5.010;
 use strict;
 use warnings;
+use autodie qw(open);
 use Getopt::Long;
 
 my $infile;
@@ -14,18 +15,17 @@ GetOptions(
            'o|outfile=s'          => \$outfile,
 	  );
 
-# open the infile or die with a usage statement
 if (!$infile || !$outfile) {
     print $usage and exit(1);
 }
 
-open my $in, '<', $infile or die "\nERROR: Can't open file: $infile\n";
-open my $seq, '<', $infile or die "\nERROR: Can't open file: $infile\n";
-open my $out, '>', $outfile or die "\nERROR: Can't open file: $outfile\n";
+open my $in, '<', $infile;
+open my $seq, '<', $infile;
+open my $out, '>', $outfile;
 
 my @contig = grep {/# (\w)/} <$seq>;
 close $seq;
-my $contigID = get_contig(@contig);
+my $contigID = get_contig(@contig); #TODO: this is silly, use map/split block
 
 my @gff = <$in>;
 for my $line (@gff) {
@@ -34,11 +34,11 @@ for my $line (@gff) {
 	say $out $line;
     }
     if ($line =~ m/^##sequence-region /) {
-	my @seq_region = split(/\s+/, $line);
+	my @seq_region = split /\s+/, $line;
 	say $out join q{ }, $seq_region[0], $contigID, $seq_region[2], $seq_region[3];
     }
     if ($line =~ m/^seq/) {
-	my @gff_fields = split(/\s+/,$line);
+	my @gff_fields = split /\s+/, $line;
 	my $correctID = $gff_fields[0];
 	$correctID =~ s/(\w*)/$contigID/;
 
@@ -55,6 +55,8 @@ for my $line (@gff) {
 	say $out join "\t", $correctID, @gff_fields[1..8];
     }
 }
+close $in;
+close $out;
 
 sub get_contig {
     my @name = @_;
@@ -64,5 +66,3 @@ sub get_contig {
     }
 }
 
-close $in;
-close $out;
