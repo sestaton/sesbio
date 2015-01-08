@@ -1,14 +1,13 @@
 #!/usr/bin/env perl
 
-use 5.014;
+use 5.010;
 use strict;
 use warnings;
 use autodie qw(open);
-use Bio::Kseq;
 use List::MoreUtils qw(uniq); # uniq is now part of List::Utils, in core with Perl 5.20+
 use Statistics::Descriptive;
 use Getopt::Long;
-use Data::Dump qw(dd);
+use Data::Dump;
 
 my $usage = "perl $0 -i infile -q query -t target -ml mer_len -fl filter_len [-e] [-pid]\n";
 my $infile;
@@ -129,20 +128,71 @@ say join "\t", $infile, ($$target_bases/$mean);
 undef $stat;
 exit;
 #
-# subs
+# methods
 #
 sub store_seq_len {
     my ($query) = @_;
 
     my %store;
-    my $kseq = Bio::Kseq->new($query);
-    my $it = $kseq->iterator;
+    my @aux = undef;
+    my ($name, $comm, $seq, $qual);
 
+    open my $fh, '<', $query;
     my ($n, $seq_ct, $base_ct) = (0, 0, 0);
-    while (my $seq = $it->next_seq) {
+
+    while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
 	$seq_ct++;
-	$base_ct += length($seq->{seq});
-	$store{ $seq->{name} } = length($seq->{seq});
+	$base_ct += length($seq);
+	$store{ $name } = length($seq);
     }
+    close $fh;
+
     return \%store, \$seq_ct, \$base_ct;
+}
+
+sub readfq {
+    my ($fh, $aux) = @_;
+    @$aux = [undef, 0] if (!@$aux);
+    return if ($aux->[1]);
+    if (!defined($aux->[0])) {
+	while (<$fh>) {
+	    chomp;
+	    if (substr($_, 0, 1) eq '>' || substr($_, 0, 1) eq '@') {
+		$aux->[0] = $_;
+		last;
+	    }
+	}
+	if (!defined($aux->[0])) {
+	    $aux->[1] = 1;
+	    return;
+	}
+    }
+    my ($name, $comm);
+    defined $_ && do {
+	($name, $comm) = /^.(\S+)(?:\s+)(\S+)/ ? ($1, $2) :
+	                 /^.(\S+)/ ? ($1, '') : ('', '');
+    };
+    my $seq = '';
+    my $c;
+    $aux->[0] = undef;
+    while (<$fh>) {
+	chomp;
+	$c = substr($_, 0, 1);
+	last if ($c eq '>' || $c eq '@' || $c eq '+');
+	$seq .= $_;
+    }
+    $aux->[0] = $_;
+    $aux->[1] = 1 if (!defined($aux->[0]));
+    return ($name, $comm, $seq) if ($c ne '+');
+    my $qual = '';
+    while (<$fh>) {
+	chomp;
+	$qual .= $_;
+	if (length($qual) >= length($seq)) {
+	    $aux->[0] = undef;
+	    return ($name, $comm, $seq, $qual);
+	}
+    }
+    $aux->[1] = 1;
+    return ($name, $seq);
 }
