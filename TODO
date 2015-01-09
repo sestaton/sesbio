@@ -1,0 +1,8 @@
+# list of TODOs for sesbio
+## gene_annotation
+script: get_intervals.pl
+    - find replacement for Set::InterTree, which is not compiling.
+
+## genome_assembly
+
+## transposon_annotation
