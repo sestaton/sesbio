@@ -6,3 +6,7 @@ script: get_intervals.pl
 ## genome_assembly
 
 ## transposon_annotation
+
+## phylogenetics
+script: eutils_taxonomy_methods.pl
+    - remove use of bioperl and use REST API to eutils
