@@ -2,7 +2,8 @@
 ## gene_annotation
 script: get_intervals.pl
     - find replacement for Set::InterTree, which is not compiling.
-
+script: seqio_benchmarks.pl
+    - add transposome seqfactory benchmarks, which are 3X faster than the transposome seqio methods
 ## genome_assembly
 
 ## transposon_annotation
