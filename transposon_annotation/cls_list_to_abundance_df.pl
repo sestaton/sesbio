@@ -1,11 +1,11 @@
 #!/usr/bin/env perl
 
-use 5.014;
+use 5.010;
 use strict;
 use warnings;
 use Getopt::Long;
 use autodie qw(open);
-use Data::Dump qw(dd);
+use Data::Dump;
 
 my $usage = "$0 -i annotations.tsv -c cls_list -o outfile\n";
 my $anno_file;
@@ -36,8 +36,7 @@ my $colormap = { Gypsy      => "darkgreen",
                  Kiri       => "azure2",
 		 Penelope   => "cyan",
 		 DIRS       => "lightgreen",
-		 Polinton   => "chartreuse",
-};
+		 Polinton   => "chartreuse" };
 
 open my $an, '<', $anno_file;
 open my $cl, '<', $cls_file;
