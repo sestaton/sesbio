@@ -14,3 +14,5 @@ script: sort_seqids.pl
 ## phylogenetics
 script: eutils_taxonomy_methods.pl
     - remove use of bioperl and use REST API to eutils
+script: orthoMCL...
+    - remove version numbers and clean up orthomcl scripts
