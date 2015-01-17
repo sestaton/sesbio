@@ -17,7 +17,7 @@ input set of sequences may be in fasta or fastq format.
 
 =head1 DEPENDENCIES
 
-Parallel::ForkManager is a non-core Perl library that must
+Parallel::ForkManager, IPC::System::Simple, and Try::Tiny are non-core Perl libraries that must
 be installed in order for this script to work. 
 
 Tested with:
@@ -46,7 +46,7 @@ statonse at gmail dot com
 
 =item -i, --infile
 
-The file of sequences to BLAST. The format may be Fasta or Fastq,
+The file of sequences to BLAST. The format may be FASTA or FASTQ,
 and may be compressed with either gzip or bzip2.
 
 =item -o, --outfile
@@ -74,23 +74,23 @@ The BLAST database to search.
 
 =item -t, --threads
 
-The number of BLAST threads to spawn. Default is 1.
+The number of BLAST threads to spawn (Default: 1).
 
 =item -a, --cpu
 
-The number of processors to use for each BLAST thread. Default is 1.
+The number of processors to use for each BLAST thread (Default: 1).
 
 =item -b, --num_aligns
 
-The number of alignments to keep for each query. Default is 250.
+The number of alignments to keep for each query (Default: 250).
 
 =item -v, --num_desc
 
-The number of descriptions to keep for each hit. Default is 500.
+The number of descriptions to keep for each hit (Default: 500).
 
 =item -p, --blast_prog
 
-The BLAST program to execute. Default is blastp.
+The BLAST program to execute (Default: blastp).
 
 =item -bf, --blast_format
 
@@ -100,7 +100,7 @@ NB: The only allowed options are '8' which is "blasttable" (tabular BLAST output
 
 =item -e, --evalue
 
-The e-value threshold for hits to each query. Default is 1e-5.
+The e-value threshold for hits to each query (Default: 1e-5).
 
 =item -w, --warn
 
@@ -235,12 +235,12 @@ say "\n========> Finihsed running BLAST on $seqct sequences in $final_time minut
 
 exit;
 #
-# Subs
+# Methods
 #
 sub run_blast {
-    my ($subseq_file,$database,$cpu,$blast_program,
-	$blast_format,$num_alignments,$num_descriptions,
-	$evalue,$warn) = @_;
+    my ($subseq_file, $database, $cpu, $blast_program,
+	$blast_format, $num_alignments, $num_descriptions,
+	$evalue, $warn) = @_;
 
     my ($dbfile,$dbdir,$dbext) = fileparse($database, qr/\.[^.]*/);
     my ($subfile,$subdir,$subext) = fileparse($subseq_file, qr/\.[^.]*/);
@@ -263,7 +263,7 @@ sub run_blast {
     $blast_cmd = "blastall ". 
                  "-p $blast_program ".
 	         "-e $evalue ". 
-	         "-F F ". #'m S' ".      # filter simple repeats with 'seg' by default (DUST for nuc) -- Can't set w/o knowing blast program
+	         "-F F ". #'m S' ".      # filter simple repeats with 'seg' by default (DUST for nuc)
 	         "-v $num_alignments ".
 	         "-b $num_descriptions ".
 	         "-i $subseq_file ".
@@ -271,10 +271,9 @@ sub run_blast {
 	         "-o $subseq_out ".
 	         "-a $cpu ".
 	         "-m $blast_format";
-	         #"2>&1 >/dev/null'";       # we really don't want multiple processes complaining silmutaneously
 
     try {
-	$exit_value = system([0..5],$blast_cmd);
+	$exit_value = system([0..5], $blast_cmd);
     }
     catch {
 	"\nERROR: BLAST exited with exit value $exit_value. Here is the exception: $_\n";
@@ -284,7 +283,7 @@ sub run_blast {
 }
 
 sub split_reads {
-    my ($infile,$outfile,$numseqs) = @_;
+    my ($infile, $outfile, $numseqs) = @_;
 
     my ($iname, $ipath, $isuffix) = fileparse($infile, qr/\.[^.]*/);
     
@@ -315,6 +314,8 @@ sub split_reads {
 					 DIR => $cwd,
 					 SUFFIX => ".fasta",
 					 UNLINK => 0);
+	    
+	    ##TODO: this part isn't necessary as File::Temp returns the fh
 	    open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
 
 	    push @split_files, $fname;
@@ -397,7 +398,7 @@ sub usage {
 USAGE: $script -i seqs.fas -d db -o blast_result -n num [-t] [-a] [-b] [-v] [-p] [-bf] [-e] [-h] [-m]
 
 Required:
-    -i|infile        :    FastA/Q file to search (maybe compressed with gzip or bzip2).
+    -i|infile        :    FASTA/Q file to search (maybe compressed with gzip or bzip2).
     -o|outfile       :    File name to write the blast results to.
     -d|database      :    Database to search.
     -n|numseqs       :    The number of sequences to write to each split.
