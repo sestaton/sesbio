@@ -136,7 +136,8 @@ while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
 
     my $nucleic_bc = ($dna =~ tr/NACGTacgtn//);
     my $nonnucleic = (length($dna) - $nucleic_bc);
-    $dna =~ s/(.{60})/$1\n/gs;        
+    #$dna =~ s/(.{60})/$1\n/gs;        
+    $dna =~ s/.{60}\K/\n/g;
 
     say $out join "\n", ">".$seqname, $dna;
 }
