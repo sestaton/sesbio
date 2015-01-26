@@ -82,7 +82,6 @@ if (!$infile || !$outfile) {
     print "\nERROR: No input was given.\n";
     pod2usage( -verbose => 1 );
 }
-    
 
 my $factory = Bio::Factory::EMBOSS->new;
 my $seqret = $factory->program('seqret'); 
