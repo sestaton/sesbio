@@ -10,7 +10,7 @@
 
 =head1 DESCRIPTION
                                                                    
- Takes an Illumina fastq file as input and returns a Sanger fastq.
+ Takes an Illumina FASTQ file as input and returns a Sanger FASTQ.
  This is a minimal script to just do the conversion, it gives no
  statistics or information about the files.
 
@@ -34,11 +34,11 @@ statonse at gmail dot com
 
 =item -i, --infile
 
-The fastq file from an Illumina instrument with Phred+64 quality encoding.
+The FASTQ file from an Illumina instrument with Phred+64 quality encoding.
 
 =item -o, --outfile
 
-A file to place the converted Sanger fastq reads with Phred+33 quality encoding.
+A file to place the converted Sanger FASTQ reads with Phred+33 quality encoding.
 
 =back
 
@@ -68,11 +68,11 @@ my $help;
 my $man;
 
 GetOptions(# Required
-           '-i|infile=s'     => \$infile,
-           '-o|outfile=s'    => \$outfile,
+           'i|infile=s'  => \$infile,
+           'o|outfile=s' => \$outfile,
            # Options
-	   '-h|help'         => \$help,
-           '-m|man'          => \$man,
+	   'h|help'      => \$help,
+           'm|man'       => \$man,
 	   );
 
 pod2usage( -verbose => 1 ) if $help;
@@ -92,5 +92,3 @@ $seqret->run({-sequence => $infile,
 	      -sformat1 => 'fastq-illumina',
 	      -outseq   => $outfile,
 	      -osformat => 'fastq-sanger'});
-
-exit;
