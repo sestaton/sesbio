@@ -13,21 +13,19 @@
 #
 # Author: S. Evan Staton
 # Date: 4/2/12
-# Updated: 1/26/15
+# Updated: 1/27/15
 #
-# NB: This has been updated to use HMMER2GO (https://github.com/sestaton/HMMER2GO)
 #==============================================================
 # TODO: 
 
 function usage() {
 cat <<EOF 
-
 USAGE: $0 input_study_directory_name input_popn_dir_name output_directory_name species_name
 
-input_study_directory_name  : Name of directory holding ONLY the study HMMscan output files (output of option --tblout).
-input_popn_dir_name         : Name of directory holding population HMMscan output file.
-output_directory_name       : Name of directory to place the GO mapping files.
-species_name                : A species name must be given for use in the association file.
+input_study_directory_name  :  Name of directory holding ONLY the study HMMscan output files (output of option --tblout).
+input_popn_dir_name         :  Name of directory holding population HMMscan output file.
+output_directory_name       :  Name of directory to place the GO mapping files.
+species_name                :  A species name must be given for use in the association file.
 
 EOF
 }
@@ -102,6 +100,7 @@ log `printf "\n"`
 
 # set the timer
 tmr=$(timer)
+echo "===== Mapping GO terms to study set..."
 
 # 
 # Generate custom gene -> GO term mapping file from HMMscan report
@@ -110,52 +109,51 @@ cd $studydir
 for file in * 
 do
   filebase=$(echo ${file%.*})
-  outfile=$filebase"_parsed.txt"
-  studyIDs=$filebase"_parsed_studyIDs.txt"
+  outfile=${filebase}_parsed.txt
+  studyIDs=${filebase}_parsed_studyIDs.txt#
 
-  hmmer2go mapterms -i $file -o $outfile
+  mapcmd="hmmer2go mapterms -i $file -o $outfile"
+  echo $mapcmd
+  `$mapcmd`
 
   cut -f1 $outfile > $studyIDs
- 
-  #
+
   # Send the results to the output dir
-  #
   mv $outfile ../$outdir
   mv $studyIDs ../$outdir
 done
 cd ../$popndir
 
+echo "===== Done mapping GO terms to study set."
+echo "===== Mapping GO terms to population set..."
+
 # This is the full genome, which is needed to create the 'population' set of IDs. 
 # The other files will be used as the 'study' sets. 
-#
 for file in *
 do
   filebase=$(echo ${file%.*})
-  outfile=$filebase"_parsed.txt"
-  gomapfile=$filebase"_parsed_GOterm_mapping.tsv"
-  gaffile=$filebase"_parsed_GOterm_mapping.gaf"
-  popnIDs=$filebase"_parsed_populationIDs.txt"
+  outfile=${filebase}_parsed.txt
+  gomapfile=${filebase}_parsed_GOterm_mapping.tsv
+  gaffile=${filebase}_parsed_GOterm_mapping.gaf
+  popnIDs=${filebase}_parsed_populationIDs.txt
 
-  hmmer2go mapterms -i $file -o $outfile --map
+  popnmapcmd="hmmer2go mapterms -i $file -o $outfile --map"
+  echo $popnmapcmd
+  mapct=$($popnmapcmd)
 
   #
   # Generate gaf file to use with Ontologizer
   #
-  hmmer2go map2gaf -i $gomapfile -o $gafffile -s $species
+  gafcmd="hmmer2go map2gaf -i $gomapfile -o $gaffile -s $species"
+  echo $gafcmd
+  `$gafcmd`
 
   #
   # Generate population gene list
   #
   cut -f1 $outfile > $popnIDs
 
-  ls -l $gomapfile
-  ls -l $outfile
-  ls -l $popnIDs
-  ls -l $gaffile 
-
-  #
   # Send the results to the output dir
-  #
   mv $gomapfile ../$outdir
   mv $outfile ../$outdir
   mv $popnIDs ../$outdir
@@ -164,6 +162,8 @@ done
 
 cd ..
 
+echo "===== Done mapping GO terms to population set."
+printf 'Total elapsed time in minutes: %s\n' $(timer $tmr)
 #
 # Print time to completion
 #
