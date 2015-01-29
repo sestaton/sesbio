@@ -16,7 +16,7 @@
 # Updated: 1/27/15
 #
 #==============================================================
-# TODO: 
+# TODO: add logging of progress/results, not just runtime
 
 function usage() {
 cat <<EOF 
