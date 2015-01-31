@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+#use strict; use warnings;
+
 die "usage: $0 <seq 1> <seq 2>\\n" unless @ARGV == 2;
 
 my ($seq1, $seq2) = @ARGV;
@@ -36,14 +38,14 @@ for (my $i = 1; $i <= length($seq2); $i++) {
         my $letter1 = substr($seq1, $j-1, 1);
         my $letter2 = substr($seq2, $i-1, 1);       
         if ($letter1 eq $letter2) {
-            $diagonal_score = $matrix[$i-1][$j-1]{score} + $MATCH;
+            $diagonal_score = $matrix[$i-1][$j-1]{score} + $MATCH; #TODO: this needs to be initialized prior to incrementing
         }
         else {
             $diagonal_score = $matrix[$i-1][$j-1]{score} + $MISMATCH;
         }
         
         # calculate gap scores
-        $up_score   = $matrix[$i-1][$j]{score} + $GAP;
+        $up_score   = $matrix[$i-1][$j]{score} + $GAP;              #TODO: same as above, need to initialize this value
         $left_score = $matrix[$i][$j-1]{score} + $GAP;
         
         if ($diagonal_score <= 0 and $up_score <= 0 and $left_score <= 0) {
