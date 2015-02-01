@@ -4,6 +4,7 @@ use 5.010;
 use strict;
 use warnings;
 use autodie qw(open);
+use File::Basename;
 use Getopt::Long;
 use Data::Dump;
 
@@ -12,8 +13,7 @@ my %genes;
 
 GetOptions(\%opt, 'infile|i=s', 'fasta|f=s');
 
-my $usage = "$0 -i file.gff -f seq.fasta\n";
-die $usage if !$opt{infile} or !$opt{fasta};
+usage() and exit(0) if !$opt{infile} or !$opt{fasta};
 
 open my $in, '<', $opt{infile};
 while (<$in>) {
@@ -58,4 +58,19 @@ sub seq_to_str {
     close $fas;
 
     return $seq;
+}
+
+sub usage {
+    my $script = basename($0);
+  print STDERR <<END
+USAGE: $script -i file.gff -f seqs.fas
+
+Required:
+ -i|infile    :    GFF file to extract gene coordinates from
+ -f|fasta     :    FASTA file to pull the gene regions from.
+    
+Options:
+ -h|help      :    Print usage statement (not implemented).
+ -m|man       :    Print full documentation (not implemented).
+END
 }
