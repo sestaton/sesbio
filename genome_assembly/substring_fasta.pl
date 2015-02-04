@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+##NB: This takes the first N bases of a sequence
+
 use 5.010;
 use strict;
 use warnings;
@@ -34,7 +36,7 @@ my ($totalct, $subseqct) = (0, 0);
 	my $seq = join '', @seqparts;
 	next unless defined $seqid && defined $seq;
 	next unless length($seq) >= $length;
-	my $subseq = substr($seq, 0, $length);
+	my $subseq = substr $seq, 0, $length;
 	$subseqct++;
 	say $out join "\n", ">".$seqid, $subseq;
     }
