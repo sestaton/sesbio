@@ -80,8 +80,8 @@ sub usage {
 USAGE: $script -q blast_res_i_to_j.bln -s blast_res_j_to_i.bln -o blast_result [-h]
 
 Required:
-    -q|query         :    Tab-delimited BLAST file for query.
-    -s|subject       :    Tab-delimited BLAST file for subject. 
+    -q|query         :    Tab-delimited BLAST file for query (generated with -outfmt 6, or -m 8 with legacy BLAST).
+    -s|subject       :    Tab-delimited BLAST file for subject (generated with -outfmt 6, or -m 8 with legacy BLAST). 
                           (NB: It makes no difference which order you put subject and query, 
 			   it only affects the order the results are printed.)
     -o|outfile       :    File name to write the reciprocal BLAST hit results to.
