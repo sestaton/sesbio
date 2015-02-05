@@ -10,6 +10,8 @@ script: sort_seqids.pl
 ## genome_assembly
 
 ## transposon_annotation
+script: find_graph_edges.pl
+    - remove use of BerkeleyDB in favor of SQLite, like in Transposome
 
 ## phylogenetics
 script: eutils_taxonomy_methods.pl
