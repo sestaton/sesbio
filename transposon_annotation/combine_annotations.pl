@@ -2,7 +2,8 @@
 
 ## This script combines annotations from Transposome, and this
 ## may be useful for looking at variation from different random
-## read samples at the same level of coverage.
+## read samples at the same level of coverage. The input is a list
+## of annotation summary files.
 
 use 5.010;
 use strict;
@@ -11,7 +12,7 @@ use autodie qw(open);
 use Statistics::Descriptive;
 use Getopt::Long;
 
-my $usage = "$0 -i file file file\n";
+my $usage = "$0 -i summary.tsv summary.tsv summary.tsv\n";
 my @files;
 my %res;
 
