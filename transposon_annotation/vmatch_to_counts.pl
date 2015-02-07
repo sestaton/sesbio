@@ -1,6 +1,8 @@
 #!/usr/bin/env perl
 
-use 5.014;
+## Take the output from Vmatch and generate a file of counts by repeat type (superfamily)
+
+use 5.010;
 use strict;
 use warnings;
 use autodie qw(open);
@@ -8,8 +10,8 @@ use Data::Dump qw(dd);
 use JSON;
 use List::Util qw(sum);
 
-my $usage = "$0 idlist vmatches\n";
-my $infile = shift or die $usage;
+my $usage    = "$0 idlist vmatches\n";
+my $infile   = shift or die $usage;
 my $vmatches = shift or die $usage;
 open my $in, '<', $infile;
 open my $vm, '<', $vmatches;
