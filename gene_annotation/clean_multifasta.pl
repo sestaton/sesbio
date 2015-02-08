@@ -139,7 +139,7 @@ while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
     #$dna =~ s/(.{60})/$1\n/gs;        
     $dna =~ s/.{60}\K/\n/g;
 
-    say $out join "\n", ">".$seqname, $dna;
+    say $out join "\n", ">".$name, $dna;
 }
 close $in;
 close $out;
