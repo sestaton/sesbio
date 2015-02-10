@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+## A pure-Perl parser for eSearch results. This is may be easier/faster
+## to install than libxml and it is fast enough.
+
 use 5.010;
 use strict;
 use warnings;
