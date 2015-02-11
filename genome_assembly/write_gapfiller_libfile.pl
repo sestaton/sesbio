@@ -50,7 +50,7 @@ my @files;
 # if any file is unpaired it should be negated because these won't work with GapFiller
 #TODO: The suffix should be an option, not hardcoded, along with the negation option.
 find( sub { 
-    push @files, $_ if -f and /^$match/ && /\.fq$/ && /[^$negate]/;
+    push @files, $File::Find::name if -f and /^$match/ && /\.fq$/ && /[^$negate]/;
       }, $directory);
  
 my @sorted = sort @files;
