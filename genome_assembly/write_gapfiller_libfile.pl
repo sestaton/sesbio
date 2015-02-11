@@ -48,6 +48,7 @@ $directory //= $cwd
 my @files;
 
 # if any file is unpaired it should be negated because these won't work with GapFiller
+#TODO: The suffix should be an option, not hardcoded, along with the negation option.
 find( sub { 
     push @files, $_ if -f and /^$match/ && /\.fq$/ && /[^$negate]/;
       }, $directory);
@@ -70,10 +71,10 @@ Required:
     -i|insertsize     :    The insert size of the reads.
 
 Options:
-    -d|directory      :   The path to search for sequence files.
-    -t|tool           :   The name of the toolto use for alignment (Default: bwa).
-    -d|deviation      :   The allowed amount of variation between the reads (Default: 0.25).
-    -o|orientation    :   The orientation of the reads(Default: FR).
+    -d|directory      :    The path to search for sequence files.
+    -t|tool           :    The name of the toolto use for alignment (Default: bwa).
+    -d|deviation      :    The allowed amount of variation between the reads (Default: 0.25).
+    -o|orientation    :    The orientation of the reads(Default: FR).
     -h|help           :    Print usage statement.
 
 END
