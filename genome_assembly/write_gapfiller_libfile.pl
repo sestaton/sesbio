@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-## This script finds all Fastq files in the working directory (default), or
+## This script finds all FASTQ files in the working directory (default), or
 ## a specified directory and writes a library file for use with GapFiller. 
 
 use 5.010;
@@ -37,6 +37,7 @@ GetOptions(
 usage() and exit(0) if $help;
 usage() and exit(1) if !$insert_size || !$libname;
 
+my $suffix = ".fq";
 $tool        //= 'bwa';
 $deviation   //= '0.25';
 $orientation //= 'FR';
@@ -44,8 +45,11 @@ $match       //= 'HA0001';
 $negate      //= 'HA0001_620J2AAXX_1_1_trimmed101.fq';
 
 my $cwd = getcwd();
-$directory //= $cwd
+$directory //= $cwd;
 my @files;
+
+my $pattern = "$File::Find::name if -f and /^$match/ && /$suffix$/";
+$pattern .= "&& /[^$negate]/" if $negate;
 
 # if any file is unpaired it should be negated because these won't work with GapFiller
 #TODO: The suffix should be an option, not hardcoded, along with the negation option.
