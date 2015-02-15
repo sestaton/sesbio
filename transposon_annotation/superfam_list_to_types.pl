@@ -1,5 +1,9 @@
 #!/usr/bin/env perl
 
+## This script is for calculating statistical differences for certain TE types between species.
+## The assumption is that there are annotation summary files from Transposome in the working
+## directory that would correspond to different species.
+
 use 5.010;
 use strict;
 use warnings;
