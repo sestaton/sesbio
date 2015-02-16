@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+## This script takes a cluster file from Transposome and a sequence file (with matching IDs
+## as in the cluster file) and generates a FASTA file for each cluster.
+
 use 5.010;
 use strict;
 use warnings;
