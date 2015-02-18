@@ -12,6 +12,8 @@ script: sort_seqids.pl
 ## transposon_annotation
 script: find_graph_edges.pl
     - remove use of BerkeleyDB in favor of SQLite, like in Transposome
+script: find_graph_edges.pl
+    - update to use latest indexing and edge-finding methods
 
 ## phylogenetics
 script: eutils_taxonomy_methods.pl
