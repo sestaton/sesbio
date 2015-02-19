@@ -54,7 +54,8 @@ for my $dir (@dirs) {
     find( sub { 
 	push @trimmed_files, $File::Find::name if -f and /trimmed_screened\.fasta$/; 
           }, $dir );
-    
+
+    #TODO: the code to match is hardcoded now (R[12]) but it could be an option
     my @forward = sort grep { /R1/ } @trimmed_files;
     my @reverse = sort grep { /R2/ } @trimmed_files;
 
