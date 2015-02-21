@@ -19,6 +19,8 @@ script: find_graph_edges.pl
 script: eutils_taxonomy_methods.pl
     - remove use of bioperl and use REST API to eutils
 script: orthoMCL...
-    - remove version numbers and clean up orthomcl scripts\
+    - remove version numbers and clean up orthomcl scripts
 script: smith-waterman.pl
     - initialize diagonals in matrix before incrementing
+script: cpbase_fetch.pl
+   - remove options that are not working, such as retrieving the alignments
