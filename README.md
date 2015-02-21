@@ -20,9 +20,9 @@ Or, use git:
 Then install the Perl dependencies:
 
     cd sesbio
-    cpanm --installdeps .
+    curl -L cpanmin.us | perl - --installdeps .
 
-The last command above requires [cpanminus](https://metacpan.org/pod/release/MIYAGAWA/App-cpanminus-1.7014/lib/App/cpanminus.pm). After that, you can use the scripts in place or move them to where is most convenient. Run `git pull` in the base directory to keep things up to date (or run the curl command above to download the latest code). Send me a message or file an issue if you have feature requests or run into any issues.
+After that, you can use the scripts in place or move them to where is most convenient. Run `git pull` in the base directory to keep things up to date (or run the curl command above to download the latest code). Send me a message or file an issue if you have feature requests or run into any issues.
 
 **USAGE**
 
