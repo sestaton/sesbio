@@ -26,7 +26,7 @@ After that, you can use the scripts in place or move them to where is most conve
 
 **USAGE**
 
-Most scripts have at least minimal documentation that can be accessed by typing the name of the script and reading the menu. Some scripts are well tested and have formal documentation that can be accessed by specifying the manual option (e.g., `perl script.pl --man`). Though, a lot of the scripts were written for one time use so not a lot of work was put into documenting or polishing the code. If something looks useful but is unclear, just ask, I should be able to help.
+Most scripts have at least minimal documentation that can be accessed by typing the name of the script and reading the menu. Some scripts are well tested and have formal documentation that can be accessed by specifying the manual option (e.g., `perl script.pl --man`). Though, a lot of the scripts were written for one time use so not a lot of work was put into documenting or polishing the code. In particular, each topic directory contains a subdirectory of shell scripts and a subdirectory of R scripts. These scripts serve as a guide for repeating analyses or running complicated programs without relearning all the options, though some of the scripts are designed to be used with any data set. If something looks useful but is unclear, just ask, I should be able to help.
 
 **LICENSE AND COPYRIGHT**
 
