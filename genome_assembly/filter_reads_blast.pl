@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+## This will emove reads matching a reference. For keeping portions of reads
+## matching a reference, see the screen_reads_blast.pl script.
+
 use 5.010;
 use strict;
 use warnings;
