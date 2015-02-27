@@ -2,14 +2,17 @@
 
 ##NB: Parthy is unable to handle large datasets, so be advised that running neutral
 ##    simulations with that program is not feasible (i.e., run times of months or more).
+##    This script generates the same format for EcoloPy as well, so perhaps I should change the script name?
 
-use 5.014;
+use 5.010;
 use strict;
 use warnings;
 use Statistics::Descriptive;
-use autodie qw(open);
-use Data::Dump qw(dd);
+use autodie;
+use Data::Dump;
 
+
+# genome sizes for each species
 my $cvalh = {
     'Phoebanthus_tenuifolius'          => 4267295897,
     'Conoclinium_coelestinum'          => 1746269472,
