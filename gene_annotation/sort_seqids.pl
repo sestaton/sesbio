@@ -32,7 +32,7 @@ my %seqhash;
 my $seqct = 0;
 my $t0 = gettimeofday();
 
-while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
+while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
     $seqhash{$name} = $seq;
     $seqct++;
 }
