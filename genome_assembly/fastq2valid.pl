@@ -2,6 +2,7 @@
 
 ##NB: This is to fix sequences for prinseq. This issue is that prinseq won't 
 ##    accept sequences that start with a dot character.
+##TODO: remove use of Bio::Kseq since it is not standard
 
 use 5.010;
 use strict;
