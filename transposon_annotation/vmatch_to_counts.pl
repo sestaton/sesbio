@@ -1,12 +1,13 @@
 #!/usr/bin/env perl
 
-## Take the output from Vmatch and generate a file of counts by repeat type (superfamily)
+## This script will take the output from Vmatch 
+## and generate a file of counts by repeat type (superfamily)
 
 use 5.010;
 use strict;
 use warnings;
-use autodie qw(open);
-use Data::Dump qw(dd);
+use autodie;
+#use Data::Dump;
 use JSON;
 use List::Util qw(sum);
 
