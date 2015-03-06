@@ -48,23 +48,23 @@ CREATE TABLE seqs (
 END_SQL
 
 $dbh->do($sql);
+my $sth = $dbh->prepare("INSERT INTO seqs (header, seqstr) VALUES (?, ?)");
 
 while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
     $header = mk_key($name, $comm) if defined $comm && $comm ne '';
     $header = $name if !defined $comm || $comm eq '' ;
     $seqstr = mk_key($seq, $qual) if defined $qual;
     $seqstr = $seq if !defined $qual;
-    $dbh->do('INSERT INTO seqs (header, seqstr) VALUES (?, ?)',
-	     undef,
-	     $header, $seqstr);
+    $sth->execute($header, $seqstr);
 }
+$sth->finish();
 
 my $sbh = DBI->connect( $dsn, $user, $pass );
 
-my $sth = $sbh->prepare("SELECT * FROM seqs WHERE header = ?");
-$sth->execute($lookup);
+my $sthf = $sbh->prepare("SELECT * FROM seqs WHERE header = ?");
+$sthf->execute($lookup);
 
-while (my $row = $sth->fetchrow_hashref()) {
+while (my $row = $sthf->fetchrow_hashref()) {
     if ($row->{header} =~ /~~/ && $row->{seqstr} =~ /~~/) {
 	my ($id, $com) = mk_vec($row->{header});
 	my ($nt, $ql)  = mk_vec($row->{seqstr});
@@ -83,7 +83,7 @@ while (my $row = $sth->fetchrow_hashref()) {
     }
 }
 
-$sth->finish();
+$sthf->finish();
 $dbh->disconnect();
 unlink $dbfile;
 
