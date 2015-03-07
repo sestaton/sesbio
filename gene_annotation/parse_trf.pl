@@ -12,7 +12,7 @@ use 5.010;
 use strict;
 use warnings;
 use Bio::Tools::TandemRepeatsFinder;
-use Data::Dump qw(dd);
+use Data::Dump;
 
 my $usage  = "USAGE: perl $0 <trf.out>\n";
 my $infile = shift or die $usage;
