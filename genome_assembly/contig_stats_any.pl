@@ -24,19 +24,12 @@ if (!$file) {
 }
 
 my ($file_name, $path, $suffix) = fileparse($file, qr/\.[^.]*/);
-my ($len,$total) = (0,0);
+my ($len, $total) = (0, 0);
+
 my @x;
-my $seq_num;
-my $seq;
-my $reads_num;
-my $kmer_cov;
-my $GC_num;
-my $GC_content;
-my $id_to_reads;
-my $id_to_cov;
-my $used_percent;
-my $singleton;
-my $exp_cov;
+my ($seq_num, $seq, $reads_num, $kmer_cov, $GC_num, $GC_content, $id_to_reads, 
+    $id_to_cov, $used_percent, $singleton, $exp_cov);
+
 my ($over100k_bases,$over50k_bases,$over25k_bases,$over10k_bases,
     $over5k_bases,$over3k_bases,$over2k_bases,$over1k_bases) = (0,0,0,0,0,0,0,0,0);
 my ($over100k_reads,$over50k_reads,$over25k_reads,$over10k_reads,
