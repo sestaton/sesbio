@@ -15,3 +15,4 @@ requires 'String::Simrank';
 requires 'XML::LibXML';
 requires 'XML::Twig';
 requires 'Try::Tiny';
+requires 'List::MoreUtils';
