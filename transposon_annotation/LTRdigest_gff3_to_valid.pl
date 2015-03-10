@@ -8,15 +8,12 @@ use Getopt::Long;
 
 my $infile;
 my $outfile;
-my $usage = "USAGE: $0 -i in.gff3 -o out.gff3\n";
+my $usage = "USAGE: $0 -i in.gff3 -o out.gff3";
 
-GetOptions(
-           'i|infile=s'           => \$infile,
-           'o|outfile=s'          => \$outfile,
-	  );
+GetOptions( 'i|infile=s' => \$infile, 'o|outfile=s' => \$outfile );
 
 if (!$infile || !$outfile) {
-    print $usage and exit(1);
+   say $usage and exit(1);
 }
 
 open my $in, '<', $infile;
