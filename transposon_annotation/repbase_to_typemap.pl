@@ -1,10 +1,10 @@
 #!/usr/bin/env perl
 
-use 5.014; ## This is important, we need at least v5.12 for this script
+use 5.010;
 use strict;
 use warnings;
-use autodie qw(open);
-use Data::Dump qw(dd);
+use autodie;
+use Data::Dump;
 use JSON;
 use List::MoreUtils qw(first_index);
 
