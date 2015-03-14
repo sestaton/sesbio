@@ -5,7 +5,6 @@ use strict;
 use warnings;
 use autodie;
 use Data::Dump;
-use JSON;
 use List::MoreUtils qw(first_index);
 
 my $usage = "$0 fasta\n";
@@ -52,13 +51,8 @@ for my $mapped_sfam (keys %family_map) {
 
     }
 }
-#exit;
 
 #dd $repeats and exit;
-#my $json = JSON->new->utf8->space_after->encode($matches);
-
-#my $hash = JSON->new->utf8->space_after->decode($json);
-#dd $hash;
 
 #
 # subs
