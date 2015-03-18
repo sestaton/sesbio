@@ -1,11 +1,10 @@
 #!/usr/bin/env perl
 
-use 5.014; ## This is important, we need at least v5.12 for this script
+use 5.010;
 use strict;
 use warnings;
-use autodie qw(open);
-use Data::Dump qw(dd);
-use JSON;
+use autodie;
+use Data::Dump;
 use List::MoreUtils qw(first_index);
 
 my $usage = "$0 fasta\n";
@@ -52,13 +51,8 @@ for my $mapped_sfam (keys %family_map) {
 
     }
 }
-#exit;
 
 #dd $repeats and exit;
-#my $json = JSON->new->utf8->space_after->encode($matches);
-
-#my $hash = JSON->new->utf8->space_after->decode($json);
-#dd $hash;
 
 #
 # subs
