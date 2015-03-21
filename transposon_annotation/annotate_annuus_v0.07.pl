@@ -19,7 +19,7 @@ use experimental 'signatures';
 
 my $data = '/oflow/jmblab/sunflower_1_sequence_data';
 my $cwd  = getcwd();
-my $sums = File::Spec->catdir($cwd, 'all_lines_summaries_screened');
+my $sums = File::Spec->catdir($cwd, 'all_lines_summaries_screened_logs');
 unless (-e $sums) {
     make_path($sums, {verbose => 0, mode => 0711,});
 }
@@ -39,7 +39,7 @@ find( sub {
     push @dirs, $_ if -d and /^PPN\d+/
     }, $data);
 
-my $pm = Parallel::ForkManager->new(1);
+my $pm = Parallel::ForkManager->new(2);
 $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump) = @_;
 			  say $out basename($ident)," just finished with PID $pid and exit code: $exit_code";
 		      } );
@@ -62,7 +62,7 @@ for my $localdir (sort @dirs) {
     my ($fscr, $rscr) = screen_reads($fsamp, $rsamp, $localdir, $matchlen, $identity);
     my ($fsamp_scr, $rsamp_scr) = sample_seqs($dirpath, $localdir, $fscr, $rscr, $sample_level, 0);
     my $joined = join_reads($localdir, $fsamp_scr, $rsamp_scr, $sample_level);
-    my $summary = run_transposome($sums, $localdir, $joined, $sample_level);
+    my ($summary, $log) = run_transposome($sums, $localdir, $joined, $sample_level);
 
     $pm->finish;
 }
@@ -88,7 +88,7 @@ sub run_transposome ($sums, $localdir, $joined, $readnum) {
         
     my @job;
     try {
-	@job = capture([0..5], "qsub -q rcc-m128-30d -pe thread 2 $script");
+	@job = capture([0..5], "qsub -q rcc-m128-30d -l mem_total=200g -pe thread 2 $script");
     }
     catch {
 	say "\nERROR: transposome exited. Here is the exception: $_\n";
@@ -100,7 +100,7 @@ sub run_transposome ($sums, $localdir, $joined, $readnum) {
     unlink @out;
     unlink $config;
     
-    my @sum;
+    my (@sum, @log);
     find( sub {
 	push @sum, $File::Find::name if -f and /summary.tsv$/
 	}, $outdir);
@@ -108,12 +108,19 @@ sub run_transposome ($sums, $localdir, $joined, $readnum) {
     @sum = sort @sum;
     my $sumfile = shift @sum;
     move $sumfile, $sums or die "move failed: $!";
+
+    find( sub {
+	push @log, $File::Find::name if -f and /log.*\.txt$/
+        }, $outdir);
+
+    my $logfile = shift @log;
+    move $logfile, $sums or die "move failed: $!";
     remove_tree($outdir);
     chdir "..";
     
     # remove the data from this line
     remove_tree($localdir);
-    return $sumfile;
+    return ($sumfile, $logfile);
 }
 
 sub check_job ($job, $script) {
@@ -252,8 +259,8 @@ sub sample_seqs ($dirpath, $dir, $f, $r, $level, $addinfo) {
 	undef $done;
 	undef @job;
 
-	my $fsample_cmd = "zcat $forward | seqtk sample -s11 - $pair_level | seqtk seq -A - > $fpair";
-	my $rsample_cmd = "zcat $reverse | seqtk sample -s11 - $pair_level | seqtk seq -A - > $rpair";
+	my $fsample_cmd = "zcat $forward | seqtk sample -s11 - $pair_level | seqtk seq -A - | pairfq addinfo -i - -o $fsamp -p 1";
+	my $rsample_cmd = "zcat $reverse | seqtk sample -s11 - $pair_level | seqtk seq -A - | pairfq addinfo -i - -o $rsamp -p 2";
 
 	$script = make_script('sample');
 	open my $saout, '>', $script;
@@ -274,25 +281,6 @@ sub sample_seqs ($dirpath, $dir, $f, $r, $level, $addinfo) {
 	undef @out;
 	undef @job;
     
-	$script = make_script('addinfo');
-	open my $sout, '>', $script;
-	my $fadd = "pairfq addinfo -i $fpair -o $fsamp -p 1";
-	my $radd = "pairfq addinfo -i $rpair -o $rsamp -p 2";
-	say $sout "#!/bin/bash\n$fadd\n$radd";
-	close $sout;
-	
-	try {
-	    @job = capture([0..5], "qsub -q rcc-30d $script");
-	}
-	catch {
-	    say "\nERROR: pairfq exited. Here is the exception: $_\n";
-	    exit;
-	};
-	
-	$done = check_job(\@job, $script);
-	#undef @job;
-	@out = glob "$script*";
-	
 	unlink @out, $forward, $reverse, $fpair, $rpair;
 	
 	return ($fsamp, $rsamp);
