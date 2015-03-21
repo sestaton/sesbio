@@ -15,7 +15,6 @@ use List::MoreUtils qw(first_index any);
 my $usage   = "$0 fastadb tophit\n";
 my $infile  = shift or die $usage;
 my @top_hits = qw(BEL1_I_AG BEL2_LTR_AG GYPSY1_LTR_AG Copia_7_AG_LTR MTANGA_I GYPSY32_LTR_AG PegasusA DNA_2_AG Clu_15B_AG);
-#my $readct = 100000;
 
 my ($repeats, $type_map) = _map_repeats($infile);
 
@@ -28,9 +27,7 @@ for my $top_hit (@top_hits) {
 		      repeat_map   => $repeats,
 		      repeat_type  => $type_map->{$top_hit} );
 
-    #say join q{ }, $top_hit, $type_map->{$top_hit};
     my ($top_hit_superfam, $cluster_annot) = blast_to_annotation(\%anno_data);
-    #dd $top_hit_superfam;
     push @annos, $cluster_annot;
     push @tops, $top_hit_superfam;
 }
@@ -120,8 +117,6 @@ sub _map_hit_family {
 	$cluster_annot{$anno_key} = $anno_val;
         return (undef, \%cluster_annot);
     }
-    #elsif ($class eq 'endogenous_retrovirus') { 
-    #dd $arr_ref and exit;
     else {
 	for my $superfam_h (@$arr_ref) {
             for my $superfam (keys %$superfam_h) {
@@ -163,16 +158,16 @@ sub _map_family_name {
     my ($family) = @_;
 
     my $family_name;
-    if ($family =~ /^(RL[GCX][_-][a-zA-Z]+)/) {
+    if ($family =~ /(^RL[GCX][_-][a-zA-Z]*\d*?[_-]?[a-zA-Z-]+?\d*?)/) {
 	$family_name = $1;
     }
-    elsif ($family =~ /^(D[HT][ACHMT][_-][a-zA-Z]+)/) {
+    elsif ($family =~ /(^D[HT][ACHMT][_-][a-zA-Z]*\d*?)/) {
 	$family_name = $1;
     }
-    elsif ($family =~ /^(PPP[_-][a-zA-Z]+)/) {
+    elsif ($family =~ /(^PPP[_-][a-zA-Z]*\d*?)/) {
 	$family_name = $1;
     }
-    elsif ($family =~ /^(R[IS][LT][_-][a-zA-Z]+)/) {
+    elsif ($family =~ /(^R[IS][LT][_-][a-zA-Z]*\d*?)/) {
 	$family_name = $1;
     }
     else {
