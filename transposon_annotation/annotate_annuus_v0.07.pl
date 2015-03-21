@@ -29,6 +29,7 @@ $outfile .= "_all.log";
 open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
 # these could be options but currently the usage is aimed at being simple
+my $threads  = 2;
 my $matchlen = 50;
 my $identity = 50;
 my $first_sample = 7e6;
@@ -39,7 +40,7 @@ find( sub {
     push @dirs, $_ if -d and /^PPN\d+/
     }, $data);
 
-my $pm = Parallel::ForkManager->new(2);
+my $pm = Parallel::ForkManager->new($threads);
 $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump) = @_;
 			  say $out basename($ident)," just finished with PID $pid and exit code: $exit_code";
 		      } );
@@ -49,7 +50,7 @@ for my $localdir (sort @dirs) {
     my $dirpath = File::Spec->catdir($data, $localdir);
     next unless -e $dirpath;
     my ($line) = ($localdir =~ /PPN(\d+)/);
-    #say "=====> working on line: $localdir";
+    say "=====> working on line: $localdir" if $threads == 1;
 
     my @seqs;
     find( sub {
@@ -134,7 +135,7 @@ sub check_job ($job, $script) {
     die "\nERROR: $job can not be found. Check $script."
 	unless defined $id;
     my $scrname = basename($script);
-    #say STDERR "checking job: $scrname with jobid: $id";
+    say STDERR "checking job: $scrname with jobid: $id" if $threads == 1;
     my $cmd = "qstat -j $id";
 
     attempt : {
@@ -187,7 +188,7 @@ sub join_reads ($dir, $fsamp, $rsamp, $sample_level) {
     my $joined = $dir."_${sample_level}_interl.fasta";
     my $jout   = File::Spec->catfile($dir, $joined);
 
-    #say STDERR "joined file is: $jout";
+    say STDERR "joined file is: $jout" if $threads == 1;
     if (defined $fsamp && defined $rsamp && -s $fsamp && -s $rsamp) {
         my $jcmd = "pairfq joinpairs -f $fsamp -r $rsamp -o $jout";
 
@@ -289,17 +290,13 @@ sub sample_seqs ($dirpath, $dir, $f, $r, $level, $addinfo) {
 	my $ext = ".fasta";
         my $pair_level = $level / 2;
 	my ($forward, $reverse) = ($f, $r);
-        #my $forward = File::Spec->catfile($dir, $f);
-        #my $reverse = File::Spec->catfile($dir, $r);
 
-	#say join q{ }, "DEBUG: ", $forward, $reverse;
-        my ($ffile, $fdir, $fext) = fileparse($forward, qr/\.[^.]*/);
+	my ($ffile, $fdir, $fext) = fileparse($forward, qr/\.[^.]*/);
         my ($rfile, $rdir, $rext) = fileparse($reverse, qr/\.[^.]*/);
 
         my $fpair = File::Spec->catfile($dir, $ffile."_$pair_level".$ext);
         my $rpair = File::Spec->catfile($dir, $rfile."_$pair_level".$ext);
 
-	#say join q{ }, "DEBUG: ", $fpair, $rpair;
 	my $fsample_cmd = "seqtk sample -s11 $forward $pair_level > $fpair";
         my $rsample_cmd = "seqtk sample -s11 $reverse $pair_level > $rpair";
 
@@ -347,14 +344,10 @@ sub pair_reads ($fscr_reads, $rscr_reads) {
     my ($fname, $fpath, $fsuffix) = fileparse($fscr_reads, qr/\.[^.]*/);
     my ($rname, $rpath, $rsuffix) = fileparse($rscr_reads, qr/\.[^.]*/);
 
-    #my $ffile = File::Spec->catfile($fpath, $fname."_f".$fsuffix);
-    #my $rfile = File::Spec->catfile($rpath, $rname."_r".$rsuffix);
     my $fpfile = File::Spec->catfile($fpath, $fname."_fp".$fsuffix);
     my $rpfile = File::Spec->catfile($rpath, $rname."_rp".$rsuffix);
     my $fsfile = File::Spec->catfile($fpath, $fname."_fs".$fsuffix);
     my $rsfile = File::Spec->catfile($rpath, $rname."_rs".$rsuffix);
-
-    #say join q{ }, "DEBUG: ", $ffile, $rfile, $fpfile, $rpfile, $fsfile, $rsfile;
 
     my $script = make_script('pairfq');
     my $cmd = "pairfq makepairs -f $fscr_reads -r $rscr_reads -fp $fpfile -rp $rpfile -fs $fsfile -rs $rsfile";
