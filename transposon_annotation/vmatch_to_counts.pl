@@ -2,7 +2,10 @@
 
 ## This script will take the output from Vmatch 
 ## and generate a file of counts by repeat type (superfamily)
-
+##
+## The arguments, in order, are: 1) an idlist of the repeats that
+##                                  can be generated with `grep ">" repeatdb.fasta | sed 's/>//' > idlist`
+##                               2) the vmatch output file
 use 5.010;
 use strict;
 use warnings;
