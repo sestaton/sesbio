@@ -3,8 +3,7 @@
 ## This script will take the output from Vmatch 
 ## and generate a file of counts by repeat type (superfamily)
 ##
-## The arguments, in order, are: 1) an idlist of the repeats that
-##                                  can be generated with `grep ">" repeatdb.fasta | sed 's/>//' > idlist`
+## The arguments, in order, are: 1) the fasta file of repeats used in the vmatch search
 ##                               2) the vmatch output file
 use 5.010;
 use strict;
@@ -14,7 +13,7 @@ use autodie;
 use JSON;
 use List::Util qw(sum);
 
-my $usage    = "$0 idlist vmatches\n";
+my $usage    = "$0 repeats.fasta vmatches\n";
 my $infile   = shift or die $usage;
 my $vmatches = shift or die $usage;
 open my $in, '<', $infile;
@@ -24,17 +23,20 @@ my %family_map;
 
 while (my $line = <$in>) {
     chomp $line;
-    my ($f, $sf, $source)  = split /\t/, $line;
-    next unless defined $sf && defined $f; ## why?
-    if ($sf =~ /(\s+)/) {
-	$sf =~ s/$1/\_/;
-    }
-    $f =~ s/\s/\_/;
-    if (exists $family_map{$sf}) {
-	push @{$family_map{$sf}}, {$f => 0};
-    }
-    else {
-	$family_map{$sf} = [];
+    if ($line =~ /^>/) {
+	$line =~ s/>//;
+	my ($f, $sf, $source)  = split /\t/, $line;
+	next unless defined $sf && defined $f; ## why?
+	if ($sf =~ /(\s+)/) {
+	    $sf =~ s/$1/\_/;
+	}
+	$f =~ s/\s/\_/;
+	if (exists $family_map{$sf}) {
+	    push @{$family_map{$sf}}, {$f => 0};
+	}
+	else {
+	    $family_map{$sf} = [];
+	}
     }
 }
 close $in;
