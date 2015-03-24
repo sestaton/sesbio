@@ -148,24 +148,8 @@ use File::Basename;
 #       name, the original would also be deleted with the 
 #       --clean option.
 
-my $infile;
-my $outfile;
-my $k;
-my $db;
-my $help;
-my $man;
-
-my $esa;
-my $index;
-my $search;
-my $log;
-my $gff;
-my $quiet;
-my $filter;
-my $matches;
-my $ratio;
-my $clean;
-my $debug;
+my ($infile, $outfile, $k, $db, $help, $man, $clean, $debug);
+my ($esa, $index, $search, $log, $gff, $quiet, $filter, $matches, $ratio);
 
 GetOptions(# Required
 	   'i|infile=s'           => \$infile,
