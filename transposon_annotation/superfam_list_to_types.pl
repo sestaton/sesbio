@@ -15,7 +15,8 @@ my $usage = "perl $0\n";
 
 my @files = glob "*summary.tsv";
 
-die "\nERROR: Could not find all summary files." unless scalar @files == 15; ## 15 species for me, change as needed
+die "\nERROR: Could not find all summary files." 
+    unless scalar @files == 15; ## corresponds to 15 species, change as needed but use as a sanity check
 
 my %typemap = (
     'Academ'       => { transposable_element => 'dna_transposon'          },
@@ -77,9 +78,6 @@ for my $file (@files) {
 	    else {
 		$classes{$sp}{$class} = [ $f[2] ];
 	    }
-	    #say join "\t", $type, $class, $f[0], $f[1], $f[2];
-	    
-	    #if (exists $allspecies{$class}) {..
 	}
 	else {
 	    say "Time for more work: DEBUG! ====> ", $f[0];
