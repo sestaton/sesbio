@@ -15,7 +15,8 @@
 ##     6) run transposome on the cleaned, sampled reads (transposome)
 ##     7) copy the annotation summary and log to a results directory
 ##     8) remove all the local results (a single directory) and start another process
-
+##
+## TODO: fix the logging method (pass the data to finish -- duh)
 use 5.020;
 use strict;
 use warnings;
@@ -386,52 +387,4 @@ sub make_script ($command) {
     my $script = $fname->filename;
 
     return $script;
-}
-
-sub readfq {
-    my ($fh, $aux) = @_;
-    @$aux = [undef, 0] if (!@$aux);
-    return if ($aux->[1]);
-    if (!defined($aux->[0])) {
-	while (<$fh>) {
-	    chomp;
-	    if (substr($_, 0, 1) eq '>' || substr($_, 0, 1) eq '@') {
-		$aux->[0] = $_;
-		last;
-	    }
-	}
-	if (!defined($aux->[0])) {
-	    $aux->[1] = 1;
-	
-    return;
-	}
-    }
-    my ($name, $comm);
-    defined $_ && do {
-	($name, $comm) = /^.(\S+)(?:\s+)(\S+)/ ? ($1, $2) :
-	                 /^.(\S+)/ ? ($1, '') : ('', '');
-    };
-    my $seq = '';
-    my $c;
-    $aux->[0] = undef;
-    while (<$fh>) {
-	chomp;
-	$c = substr($_, 0, 1);
-	last if ($c eq '>' || $c eq '@' || $c eq '+');
-	$seq .= $_;
-    }
-    $aux->[0] = $_;
-    $aux->[1] = 1 if (!defined($aux->[0]));
-    return ($name, $comm, $seq) if ($c ne '+');
-    my $qual = '';
-    while (<$fh>) {
-	chomp;
-	$qual .= $_;
-	if (length($qual) >= length($seq)) {
-	    $aux->[0] = undef;
-	    return ($name, $comm, $seq, $qual);
-	}
-    }
-    $aux->[1] = 1;
-    return ($name, $seq);
 }
