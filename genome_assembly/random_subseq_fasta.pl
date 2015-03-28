@@ -1,7 +1,8 @@
 #!/usr/bin/env perl
 
 ##NB: The assumption is that you have one large scaffold,
-##     or pseudomolecule in FASTA format.
+##    or pseudomolecule in FASTA format that you want to break into pieces
+##    of a defined size.
 ##    The code is modifed from: http://stackoverflow.com/a/16660010/1543853
 
 use 5.010;
