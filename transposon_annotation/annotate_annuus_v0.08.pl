@@ -1,5 +1,22 @@
 #!/usr/bin/env perl
 
+## NB: this is a script for annotating hundreds of sunflower
+##     lines with transposome. There are hard-coded paths and
+##     queue names, a necessity due to the data storage situation,
+##     so this is not going to be generally useful without some
+##     modification.
+##
+## What it do?
+##     1) select 2 paired-end files from a breeding line and copy them to a local directory
+##     2) downsample the files for efficient screening (seqtk)
+##     3) screen out mitochondria, chloroplast and ribosomal repeats (bbsplit.sh)
+##     4) downsample the files to 1/2 to total desired coverage for each file (seqtk)
+##     5) interleave the files (pairfq)
+##     6) run transposome on the cleaned, sampled reads (transposome)
+##     7) copy the annotation summary and log to a results directory
+##     8) remove all the local results (a single directory) and start another process
+##
+## TODO: fix the logging method (pass the data to finish -- duh)
 use 5.020;
 use strict;
 use warnings;
@@ -29,11 +46,11 @@ $outfile .= "_all.log";
 open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
 # these could be options but currently the usage is aimed at being simple
-my $threads  = 2;
+my $threads = 8;
 my $matchlen = 50;
 my $identity = 50;
 my $first_sample = 7e6;
-my $sample_level = 3.6e6;
+my $sample_level = 1e6;
 
 my @dirs;
 find( sub {
@@ -50,7 +67,6 @@ for my $localdir (sort @dirs) {
     my $dirpath = File::Spec->catdir($data, $localdir);
     next unless -e $dirpath;
     my ($line) = ($localdir =~ /PPN(\d+)/);
-    say "=====> working on line: $localdir" if $threads == 1;
 
     my @seqs;
     find( sub {
@@ -89,7 +105,7 @@ sub run_transposome ($sums, $localdir, $joined, $readnum) {
         
     my @job;
     try {
-	@job = capture([0..5], "qsub -q rcc-m128-30d -l mem_total=200g -pe thread 2 $script");
+	@job = capture([0..5], "qsub -q rcc-m128-30d -l mem_total=200g $script");
     }
     catch {
 	say "\nERROR: transposome exited. Here is the exception: $_\n";
@@ -135,14 +151,12 @@ sub check_job ($job, $script) {
     die "\nERROR: $job can not be found. Check $script."
 	unless defined $id;
     my $scrname = basename($script);
-    say STDERR "checking job: $scrname with jobid: $id" if $threads == 1;
     my $cmd = "qstat -j $id";
 
     attempt : {
 	my $out = capture_merged { system([0..5], $cmd); };
 	
 	if ($out =~ /jobs do not exist/) {
-	    #say STDERR "job $id is complete";
 	    return 1;
 	}
 	else {
@@ -160,10 +174,10 @@ sub write_transposome_conf ($dir, $joined, $readnum) {
     say $out "
 blast_input:
   - sequence_file:      $joined
-  - sequence_format:    fasta
+  - sequence_format:    fastq
   - sequence_num:       50000
   - cpu:                1
-  - thread:             2
+  - thread:             1
   - output_directory:   $outdir
 clustering_options:
   - in_memory:          1
@@ -185,10 +199,9 @@ output:
 }
 
 sub join_reads ($dir, $fsamp, $rsamp, $sample_level) {
-    my $joined = $dir."_${sample_level}_interl.fasta";
+    my $joined = $dir."_${sample_level}_interl.fastq";
     my $jout   = File::Spec->catfile($dir, $joined);
 
-    say STDERR "joined file is: $jout" if $threads == 1;
     if (defined $fsamp && defined $rsamp && -s $fsamp && -s $rsamp) {
         my $jcmd = "pairfq joinpairs -f $fsamp -r $rsamp -o $jout";
 
@@ -220,7 +233,7 @@ sub sample_seqs ($dirpath, $dir, $f, $r, $level, $addinfo) {
     }
 
     if ($addinfo) {
-	my $ext = ".fasta";
+	my $ext = ".fastq";
 	my $pair_level = $level / 2;
 	my $forig   = File::Spec->catfile($dirpath, $f);
 	my $rorig   = File::Spec->catfile($dirpath, $r);
@@ -260,8 +273,8 @@ sub sample_seqs ($dirpath, $dir, $f, $r, $level, $addinfo) {
 	undef $done;
 	undef @job;
 
-	my $fsample_cmd = "zcat $forward | seqtk sample -s11 - $pair_level | seqtk seq -A - | pairfq addinfo -i - -o $fsamp -p 1";
-	my $rsample_cmd = "zcat $reverse | seqtk sample -s11 - $pair_level | seqtk seq -A - | pairfq addinfo -i - -o $rsamp -p 2";
+	my $fsample_cmd = "zcat $forward | seqtk sample -s11 - $pair_level | pairfq addinfo -i - -o $fsamp -p 1";
+	my $rsample_cmd = "zcat $reverse | seqtk sample -s11 - $pair_level | pairfq addinfo -i - -o $rsamp -p 2";
 
 	$script = make_script('sample');
 	open my $saout, '>', $script;
@@ -287,11 +300,10 @@ sub sample_seqs ($dirpath, $dir, $f, $r, $level, $addinfo) {
 	return ($fsamp, $rsamp);
     }
     else {
-	my $ext = ".fasta";
+	my $ext = ".fastq";
         my $pair_level = $level / 2;
 	my ($forward, $reverse) = ($f, $r);
-
-	my ($ffile, $fdir, $fext) = fileparse($forward, qr/\.[^.]*/);
+        my ($ffile, $fdir, $fext) = fileparse($forward, qr/\.[^.]*/);
         my ($rfile, $rdir, $rext) = fileparse($reverse, qr/\.[^.]*/);
 
         my $fpair = File::Spec->catfile($dir, $ffile."_$pair_level".$ext);
@@ -326,116 +338,42 @@ sub sample_seqs ($dirpath, $dir, $f, $r, $level, $addinfo) {
 sub screen_reads ($fsamp, $rsamp, $dir, $matchlen, $identity) {
     my ($ffile, $fdir, $fext) = fileparse($fsamp, qr/\.[^.]*/);
     my ($rfile, $rdir, $rext) = fileparse($rsamp, qr/\.[^.]*/);
-    my $fsamp_blt = File::Spec->catfile($dir, $ffile."_scr".".bln");
-    my $rsamp_blt = File::Spec->catfile($dir, $rfile."_scr".".bln");
-    my $fsamp_scrfas = File::Spec->catfile($dir, $ffile."_scr".".fasta");
-    my $rsamp_scrfas = File::Spec->catfile($dir, $rfile."_scr".".fasta");
+    my $contam = File::Spec->catfile($dir, $ffile."_contam_%".".fastq");
+    my $fsamp_scrfq = File::Spec->catfile($dir, $ffile."_scr".".fastq");
+    my $rsamp_scrfq = File::Spec->catfile($dir, $rfile."_scr".".fastq");
 
-    ($fsamp_blt, $rsamp_blt) = run_blast($fsamp, $rsamp, $fsamp_blt, $rsamp_blt);
-    my $fscr_reads = filter_hits($fsamp, $fsamp_blt, $fsamp_scrfas, $matchlen, $identity);
-    my $rscr_reads = filter_hits($rsamp, $rsamp_blt, $rsamp_scrfas, $matchlen, $identity);
-    my ($fpfile, $rpfile) = pair_reads($fscr_reads, $rscr_reads);
+    ($fsamp_scrfq, $rsamp_scrfq) = run_bbsplit($dir, $fsamp, $rsamp, $contam, $fsamp_scrfq, $rsamp_scrfq);
 
-    unlink $fsamp_blt, $rsamp_blt;
-    return ($fpfile, $rpfile);
+    return ($fsamp_scrfq, $rsamp_scrfq);
 }
 
-sub pair_reads ($fscr_reads, $rscr_reads) {
-    my ($fname, $fpath, $fsuffix) = fileparse($fscr_reads, qr/\.[^.]*/);
-    my ($rname, $rpath, $rsuffix) = fileparse($rscr_reads, qr/\.[^.]*/);
+sub run_bbsplit ($dir, $fsamp, $rsamp, $contam, $fsamp_scrfq, $rsamp_scrfq) {
+    my $db = '/home/jmblab/statonse/db/ScreenDB_Hannus-cpDNA_UniVec-5-2_Plant-mtDNA_LSU-SSU-DB.fasta';
+    my $bbcmd = "~/apps/bbmap/bbsplit.sh -Xmx8g in1=$fsamp in2=$rsamp ref=$db ";
+    $bbcmd .= "basename=$contam outu1=$fsamp_scrfq outu2=$rsamp_scrfq";
 
-    my $fpfile = File::Spec->catfile($fpath, $fname."_fp".$fsuffix);
-    my $rpfile = File::Spec->catfile($rpath, $rname."_rp".$rsuffix);
-    my $fsfile = File::Spec->catfile($fpath, $fname."_fs".$fsuffix);
-    my $rsfile = File::Spec->catfile($rpath, $rname."_rs".$rsuffix);
+    my $bbscript = make_script('bbsplit');
 
-    my $script = make_script('pairfq');
-    my $cmd = "pairfq makepairs -f $fscr_reads -r $rscr_reads -fp $fpfile -rp $rpfile -fs $fsfile -rs $rsfile";
-    open my $tout, '>', $script;
-    say $tout "#!/bin/bash\n$cmd";
-    close $tout;
-        
-    my @job;
-    try {
-        @job = capture([0..5], "qsub -q rcc-30d $script");
-    }
-    catch {
-        say "\nERROR: pairfq exited. Here is the exception: $_\n";
-        exit;
-    };
-    
-    my $done = check_job(\@job, $script);
-    my @out = glob "$script*";
-    unlink @out;
-    unlink $fscr_reads, $rscr_reads, $fsfile, $rsfile;
-
-    return ($fpfile, $rpfile);
-}
-
-sub filter_hits ($samp, $blast, $scr, $matchlen, $identity) {
-    my $script = make_script('filterhits');
-    my $cmd = "perl ~/github/sesbio/genome_assembly/filter_reads_blast.pl -i $samp -b $blast -o $scr";
-
-    open my $tout, '>', $script;
-    say $tout "#!/bin/bash\n$cmd";
-    close $tout;
+    open my $out, '>', $bbscript;
+    say $out "#!/bin/bash\n$bbcmd";
+    close $out;
 
     my @job;
     try {
-        @job = capture([0..5], "qsub -q rcc-30d $script");
-    }
-    catch {
-        say "\nERROR: filterhits exited. Here is the exception: $_\n";
-        exit;
-    };
-
-    my $done = check_job(\@job, $script);
-    my @out = glob "$script*";
-    unlink @out, $samp;
-
-    return $scr;
-}
-
-sub run_blast ($fsamp, $rsamp, $fsamp_blt, $rsamp_blt) {
-    my $fscr_cmd = "blastall -p blastn -i $fsamp -d ~/db/screendb -o $fsamp_blt -a 2 -m 8 2>&1 > /dev/null";
-    my $rscr_cmd = "blastall -p blastn -i $rsamp -d ~/db/screendb -o $rsamp_blt -a 2 -m 8 2>&1 > /dev/null";
-    my $fscript = make_script('blast');
-    my $rscript = make_script('blast');
-
-    open my $fout, '>', $fscript;
-    say $fout "#!/bin/bash\n$fscr_cmd";
-    close $fout;
-
-    open my $rout, '>', $rscript;
-    say $rout "#!/bin/bash\n$rscr_cmd";
-    close $rout;
-
-    my @fjob;
-    try {
-	@fjob = capture([0..5], "qsub -q rcc-30d -pe thread 2 $fscript");
+	@job = capture([0..5], "qsub -q rcc-30d -l mem_total=8g $bbscript");
     }
     catch {
 	say "\nERROR: blast exited. Here is the exception: $_\n";
 	exit;
     };
 
-    my @rjob;
-    try {
-        @rjob = capture([0..5], "qsub -q rcc-30d -pe thread 2 $rscript");
-    }
-    catch {
-        say "\nERROR: blast exited. Here is the exception: $_\n";
-        exit;
-    };
-        
-    my $done = check_job(\@fjob, $fscript);
+    my $done = check_job(\@job, $bbscript);
     undef $done;
-    $done = check_job(\@rjob, $rscript);
-    my @fout = glob "$fscript*";
-    my @rout = glob "$rscript*";
-    unlink @fout, @rout;
+    my @bout = glob "$bbscript*";
+    my @out = glob "$dir/*ScreenDB*";
+    unlink @bout, @out;
 
-    return ($fsamp_blt, $rsamp_blt);
+    return ($fsamp_scrfq, $rsamp_scrfq);
 }
 
 sub make_script ($command) {
@@ -449,52 +387,4 @@ sub make_script ($command) {
     my $script = $fname->filename;
 
     return $script;
-}
-
-sub readfq {
-    my ($fh, $aux) = @_;
-    @$aux = [undef, 0] if (!@$aux);
-    return if ($aux->[1]);
-    if (!defined($aux->[0])) {
-	while (<$fh>) {
-	    chomp;
-	    if (substr($_, 0, 1) eq '>' || substr($_, 0, 1) eq '@') {
-		$aux->[0] = $_;
-		last;
-	    }
-	}
-	if (!defined($aux->[0])) {
-	    $aux->[1] = 1;
-	
-    return;
-	}
-    }
-    my ($name, $comm);
-    defined $_ && do {
-	($name, $comm) = /^.(\S+)(?:\s+)(\S+)/ ? ($1, $2) :
-	                 /^.(\S+)/ ? ($1, '') : ('', '');
-    };
-    my $seq = '';
-    my $c;
-    $aux->[0] = undef;
-    while (<$fh>) {
-	chomp;
-	$c = substr($_, 0, 1);
-	last if ($c eq '>' || $c eq '@' || $c eq '+');
-	$seq .= $_;
-    }
-    $aux->[0] = $_;
-    $aux->[1] = 1 if (!defined($aux->[0]));
-    return ($name, $comm, $seq) if ($c ne '+');
-    my $qual = '';
-    while (<$fh>) {
-	chomp;
-	$qual .= $_;
-	if (length($qual) >= length($seq)) {
-	    $aux->[0] = undef;
-	    return ($name, $comm, $seq, $qual);
-	}
-    }
-    $aux->[1] = 1;
-    return ($name, $seq);
 }
