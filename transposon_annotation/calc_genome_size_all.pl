@@ -4,7 +4,7 @@
 # nohup perl calc_genome_size_all.pl 2>&1 > calc_genome_size_all.out &
 #
 # to calculate genome size:
-# perl -pe 'while (<>) { @t = split; if ($t[1] == 60 && $t[2] == 70) { print join "\t", @t[0..2], $t[4], 2*$t[4], "\n" } }' < calc_genome_size_all.out > calc_genome_size_all_adjusted_cvals.tsv
+# perl -pae 'while (<>) { if ($F[1] == 60 && $F[2] == 70) { print join "\t", @F[0..2], $F[4], 2*$F[4], "\n" } }' < calc_genome_size_all.out > calc_genome_size_all_adjusted_cvals.tsv
 
 use 5.010;
 use strict;
@@ -50,21 +50,21 @@ say STDERR join "\t", "blast_file", "filter_len", "PID", "cval_by_mean", "cval_b
 
 for my $fl (qw(50 60 70 80 90 100)) {
     for my $pid (qw(70 80 90 95)) {
-	system([0..5], "perl calc_genome_size_v0.03.pl -i $phe_blfile -q $target -t $phe_fafile -fl $fl -pid $pid");
-	system([0..5], "perl calc_genome_size_v0.03.pl -i $han_blfile -q $target -t $han_fafile -fl $fl -pid $pid");
-	system([0..5], "perl calc_genome_size_v0.03.pl -i $har_blfile -q $target -t $har_fafile -fl $fl -pid $pid");
-	system([0..5], "perl calc_genome_size_v0.03.pl -i $hte_blfile -q $target -t $hte_fafile -fl $fl -pid $pid");
-	system([0..5], "perl calc_genome_size_v0.03.pl -i $hpo_blfile -q $target -t $hpo_fafile -fl $fl -pid $pid");
-	system([0..5], "perl calc_genome_size_v0.03.pl -i $hve_blfile -q $target -t $hve_fafile -fl $fl -pid $pid");
-	system([0..5], "perl calc_genome_size_v0.03.pl -i $sen_blfile -q $target -t $sen_fafile -fl $fl -pid $pid");
-	system([0..5], "perl calc_genome_size_v0.03.pl -i $ger_blfile -q $target -t $ger_fafile -fl $fl -pid $pid");
-	system([0..5], "perl calc_genome_size_v0.03.pl -i $saf_blfile -q $target -t $saf_fafile -fl $fl -pid $pid");
-	system([0..5], "perl calc_genome_size_v0.03.pl -i $tks_blfile -q $target -t $tks_fafile -fl $fl -pid $pid");
-	system([0..5], "perl calc_genome_size_v0.03.pl -i $cp_blfile -q $target -t $cp_fafile -fl $fl -pid $pid");
-	system([0..5], "perl calc_genome_size_v0.03.pl -i $age_blfile -q $target -t $age_fafile -fl $fl -pid $pid");
-	system([0..5], "perl calc_genome_size_v0.03.pl -i $cal_blfile -q $target -t $cal_fafile -fl $fl -pid $pid");
-	system([0..5], "perl calc_genome_size_v0.03.pl -i $das_blfile -q $target -t $das_fafile -fl $fl -pid $pid");
-	system([0..5], "perl calc_genome_size_v0.03.pl -i $gna_blfile -q $target -t $gna_fafile -fl $fl -pid $pid");
+	system([0..5], "perl calc_genome_size.pl -i $phe_blfile -q $target -t $phe_fafile -fl $fl -pid $pid");
+	system([0..5], "perl calc_genome_size.pl -i $han_blfile -q $target -t $han_fafile -fl $fl -pid $pid");
+	system([0..5], "perl calc_genome_size.pl -i $har_blfile -q $target -t $har_fafile -fl $fl -pid $pid");
+	system([0..5], "perl calc_genome_size.pl -i $hte_blfile -q $target -t $hte_fafile -fl $fl -pid $pid");
+	system([0..5], "perl calc_genome_size.pl -i $hpo_blfile -q $target -t $hpo_fafile -fl $fl -pid $pid");
+	system([0..5], "perl calc_genome_size.pl -i $hve_blfile -q $target -t $hve_fafile -fl $fl -pid $pid");
+	system([0..5], "perl calc_genome_size.pl -i $sen_blfile -q $target -t $sen_fafile -fl $fl -pid $pid");
+	system([0..5], "perl calc_genome_size.pl -i $ger_blfile -q $target -t $ger_fafile -fl $fl -pid $pid");
+	system([0..5], "perl calc_genome_size.pl -i $saf_blfile -q $target -t $saf_fafile -fl $fl -pid $pid");
+	system([0..5], "perl calc_genome_size.pl -i $tks_blfile -q $target -t $tks_fafile -fl $fl -pid $pid");
+	system([0..5], "perl calc_genome_size.pl -i $cp_blfile -q $target -t $cp_fafile -fl $fl -pid $pid");
+	system([0..5], "perl calc_genome_size.pl -i $age_blfile -q $target -t $age_fafile -fl $fl -pid $pid");
+	system([0..5], "perl calc_genome_size.pl -i $cal_blfile -q $target -t $cal_fafile -fl $fl -pid $pid");
+	system([0..5], "perl calc_genome_size.pl -i $das_blfile -q $target -t $das_fafile -fl $fl -pid $pid");
+	system([0..5], "perl calc_genome_size.pl -i $gna_blfile -q $target -t $gna_fafile -fl $fl -pid $pid");
     }
 }
 
