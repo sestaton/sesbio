@@ -122,12 +122,12 @@ use warnings;
 use Cwd;
 use Getopt::Long;
 use Pod::Usage;
-use Time::HiRes qw(gettimeofday);
 use File::Basename;
 use File::Temp;
-use IPC::System::Simple qw(system);
 use Try::Tiny;
 use Parallel::ForkManager;
+use Time::HiRes         qw(gettimeofday);
+use IPC::System::Simple qw(system);
 
 #
 # Vars with scope
@@ -209,7 +209,8 @@ $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump
 			  my $t1 = gettimeofday();
 			  my $elapsed = $t1 - $t0;
 			  my $time = sprintf("%.2f",$elapsed/60);
-			  say basename($ident)," just finished with PID $pid and exit code: $exit_code in $time minutes";
+			  say basename($ident),
+			      " just finished with PID $pid and exit code: $exit_code in $time minutes";
 		      } );
 
 for my $seqs (@$seq_files) {
@@ -316,14 +317,16 @@ sub split_reads {
 					 UNLINK => 0);
 	    
 	    ##TODO: this part isn't necessary as File::Temp returns the fh
-	    open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
+	    #open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
 
-	    push @split_files, $fname;
+	    push @split_files, $fname->filename;
 	}
-	say $out join "\n", ">".$name, $seq;
+	say $fname join "\n", ">".$name, $seq;
 	$count++;
     }
-    close $in; close $out;
+    close $in; 
+    close $fname;
+
     return (\@split_files, $count);
 }
 
