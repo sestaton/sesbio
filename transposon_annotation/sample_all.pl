@@ -47,7 +47,7 @@ find( sub {
       }, $opt{dir} );
 
 for my $dir (@dirs) {
-    #say "DIR: $dir";
+    say "DIR: $dir" if $opt{threads} == 1;
     $pm->start($dir) and next;
 
     my @trimmed_files;
@@ -62,9 +62,11 @@ for my $dir (@dirs) {
     my $ea = each_array(@forward, @reverse);
 
     while ( my ($f, $r) = $ea->() ) {
-	#say join "\n", $f, $r;
-	#say "----------------";
-	my ($fpfile, $rpfile) = make_pairs($f, $r);
+	if ($opt{threads} == 1) {
+	    say join "\n", $f, $r;
+	    say "----------------";
+	}
+	my ($fpfile, $rpfile) = make_pairs($f, $r, $opt);
 	my $fsample = sample_reads($fpfile, $opt{num});
 	my $rsample = sample_reads($rpfile, $opt{num});
 	my $intfile = join_pairs($fsample, $rsample);
@@ -84,7 +86,7 @@ say "***** Finished sampling reads in $final_time minutes at: $ft.";
 # methods
 #
 sub make_pairs {
-    my ($f, $r) = @_;
+    my ($f, $r, $opt) = @_;
 
     my ($fname, $fpath, $fsuffix) = fileparse($f, qr/\.[^.]*/);
     my ($rname, $rpath, $rsuffix) = fileparse($r, qr/\.[^.]*/);
@@ -95,8 +97,11 @@ sub make_pairs {
     my @addinfo_r = "pairfq addinfo -i $r -o $rfile -p 2";
     run_cmd(\@addinfo_f, 'pairfq addinfo');
     run_cmd(\@addinfo_r, 'pairfq addinfo');
-    #say join "\n", $ffile, $rfile;
-    #say "------------------------";
+
+    if ($opt{threads} == 1) {
+	say join "\n", $ffile, $rfile;
+	say "------------------------";
+    }
 
     my $fpfile = File::Spec->catfile($fpath, $fname."_fp".$fsuffix);
     my $rpfile = File::Spec->catfile($rpath, $rname."_rp".$rsuffix);
@@ -106,8 +111,11 @@ sub make_pairs {
     my @pairfq_mp = "pairfq makepairs -f $ffile -r $rfile -fp $fpfile -rp $rpfile -fs $fsfile -rs $rsfile";
 
     run_cmd(\@pairfq_mp, 'pairfq makepairs');
-    #say join "\n", $fpfile, $rpfile, $fsfile, $rsfile;
-    #say "-----------------------";
+
+    if ($opt{threads} == 1) {
+	say join "\n", $fpfile, $rpfile, $fsfile, $rsfile;
+	say "-----------------------";
+    }
 
     return ($fpfile, $rpfile);
 }
