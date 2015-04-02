@@ -57,13 +57,8 @@ sub id2hash {
     my $idlist = shift;
     open my $fh, '<', $idlist or die "\nERROR: Could not open file: $!\n";
 
-    my %ids;
-    while (<$fh>) {
-	chomp;
-	#s/\s+/_/g;
-	$ids{$_} = 1;
-    }
-    close $fh;
+    my %ids = map { $_ => 1 } <$fh>;
+
     return \%ids;
 }
 
