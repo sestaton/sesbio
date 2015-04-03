@@ -11,7 +11,6 @@ my $usage = "$0 cls_file hitsort cores\n";
 my $cls_file = shift or die $usage;
 my $hitsort  = shift or die $usage;
 my $cores    = shift or die $usage;
-#my $gl_dir = shift or die $usage;
 
 clusters2graphs($cls_file, $hitsort, $cores);
 
@@ -22,13 +21,6 @@ exit;
 sub clusters2graphs {
     my ($cls_file, $hitsort, $cores) = @_;
 
-    #unless ($gl_dir =~ /\/$/) {
-    #    $gl_dir .= "/";
-    #}
-    ## open it, write it, then unlink it
-
-    #my $clusters2graph_plot = $cls_file;
-    #$clusters2graph_plot .= ".cluster_graph_summary.pdf";
     my $clusters2graph_rscript = $cls_file;
     $clusters2graph_rscript .= ".clusters2graph.rscript";
     my ($hname, $hpath, $hsuffix) = fileparse($hitsort, qr/\.[^.]*/);
@@ -182,7 +174,8 @@ out=foreach(i = seq_along(clusters),.inorder=FALSE) %dopar% {
 }";
 
 close $rscript;
-	 
-system("/usr/local/R/2.15.0/lib64/R/bin/R --vanilla --slave --silent < $clusters2graph_rscript 2> /dev/null");
+
+system("/usr/local/R/2.15.0/lib64/R/bin/R --vanilla --slave --silent < $clusters2graph_rscript 2> /dev/null") == 0 or die $!;
+
 unlink $clusters2graph_rscript;
 }
