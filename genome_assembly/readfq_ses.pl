@@ -1,6 +1,53 @@
+package File;
+
+use Moose::Role;
+use MooseX::Types::Path::Class;
+use IO::File;
+
+has 'file' => (
+      is       => 'ro',
+      isa      => 'Path::Class::File',
+      required => 0,
+      coerce   => 1,
+    );
+
+has 'dir' => (
+      is       => 'ro',
+      isa      => 'Path::Class::Dir',
+      required => 0,
+      coerce   => 1,
+    );
+
+has 'fh' => (
+    is         => 'ro',
+    predicate  => 'has_fh',
+    lazy_build => 1,
+    builder    => '_build_fh',
+    );
+
+sub _build_fh {
+    my $self = shift;
+    my $file = $self->file->absolute;
+    my $fh = IO::File->new();
+
+    if ($file =~ /\.gz$/) {
+        open $fh, '-|', 'zcat', $file or die "\nERROR: Could not open file: $file\n";
+    }
+    elsif ($file =~ /\.bz2$/) {
+        open $fh, '-|', 'bzcat', $file or die "\nERROR: Could not open file: $file\n";
+    }
+    elsif ($file =~ /^-$|STDIN/) {
+        open $fh, '< -' or die "\nERROR: Could not open STDIN\n";
+    }
+    else {
+	open $fh, '<', $file or die "\nERROR: Could not open file: $file\n";
+    }
+
+    return $fh;
+}
+
 package readfq_ses;
 
-use 5.014;
 use Moose;
 use namespace::autoclean;
 
@@ -121,11 +168,11 @@ __PACKAGE__->meta->make_immutable;
 
 package main;
 
-use 5.014;
+use 5.010;
 use strict;
 use warnings;
-use autodie qw(open);
-use Data::Dump qw(dd);
+use autodie;
+use Data::Dump;
 
 my $usage = "$0 infile\n";
 my $infile = shift or die $usage;
