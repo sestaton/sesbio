@@ -1,13 +1,14 @@
 #!/usr/bin/env perl
 
 ## TODO: Store matches with Storable for later
+
 use 5.010;
 use strict;
 use warnings;
 use String::Simrank;
 use Data::Dump;
 use Getopt::Long;
-use autodie qw(open);
+use autodie;
 use Cwd;
 
 my $usage = "$0 -d infile(db) -q query -o outfile\n";
@@ -39,7 +40,8 @@ for my $k (sort { scalar(@{$matches->{$a}}) <=> scalar(@{$matches->{$b}}) } keys
     my $num_matches = scalar @{$matches->{$k}};
     if ($num_matches > 1) { 
 	say {$out} join "\t", "$k:", $num_matches;
-	for my $hit (@{$matches->{$k}}) { ## Matches are already sorted by percent identity, so no sorting necessary.
+	## Matches are already sorted by percent identity, so no sorting necessary.
+	for my $hit (@{$matches->{$k}}) {
 	    say {$out} join "\t", "HitID:", $hit->[0], "Perc:", $hit->[1];
 	}
     }
