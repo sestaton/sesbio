@@ -35,12 +35,12 @@
 use 5.010;
 use strict;
 use warnings;
+use autodie;
 use Bio::SeqIO;
-use Transposome::SeqIO;
+use Transposome::SeqFactory;
 use Benchmark qw(:all);
-#use lib qw(/home/jmblab/statonse/apps/perlmod/biome/blib/lib);
+use lib qw(/home/jmblab/statonse/apps/perlmod/biome/blib/lib);
 use Biome::SeqIO;
-use autodie qw(open);
 
 my $usage = "perl $0 infile";
 my $infile = shift or die $usage;
@@ -52,16 +52,20 @@ my ($id, $comm, $seq, $qual);
 
 my $results = timethese($count, {
     'biome_seqio' => sub {
-        my $seqio = Biome::SeqIO->new( file => $infile, format => 'fasta' );
+	open my $in, '<', $infile;
+        my $seqio = Biome::SeqIO->new( fh => $in, format => 'fasta' );
         while (my $seq = $seqio->next_Seq) {
-            $seqct++ if defined $seq;
+            $seqct++ if defined $seq->seq;
         }
+	close $in;
     },
     'transposome_seqio' => sub {
-	my $seqio = Transposome::SeqIO->new( file => $infile );
+	open my $in, '<', $infile;
+	my $seqio = Transposome::SeqFactory->new( fh => $in, format => 'fasta' )->make_seqio_object;
 	while (my $seq = $seqio->next_seq) {
-	    $seqct++ if defined $seq;
+	    $seqct++ if defined $seq->get_seq;
 	}
+	close $in;
     },
     'base_perl' => sub {
 	open my $in, '<', $infile;
@@ -79,9 +83,9 @@ my $results = timethese($count, {
     },
     'bioseqio' => sub {
 	open my $in, '<', $infile;
-	my $seqio = Bio::SeqIO->new(-fh => $in, -format => 'fastq');
+	my $seqio = Bio::SeqIO->new(-fh => $in, -format => 'fasta');
 	while (my $seq = $seqio->next_seq) {
-	    $seqct++ if defined $seq;
+	    $seqct++ if defined $seq->seq;
 	}
 	close $in;
     },
