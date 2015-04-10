@@ -58,9 +58,15 @@ Perl 5.16.0 (on Mac OS X 10.6.8 (Snow Leopard))
 
 =back
 
+=head1 SEE ALSO
+
+HMMER2GO: https://github.com/sestaton/HMMER2GO
+
+This project includes the same functionality as this script and is maintained.
+
 =head1 LICENSE
 
-Copyright (C) 2013 S. Evan Staton
+Copyright (C) 2013-2015 S. Evan Staton
 
 This program is distributed under the MIT (X11) License: http://www.opensource.org/licenses/mit-license.php
 
@@ -119,7 +125,7 @@ Print the full documentation.
 
 =cut      
 
-use 5.014;
+use 5.010;
 use strict;
 use warnings;
 use File::Basename;
@@ -129,7 +135,7 @@ use HTML::TableExtract;
 use XML::LibXML;
 use Getopt::Long;
 use Pod::Usage;
-use Data::Dump qw(dd dump);
+use Data::Dump;
 
 my $search_term;
 my $fetch_results;
@@ -169,15 +175,15 @@ $family_term      = ucfirst($family_term) if $family_term;
 my $pfam_response = qq{pfam_sanger_search_res.html};
 
 my $ua   = LWP::UserAgent->new;
-my $tree  HTML::TreeBuilder->new;
+my $tree = HTML::TreeBuilder->new;
 $ua->env_proxy;
 
 my ($response, $results);
 if ($search_term) {
-    $response = $ua->get( "http://pfam.sanger.ac.uk/search/keyword?query=$search_term" );
+    $response = $ua->get("http://pfam.sanger.ac.uk/search/keyword?query=$search_term");
 }
 elsif ($family_term) {
-    $response = $ua->get( "http://pfam.sanger.ac.uk/family/$family_term?output=xml" );
+    $response = $ua->get("http://pfam.sanger.ac.uk/family/$family_term?output=xml");
     say $response->content;
 }
 
@@ -197,9 +203,7 @@ elsif ($family_term) {
 #
 # print the results
 #
-if ($fetch_results) {
-    dd $results;
-}
+dd $results if $fetch_results;
 
 my $got_ct = 0;
 if ($fetch_hmms) {

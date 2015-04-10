@@ -5,7 +5,7 @@ Bioinformatics tools for genome analysis
 
 **ABOUT**
 
-This is a collection of (mostly) Perl scripts for working with genomics data. There is no install or build process, just use them in place. See below for usage information.
+This is a collection of scripts for working with genomics data and visualizing results. There is no install or build process, just use them in place. See below for usage information.
 
 **INSTALLATION**
 
