@@ -6,13 +6,12 @@
 use 5.010;
 use strict;
 use warnings;
+use autodie;
 use Getopt::Long;
-use autodie qw(open);
-use Data::Dump qw(dd);
-use File::Path qw(make_path);
 use File::Spec;
 use File::Basename;
-use POSIX qw(strftime);
+use File::Path qw(make_path);
+use POSIX      qw(strftime);
 
 my $usage = "$0 cls_file fasta_file\n";
 my $cls_file = shift or die $usage;
@@ -25,14 +24,12 @@ GetOptions(
 	   );
 
 my $seqhash = fas2hash($fas_file);
-#dd $seqhash;
+$cluster_size //= 500;
 
 {
     local $/ = '>';
    
     my $cls_dir_path;
-
-    $cluster_size = defined($cluster_size) ? $cluster_size : '500';
 
     open my $cls, '<', $cls_file;
 
@@ -42,7 +39,6 @@ my $seqhash = fas2hash($fas_file);
     $cls_dir_base =~ s/\.[^.]+$//;
     my $cls_dir = $cls_dir_base."_cls_fasta_files_$str";
     $cls_dir_path = $ipath.$cls_dir;
-    #say "str $str iname $iname cls_dir_base $cls_dir_base cls_dir_path $cls_dir_path";
     make_path($cls_dir_path, {verbose => 0, mode => 0711,});
  
     while (my $line = <$cls>) {
@@ -51,13 +47,9 @@ my $seqhash = fas2hash($fas_file);
         my @ids = split /\s+/, $seqids;
         my ($clid, $cls_seq_num) = $clsid =~ /(\S+)\s(\d+)/;
         #$cls_seq_num =~ s/^.*?(\d+)/$1/s;                                                                               
-        #say "clid is $clid and cls_seq_num is $cls_seq_num";
-
         if ($cls_seq_num >= $cluster_size) {
-            say $cls_seq_num;
             my $indiv_clsfile = join "_", $clid, $cls_seq_num;
             $indiv_clsfile .= ".fas";
-            #say $indiv_clsfile;
    
             my $cls_file_path = File::Spec->catfile($cls_dir_path, $indiv_clsfile);
             open my $clsout, '>', $cls_file_path;
@@ -72,7 +64,7 @@ my $seqhash = fas2hash($fas_file);
 }
 
 #
-# Subs
+# methods
 #
 sub fas2hash {
     my $fas_file = shift;
