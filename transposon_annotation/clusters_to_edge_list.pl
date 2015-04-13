@@ -6,8 +6,8 @@
 use 5.012;
 use strict;
 use warnings;
-use autodie qw(open);
-use Data::Dump qw(dd);
+use autodie;
+use Data::Dump;
 use lib qw(graph-gexf/lib);
 use Graph::GEXF;
 
