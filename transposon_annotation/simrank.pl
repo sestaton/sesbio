@@ -1,14 +1,11 @@
 #!/usr/bin/env perl
 
-## TODO: Store matches with Storable for later
-
 use 5.010;
 use strict;
 use warnings;
-use String::Simrank;
-use Data::Dump;
-use Getopt::Long;
 use autodie;
+use String::Simrank;
+use Getopt::Long;
 use Cwd;
 
 my $usage = "$0 -d infile(db) -q query -o outfile\n";
@@ -33,8 +30,6 @@ my $matches = $sr->match_oligos({ query => $query,
 				  outlen => 10,
 				  minpct => 50,
 				  reverse => 1,});
-
-#dd $matches; ## for debug
 
 for my $k (sort { scalar(@{$matches->{$a}}) <=> scalar(@{$matches->{$b}}) } keys %$matches) {
     my $num_matches = scalar @{$matches->{$k}};
