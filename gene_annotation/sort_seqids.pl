@@ -5,23 +5,27 @@
 use 5.010;
 use strict;
 use warnings;
-use autodie qw(open);
+use autodie;
 use Getopt::Long;
 use Time::HiRes qw(gettimeofday);
 
 my $infile;
 my $outfile;
-my $usage = "$0 -i in -o sorted\n";
+my $format; 
+my $usage = "$0 -i in -o sorted [-f fastq]\n";
 
 GetOptions(
 	   'i|infile=s'   => \$infile,
 	   'o|outfile=s'  => \$outfile,
+           'f|format=s'   => \$format,
 	   );
 
 if (!$infile or !$outfile) {
     say $usage,"\nERROR: No input was given. Exiting.";
     exit(1);
 }
+
+$format //= 'fasta';
 
 open my $in, '<', $infile;
 open my $out, '>', $outfile;
@@ -33,12 +37,25 @@ my $seqct = 0;
 my $t0 = gettimeofday();
 
 while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
-    $seqhash{$name} = $seq;
+    my $rec;
+    if ($format =~ /fastq/i) {
+	$rec = join "||", $seq, $qual;
+    }
+    else {
+	$rec = $seq;
+    }
+    $seqhash{$name} = $rec;
     $seqct++;
 }
 
 for my $k (sort keys %seqhash) {
-    say $out join "\n", ">".$k,$seqhash{$k};
+    if ($format =~ /fastq/i) {
+	my ($seq, $qual) = split /\|\|/, $seqhash{$k};
+	say $out join "\n", "@".$k, $seq, "+", $qual;
+    }
+    else {
+	say $out join "\n", ">".$k, $seqhash{$k};
+    }
 }
 
 close $in;
