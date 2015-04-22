@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+##NB: These timings are out-of-date, the transposome timings are now 3X faster.
+
 # Output of cmpthese() for a fasta file of 1m sequences:
 #
 #                  s/iter biome_seqio bioseqio transposome_seqio base_perl readfq
