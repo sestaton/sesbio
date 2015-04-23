@@ -13,14 +13,14 @@ use warnings;
 use Getopt::Long;
 use File::Basename;
 use Time::HiRes qw(gettimeofday);
-use IPC::System::Simple qw(system);
+use HTTP::Tiny;
 use Try::Tiny;
 use Pod::Usage;
 use WWW::Mechanize;
 use HTML::TableExtract;
 use LWP::UserAgent;
 use XML::LibXML;
-use Data::Dump qw(dd);
+use Data::Dump;
 
 # given/when emits warnings in v5.18+
 no if $] >= 5.018, 'warnings', "experimental::smartmatch";
@@ -86,10 +86,12 @@ if ($statistics) {
 }
 
 ##This is a reminder for the TODO below; just say this option isn't implemented and exit
-if ($alignments && !$gene_name || !$gene_clusters) {
-    say "ERROR: Currently only alignments for a specific gene cluster or gene name ".
-	"may be returned. Exiting.";
-    exit(1);
+if ($alignments) { 
+    if (!$gene_name || !$gene_clusters) {
+	say "ERROR: Currently only alignments for a specific gene cluster or gene name ".
+	    "may be returned. Exiting.";
+	exit(1);
+    }
 }
 
 ##TODO add handling of option for getting all alignments
@@ -644,13 +646,14 @@ sub fetch_file {
     my ($file, $endpoint) = @_;
 
     unless (-e $file) {
-	my $exit_code;
-	try {
-	    $exit_code = system([0..5], "wget -O $file $endpoint");
+	my $response = HTTP::Tiny->new->get($endpoint);
+	unless ($response->{success}) {
+	    die "Can't get url $endpoint -- Status: ", $response->{status}, " -- Reason: ", $response->{reason};
 	}
-	catch {
-	    say "\nERROR: wget exited abnormally with exit code: $exit_code. Here is the exception: $_\n";
-	};
+	
+	open my $out, '>', $file;
+	say $out $response->{content};
+	close $out;
     }
 }
 
