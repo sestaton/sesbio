@@ -1,3 +1,5 @@
+## simple role and class for handling a sequence file and reading
+## the sequences (for demonstration purposes).
 package File;
 
 use Moose::Role;
@@ -46,7 +48,7 @@ sub _build_fh {
     return $fh;
 }
 
-package readfq_ses;
+package seqio;
 
 use Moose;
 use namespace::autoclean;
@@ -171,13 +173,11 @@ package main;
 use 5.010;
 use strict;
 use warnings;
-use autodie;
-use Data::Dump;
 
 my $usage = "$0 infile\n";
 my $infile = shift or die $usage;
 
-my $seqio = readfq_ses->new( file => $infile );
+my $seqio = seqio->new( file => $infile );
 my $fh = $seqio->get_fh;
 
 while (my $seq = $seqio->next_seq($fh)) {
