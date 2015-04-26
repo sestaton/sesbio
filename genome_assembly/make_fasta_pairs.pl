@@ -1,8 +1,9 @@
 #!/usr/bin/env perl
 
 ##Description: Add pair information back to an interleaved file
-##             of paired-end reads. Ususally this is necessary
+##             of paired-end reads. Usually this is necessary
 ##             with Illumina 1.8+ where the pair information is in the comment.
+## Alternatively, just use 'pairfq addinfo'
 
 use 5.010;
 use strict;
