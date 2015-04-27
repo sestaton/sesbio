@@ -3,6 +3,7 @@
 ##TODO: 1) Filter matches by length,       DONE 
 ##      2) Filter matches by repeat ratio  (This could generate artifacts since there will be repetitive regions of most targets)
 ##      3) Putting the program in the background seems to cause capture to throw an exception
+##NB: this method with vmatch returns the best match, often resulting in only short, identical matches.
 
 use utf8;
 use 5.012;
