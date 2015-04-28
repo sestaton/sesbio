@@ -1,7 +1,8 @@
 #!/usr/bin/env perl
 
-#TODO: Take multiple hmm names at the command line
-#
+#TODO: Take multiple hmm names at the command line.
+#      Make use of the (undocumented) Easel library shipped with HMMER,
+#      which provides access to many parsing/extraction utilities.
 use 5.010;
 use strict;
 use warnings;
