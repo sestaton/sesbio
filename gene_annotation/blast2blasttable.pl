@@ -76,7 +76,7 @@ while ( my $result = $search_in->next_result ) {
 close $blastout;
 
 if ($verbose) {
-    print "$allq total hits written to report $blastout.\n";
+    print "$allq total hits written to report $outfile.\n";
 }
 
 sub usage {
