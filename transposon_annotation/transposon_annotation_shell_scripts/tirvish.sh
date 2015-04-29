@@ -11,6 +11,7 @@ hmm=/home/statonse/db/Pfam-A.hmm
 gt=/home/statonse/apps/genometools-unstable/bin/gt
 
 ## index genome
+## NB: the '-mirrored' option is required (to search both strands)
 time $gt suffixerator -db $db -indexname $index -tis -suf -lcp -des -ssp -dna -mirrored -v
 
 ## run tirvish
