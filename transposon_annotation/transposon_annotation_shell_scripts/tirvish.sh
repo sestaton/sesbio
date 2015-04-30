@@ -11,7 +11,9 @@ hmm=/home/statonse/db/Pfam-A.hmm
 gt=/home/statonse/apps/genometools-unstable/bin/gt
 
 ## index genome
-## NB: the '-mirrored' option is required (to search both strands)
+## NB: the '-mirrored' option is required for tirvish(to search both strands)
+##     Also, the database is incompatible with ltrharvest, so see the ltrdigest.sh 
+##     script for details on the usage of that program
 time $gt suffixerator -db $db -indexname $index -tis -suf -lcp -des -ssp -dna -mirrored -v
 
 ## run tirvish
