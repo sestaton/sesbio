@@ -1,18 +1,50 @@
 #!/bin/bash
 
+gt=/home/statonse/apps/genometools-unstable/bin/gt
+db=Ha412v1r1_genome_no_cp-mt-rd.fasta
+dbbase=$(echo ${db%.*})
+gff=${dbbase}_ltrharvest.gff3
+gff_sort=${dbbase}_ltrharvest_sort.gff3
+gff_h=${dbbase}_ltrdigest.gff3
+index=${db}.index
+hmm=/home/statonse/db/Pfam-A.hmm
+trnas=/home/statonse/db/plant_tRNAs.fasta
 ###################################################
 #LTRharvest
 ###################################################
 # create suffix array for ltrharvest
+time $gt suffixerator -db $db -indexname $index -tis -suf -lcp -ssp -sds -des -dna -v
 
-gt suffixerator -db MCU_07A15.fasta -indexname MCU_BAC -tis -suf -lcp -ssp -sds -des -dna -v
-
-gt ltrharvest -longoutput -mintsd 3 -maxlenltr 4000 -index MCU_BAC -out pred-all_MCU_BAC -outinner pred-inner_MCU_BAC -gff3 MCU_BAC.gff3
+# run ltrharvest
+time $gt ltrharvest \
+-seqids \
+-longoutput \
+-mintsd 3 \
+-minlenltr 100 \
+-maxlenltr 6000 \
+-maxdistltr 25000 \
+-motif tgca \
+-similar 99 \
+-vic 10 \
+-index $index \
+-out pred-all_Ha412v1.1 \
+-outinner pred-inner_Ha412v1.1 \
+-gff3 $gff
 
 ###################################################
 #LTRdigest
 ###################################################
 # sort the gff3 file(s) prior to running ltrdigest
-gt gff3 -sort MCU_BAC.gff3 > MCU_BAC_sorted.gff3
+$gt gff3 -sort $gff > $gff_sort
 
-gt ltrdigest -trnas /iob_home/jmblab/statonse/db/tRNAdb/plant_tRNAs.fasta -hmms /iob_home/jmblab/statonse/db/HMMs/*.hmm -aliout yes -aaout yes -outfileprefix ltrdigest_MCU_BAC MCU_BAC_sorted.gff3 MCU_BAC > MCU_BAC_ltrdigest.gff3
+# run ltrdigest
+time $gt ltrdigest \
+-trnas $trnas \
+-hmms $hmm \
+-aliout yes \
+-aaout yes \
+-seqfile $db \
+-matchdescstart \
+-seqnamelen 50 \
+-o $gff_h \
+-outfileprefix ltrdigest_Ha412v1.1 $gff_sort $index
