@@ -1,5 +1,11 @@
 #!/bin/bash
 
+##NB: 1) Having the database file in the working directory is perferable
+##    so that all the results files are in that directory.
+##    2) The suffixerator command uses a lot of memory, so be aware (~20 Gb RAM
+##    for a plant genome).
+##    3) The index commands for ltrharvest are different than those for tirvish.
+
 gt=/home/statonse/apps/genometools-unstable/bin/gt
 db=Ha412v1r1_genome_no_cp-mt-rd.fasta
 dbbase=$(echo ${db%.*})
