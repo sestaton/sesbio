@@ -2,4 +2,6 @@
 
 cd `pwd`
 
-perl ~/apps/MITE-Hunter/MITE_Hunter_manager.pl -i CGP_JMBLAB_MCU_sunflowerBACs_11-09.fasta -g HAmites -n 4 -S 12345678 &
+db=/home/statonse/db/Ha412v1r1_genome_no_cp-mt-rd.fasta
+
+perl ~/apps/MITE_Hunter/MITE_Hunter_manager.pl -i $db -g HAmites -n 8 -S 12345678
