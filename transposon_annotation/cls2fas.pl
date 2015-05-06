@@ -13,15 +13,18 @@ use File::Basename;
 use File::Path qw(make_path);
 use POSIX      qw(strftime);
 
-my $usage = "$0 cls_file fasta_file\n";
-my $cls_file = shift or die $usage;
-my $fas_file = shift or die $usage;
+my $usage = "$0 -c cls_file -f fasta_file [-s]\n";
+my $cls_file;
+my $fas_file;
 my $cluster_size;
 
 GetOptions(
-	   'c|cls_file=s'  => \$cls_file,
-	   'f|fas_file=s'  => \$fas_file,
+	   'c|cls_file=s'     => \$cls_file,
+	   'f|fas_file=s'     => \$fas_file,
+           's|cluster_size=i' => \$cluster_size,
 	   );
+
+die $usage if !$cls_file || !$fas_file;
 
 my $seqhash = fas2hash($fas_file);
 $cluster_size //= 500;
