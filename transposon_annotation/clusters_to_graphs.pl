@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+## R code is from the predecessor to RepeatExplorer (same authors).
+
 use 5.010;
 use strict;
 use warnings;
