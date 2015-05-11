@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 ## NB: faSomeRecords from Kent source is the fastest for this task, but 
-##     this script works for Fastq, as well as Fasta.
+##     this script works for FASTQ also and reads compressed files..
 
 use 5.010;
 use strict;
@@ -136,7 +136,8 @@ USAGE: $script [-id] [-i] [-o]
 
 Required:
     -id|idlist    :      An ID list of records (one per line).  
-    -i|infile     :      A fasta/q file to pull sequences from.
+    -i|infile     :      A FASTA/Q file to pull sequences from 
+                         (input may be compressed with gzip or bzip2).
     -o|outfile    :      A file to write the records to.
 
 EOF
