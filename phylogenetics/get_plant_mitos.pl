@@ -44,13 +44,9 @@ usage() and exit(0) if $help;
 
 # counters
 my $t0 = gettimeofday();
-my $fasnum = 0;
-my $headchar = 0;
+my $fasnum    = 0;
+my $headchar  = 0;
 my $non_atgcn = 0;
-
-my @aux = undef;
-my ($name, $comm, $seq, $qual);
-my ($n, $slen, $qlen) = (0, 0, 0);
 
 my $url = 'http://www.ncbi.nlm.nih.gov/genomes/GenomesGroup.cgi?taxid=33090&opt=organelle';
 my $response = HTTP::Tiny->new->get($url);
@@ -88,11 +84,10 @@ for my $ts ($te->tables) {
 	}
     }
 }
-#close $outfile;
 
 my $t1 = gettimeofday();
 my $elapsed = $t1 - $t0;
-my $time = sprintf("%.2f",$elapsed);
+my $time    = sprintf("%.2f",$elapsed);
 
 exit;
 
@@ -102,17 +97,19 @@ sub search_by_name ($genus, $species) {
     say join "\t", $genus, $species, $id;
     _get_lineage_for_id($id);
 }
+
 sub _get_lineage_for_id ($id) {
-    my $esumm = "esumm_$id.xml";
-    my $urlbase = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=$id";
+    my $esumm    = "esumm_$id.xml";
+    my $urlbase  = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=$id";
     my $response = _fetch_file($urlbase, $esumm);
-    my $parser = XML::LibXML->new;
-    my $doc = $parser->parse_file($esumm);
+    my $parser   = XML::LibXML->new;
+    my $doc      = $parser->parse_file($esumm);
+
     for my $node ( $doc->findnodes('//TaxaSet/Taxon') ) {
 	my ($lineage) = $node->findvalue('Lineage/text()');
-	my ($family) = map { s/\;$//; $_; }
+	my ($family) = map  { s/\;$//; $_; }
 	               grep { /(\w+aceae)/ }
-          	       map { split /\s+/ } $lineage;
+          	       map  { split /\s+/  } $lineage;
 	say "Family: $family";
 	say "Full taxonomic lineage: $lineage";
     }
@@ -121,11 +118,12 @@ sub _get_lineage_for_id ($id) {
 sub _fetch_id_for_name ($genus, $species) {
     my $esearch = "esearch_$genus"."_"."$species.xml";
     my $urlbase = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi";
-    $urlbase .= "?db=taxonomy&term=$genus%20$species";
+    $urlbase    .= "?db=taxonomy&term=$genus%20$species";
     my $reponse = _fetch_file($urlbase, $esearch);
     my $id;
     my $parser = XML::LibXML->new;
-    my $doc = $parser->parse_file($esearch);
+    my $doc    = $parser->parse_file($esearch);
+
     for my $node ( $doc->findnodes('//eSearchResult/IdList') ) {
 	($id) = $node->findvalue('Id/text()');
     }
@@ -150,11 +148,11 @@ sub usage {
 USAGE: $script -i file -o file
 
 Required:
-    -i|infile    :    input
-    -o|outfile   :    output
+    -i|infile    :    input (not required/used at this time)
+    -o|outfile   :    output (not required/used at this time)
     
 Options:
-    -h|help      :    Print usage statement.
-    -m|man       :    Print full documentation.
+    -h|help      :    Print usage statement. (not implemented)
+    -m|man       :    Print full documentation. (not implemented)
 END
 }
