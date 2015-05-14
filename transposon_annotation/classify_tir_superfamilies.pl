@@ -5,9 +5,7 @@ use warnings;
 use autodie;
 use File::Basename;
 use Statistics::Descriptive;
-use Sort::Naturally;
 use Bio::Tools::GFF;
-use List::Util    qw(any);
 use List::UtilsBy qw(nsort_by);
 use Data::Dump;
 use experimental 'signatures';
@@ -74,7 +72,7 @@ sub find_tc1_mariner ($feature, $header, $hash, $gff) {
     my $pdoms      = 0;
     
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = $name."_tc1-mariner.gff";
+    my $outfile = $name."_tc1-mariner.gff3";
     open my $out, '>>', $outfile;
     say $out $header;
 
@@ -96,14 +94,12 @@ sub find_tc1_mariner ($feature, $header, $hash, $gff) {
 		my $tsd_len = ($feats[4] - $feats[3]) + 1;
 		if ($tsd_len == 2) {
 		    my $tsd = substr $hash->{$loc}, $feats[3], $tsd_len;
-		    if ($tsd eq 'TA') {
-			$is_mariner = 1;
-		    }
+		    $is_mariner = 1 if $tsd =~ /ta/i;
 		}
 	    }
-	    $mar_feats .= join "\t", @feats, "\n" if $is_mariner;
+	    $mar_feats .= join "\t", @feats, "\n";
 	}
-	if (defined $mar_feats) {
+	if ($is_mariner) {
 	    chomp $mar_feats;
 	    say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
 	    say $out $mar_feats;
@@ -135,7 +131,7 @@ sub find_hat ($feature, $header, $hash, $gff) {
     my $pdoms = 0;
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = $name."_hAT.gff";
+    my $outfile = $name."_hAT.gff3";
     open my $out, '>>', $outfile;
     say $out $header;
 
@@ -155,13 +151,11 @@ sub find_hat ($feature, $header, $hash, $gff) {
 	    $has_pdoms = 1 if $feats[2] =~ /protein_match/;
             if ($feats[2] eq 'target_site_duplication') {
                 my $tsd_len = ($feats[4] - $feats[3]) + 1;
-                if ($tsd_len == 8) {
-		    $is_hat = 1;
-                }
+		$is_hat = 1 if $tsd_len == 8;
             }
-            $hat_feats .= join "\t", @feats, "\n" if $is_hat;
+            $hat_feats .= join "\t", @feats, "\n";
         }
-	if (defined $hat_feats) {
+	if ($is_hat) {
 	    chomp $hat_feats;
 	    say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
 	    say $out $hat_feats;
@@ -193,7 +187,7 @@ sub find_mutator ($feature, $header, $hash, $gff) {
     my $pdoms = 0;
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = $name."_mutator.gff";
+    my $outfile = $name."_mutator.gff3";
     open my $out, '>>', $outfile;
     say $out $header;
 
@@ -217,9 +211,9 @@ sub find_mutator ($feature, $header, $hash, $gff) {
 		    $is_mutator = 1;
                 }
             }
-            $mut_feats .= join "\t", @feats, "\n" if $is_mutator;
+            $mut_feats .= join "\t", @feats, "\n";
         }
-	if (defined $mut_feats) {
+	if ($is_mutator) {
 	    chomp $mut_feats;
 	    say $out $mut_feats;
 	    say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
@@ -251,7 +245,7 @@ sub find_cacta ($feature, $header, $hash, $gff) {
     my $pdoms = 0;
 
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = $name."_cacta.gff";
+    my $outfile = $name."_cacta.gff3";
     open my $out, '>>', $outfile;
     say $out $header;
 
@@ -273,14 +267,12 @@ sub find_cacta ($feature, $header, $hash, $gff) {
                 my $tsd_len = ($feats[4] - $feats[3]) + 1;
                 if ($tsd_len >= 2 && $tsd_len <= 3) {
                     my $tir_elem = substr $hash->{$loc}, $s, $len;
-                    if ($tir_elem =~ /^cact[ag]/i) {
-                        $is_cacta = 1;
-                    }
+		    $is_cacta = 1 if $tir_elem =~ /^cact[ag]/i;
                 }
 	    }
-            $cac_feats .= join "\t", @feats, "\n" if $is_cacta;
+            $cac_feats .= join "\t", @feats, "\n";
         }
-	if (defined $cac_feats) {
+	if ($is_cacta) {
 	    chomp $cac_feats;
 	    say $out $cac_feats;
 	    say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
@@ -312,7 +304,7 @@ sub write_unclassified_tirs ($feature, $header, $hash, $gff) {
     my $pdoms = 0;
     
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
-    my $outfile = $name."_unclassified.gff";
+    my $outfile = $name."_unclassified.gff3";
     open my $out, '>>', $outfile;
     say $out $header;
 
@@ -353,7 +345,6 @@ sub write_unclassified_tirs ($feature, $header, $hash, $gff) {
 sub get_source {
     my ($ref) = @_;
 
-    #dd $ref and exit;
     for my $feat (@$ref) {
 	for my $rfeat (@$feat) {
 	    my @feats = split /\|\|/, $rfeat;
