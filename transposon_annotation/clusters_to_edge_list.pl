@@ -1,14 +1,12 @@
 #!/usr/bin/env perl
 
-##NB: This script only works with my version of Graph::GEXF (https://github.com/sestaton/graph-gexf)
-##    At least, I could only get the graphs load in Geffi with some modifications implemented in that library.
+##NB: This script requires Graph::GEXF (https://github.com/sestaton/graph-gexf)
 
 use 5.012;
 use strict;
 use warnings;
 use autodie;
 use Data::Dump;
-use lib qw(graph-gexf/lib);
 use Graph::GEXF;
 
 my $usage = "$0 hitsort_file cls_file\n";
@@ -25,12 +23,7 @@ while (<$hs>) {
     my @f = split /\t/;
     $idmap{$f[0]} = $f[1];
     $idmap{$f[1]} = $f[0];
-    if (exists $nodes{$f[0]}) {
-	push @{$nodes{$f[0]}}, join "|", $f[1], $f[2];
-    }
-    else {
-	$nodes{$f[0]} = [ join "|", $f[1], $f[2] ];
-    }
+    push @{$nodes{$f[0]}}, join "|", $f[1], $f[2];
 }
 close $hs;
 
