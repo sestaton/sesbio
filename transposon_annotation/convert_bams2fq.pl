@@ -44,8 +44,6 @@ $pm->wait_all_children;
 # methods
 #
 sub bam2fq ($bam, $samtools) {
-    #say STDERR "===> Converting bam to fastq...";
-    
     my $wd = getcwd();
     my ($name, $path, $suffix) = fileparse($bam, qr/\.[^.]*/);
     my $fq  = File::Spec->catfile($wd, $name.".fq");
@@ -67,14 +65,5 @@ sub bam2fq ($bam, $samtools) {
 
 sub run_cmd ($cmd) {
     my ($stdout, $stderr, @res) = capture { system([0..5], $cmd); };
-
-    #my @job;
-    #try {
-	#@job = capture([0..5], $cmd);
-    #}
-    #catch {
-	#say "\nERROR: $cmd exited. Here is the exception: $_\n";
-	#exit;
-    #};
 }
 
