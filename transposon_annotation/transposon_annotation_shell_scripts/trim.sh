@@ -13,7 +13,7 @@ trnas=/home/statonse/db/plant_tRNAs.fasta
 #LTRharvest
 ###################################################
 # create suffix array for ltrharvest
-#time $gt suffixerator -db $db -indexname $index -tis -suf -lcp -ssp -sds -des -dna -v
+time $gt suffixerator -db $db -indexname $index -tis -suf -lcp -ssp -sds -des -dna -v
 
 time $gt ltrharvest \
 -seqids yes \
