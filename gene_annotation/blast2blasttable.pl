@@ -50,8 +50,14 @@ $pid_thresh //= 0;
 open my $blastout, '>', $outfile or die "\nERROR: Could not open file: $!\n";
 
 # create SearchIO object to read in blast report and to write outfile
-my $search_in = Bio::SearchIO->new(-format => $format, -file => $infile, -tempfile => 1);
-
+my $search_in; 
+if ($tophit) {
+    $search_in = Bio::SearchIO->new(-format => $format, -file => $infile, -tempfile => 1, -best_hit_only => 1);
+}
+else {
+    $search_in = Bio::SearchIO->new(-format => $format, -file => $infile, -tempfile => 1);
+}
+say STDERR "Getting top hits only..." if $tophit;
 #say $blastout join "\t", "#Query", "Hit", "Percent_ID", "HSP_len", "Num_mismatch", "Num_gaps", 
 #                          "Query_start", "Query_end", "Hit_start", "Hit_end", "E-value", "Bit_score";
 
@@ -67,17 +73,19 @@ while ( my $result = $search_in->next_result ) {
 		my $matches = @matches;
 		my $mismatches = $hsplen - $matches;
 		
-		say $blastout join "\t", $result->query_name, $hit->name, $percent_identity, $hsplen, $mismatches, $hsp->gaps,
-		$hsp->start('query'), $hsp->end('query'), $hsp->start('hit'), $hsp->end('hit'), $hsp->evalue, $hsp->bits;
+		my $name = $result->query_description;
+		$name =~ s/\s+/_/g;
+		say $blastout join "\t", $name, $hit->name, 
+		$percent_identity, $hsplen, $mismatches, $hsp->gaps,
+		$hsp->start('query'), $hsp->end('query'), $hsp->start('hit'), 
+		$hsp->end('hit'), $hsp->evalue, $hsp->bits, $hit->description;
 	    }  
 	}
     }
 }
 close $blastout;
 
-if ($verbose) {
-    print "$allq total hits written to report $outfile.\n";
-}
+say "$allq total hits written to report $outfile" if $verbose;
 
 sub usage {
     my $script = basename($0);
