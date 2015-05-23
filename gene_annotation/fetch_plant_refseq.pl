@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+# consider do this asynchronously with AnyEvent::HTTP
+
 use 5.010;
 use strict;
 use warnings;
