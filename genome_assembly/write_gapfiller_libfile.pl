@@ -20,6 +20,7 @@ my $orientation;
 my $directory;
 my $match;
 my $negate;
+my $suffix;
 my $help;
 
 GetOptions(
@@ -31,13 +32,14 @@ GetOptions(
 	   'd|directory:s'   => \$directory,
            'm|match:s'       => \$match,
            'n|negate:s'      => \$negate,
+           's|suffix:s'      => \$suffix,
            'h|help'          => \$help,
 	   );
 
 usage() and exit(0) if $help;
 usage() and exit(1) if !$insert_size || !$libname;
 
-my $suffix = ".fq";
+$suffix      //= ".fq";
 $tool        //= 'bwa';
 $deviation   //= '0.25';
 $orientation //= 'FR';
@@ -52,9 +54,8 @@ my $pattern = "$File::Find::name if -f and /^$match/ && /$suffix$/";
 $pattern .= "&& /[^$negate]/" if $negate;
 
 # if any file is unpaired it should be negated because these won't work with GapFiller
-#TODO: The suffix should be an option, not hardcoded, along with the negation option.
 find( sub { 
-    push @files, $File::Find::name if -f and /^$match/ && /\.fq$/ && /[^$negate]/;
+    push @files, $File::Find::name if -f and /^$match/ && /$suffix$/ && /[^$negate]/;
       }, $directory);
  
 my @sorted = sort @files;
@@ -79,6 +80,8 @@ Options:
     -t|tool           :    The name of the toolto use for alignment (Default: bwa).
     -d|deviation      :    The allowed amount of variation between the reads (Default: 0.25).
     -o|orientation    :    The orientation of the reads(Default: FR).
+    -n|negate         :    The name of an unpaired file to skip.
+    -s|suffix         :    The FASTQ suffix to use for matching (Default: .fq).
     -h|help           :    Print usage statement.
 
 END
