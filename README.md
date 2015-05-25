@@ -1,7 +1,7 @@
 sesbio
 ======
 
-Bioinformatics tools for genome analysis
+Bioinformatics scripts for genome analysis
 
 **ABOUT**
 
