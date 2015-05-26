@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # Convert a blastxml or standard blast report to a blast table
-# TODO: Not currently getting top hit.
+# TODO: Not currently getting top hit with xml report (add test with standard reports).
 
 use 5.010;
 use strict;
