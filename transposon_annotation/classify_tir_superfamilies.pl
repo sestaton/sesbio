@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+## Take the output of gt tirvish and classify TEs into superfamilies
+## after filtering out retroelements.
+
 use 5.020;
 use warnings;
 use autodie;
