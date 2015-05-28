@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
-# consider do this asynchronously with AnyEvent::HTTP
+# consider do this asynchronously with AnyEvent::FTP::Client,
+# or in parallel with a (thread) queue
 
 use 5.010;
 use strict;
