@@ -6,6 +6,8 @@ script: seqio_benchmarks.pl
     - add transposome seqfactory benchmarks, which are 3X faster than the transposome seqio methods
 
 ## genome_assembly
+script: gsAssembler.pl
+    - remove hard coded paths and implement some exception handling for command execution
 
 ## transposon_annotation
 script: find_graph_edges.pl
