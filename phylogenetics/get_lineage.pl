@@ -12,7 +12,6 @@ use warnings;
 use HTTP::Tiny;
 use XML::LibXML;
 
-my $id      = 4232; # Helianthus annuus
 my $genus   = 'Helianthus';
 my $species = 'annuus';
 
@@ -55,9 +54,9 @@ sub _get_lineage_for_id {
 sub _fetch_id_for_name {
     my ($genus, $species) = @_;
 
-    my $esearch  = "esearch_$genus"."_"."$species.xml";
-    my $urlbase  = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=taxonomy&term=$genus%20$species";
-
+    my $esearch = "esearch_$genus"."_"."$species.xml";
+    my $urlbase = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?";
+    $urlbase    .= "db=taxonomy&term=$genus%20$species";
     my $reponse = _fetch_file($urlbase, $esearch);
 
     my $id;
