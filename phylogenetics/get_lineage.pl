@@ -11,10 +11,15 @@ use strict;
 use warnings;
 use HTTP::Tiny;
 use XML::LibXML;
+use Getopt::Long;
 
-my $genus   = 'Helianthus';
-my $species = 'annuus';
+my $genus;
+my $species;
 
+GetOptions( 'g|genus=s' => \$genus, 's|species=s' => \$species );
+
+$genus   //= 'Helianthus';
+$species //= 'annuus';
 search_by_name($genus, $species);
 
 #
@@ -23,7 +28,9 @@ search_by_name($genus, $species);
 sub search_by_name {
     my ($genus, $species) = @_;
 
-    my $id = _fetch_id_for_name($genus, $species);
+    $genus   = lcfirst($genus);
+    $species = lc($species);
+    my $id   = _fetch_id_for_name($genus, $species);
     say join "\t", $genus, $species, $id;
     
     _get_lineage_for_id($id);
