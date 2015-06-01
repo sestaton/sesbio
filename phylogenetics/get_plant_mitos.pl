@@ -8,8 +8,8 @@ use File::Basename;
 use File::Find;
 use File::Copy;
 use Try::Tiny;
-use Capture::Tiny       qw(capture);
-use Time::HiRes         qw(gettimeofday);
+use Capture::Tiny qw(capture);
+use Time::HiRes   qw(gettimeofday);
 use HTTP::Tiny;
 use HTML::TableExtract;
 use XML::LibXML;
@@ -49,17 +49,7 @@ my $headchar  = 0;
 my $non_atgcn = 0;
 
 my $url = 'http://www.ncbi.nlm.nih.gov/genomes/GenomesGroup.cgi?taxid=33090&opt=organelle';
-my $response = HTTP::Tiny->new->get($url);
-
-unless ($response->{success}) {
-    die "Can't get url $url -- Status: ", $response->{status}, " -- Reason: ", $response->{reason};
-}
-
-# open and parse the results
-open my $out, '>', $outfile or die "\nERROR: Could not open file: $!\n";
-say $out $response->{content};
-close $out;
-
+my $response = _fetch_file($url, $outfile);
 my %mt;
 
 my $te = HTML::TableExtract->new( attribs => { border => 0 } );
