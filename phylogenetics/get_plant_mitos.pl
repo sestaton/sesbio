@@ -49,6 +49,7 @@ my $headchar  = 0;
 my $non_atgcn = 0;
 
 my $url = 'http://www.ncbi.nlm.nih.gov/genomes/GenomesGroup.cgi?taxid=33090&opt=organelle';
+$outfile //= 'viridiplantae_organelles_xx.html';
 my $response = _fetch_file($url, $outfile);
 my %mt;
 
@@ -59,15 +60,11 @@ for my $ts ($te->tables) {
     for my $row ($ts->rows) {
 	my @elem = grep { defined } @$row;
 	for (@elem) { chomp; tr/\n//d; tr/\xA0//d; }
-	if (defined $elem[0] && $elem[0] =~ /Viridiplantae mitochondrial genomes - (\d+) records/i) {
+	if (defined $elem[1] && $elem[1] =~ /^\s+?Viridiplantae mitochondrial genomes - (\d+) records/i) {
 	    my $genomes = $1;
 	    say "$genomes mitochondrial plant genomes available at NCBI.";
 	}
-	#elsif (/Genome Accession/) {
-	    #my ($species, $accession, $length, $protein, $rna, $created, $updated) = split /\s+/, $elem[0]; 
-	    #say join q{ }, @elem;
-	#}
-	if (defined $elem[0] && defined $elem[1] && $elem[1] =~ /NC_/) {
+	elsif (defined $elem[0] && defined $elem[1] && $elem[1] =~ /NC_/) {
 	    my ($species, $accession, $length, $protein, $rna, $created, $updated) = @elem;
 	    $length =~ s/nt//;
 	    say join "\t", $species, $accession, $length, $protein, $rna, $created, $updated;
@@ -80,7 +77,6 @@ my $elapsed = $t1 - $t0;
 my $time    = sprintf("%.2f",$elapsed);
 
 exit;
-
 # methods
 sub search_by_name ($genus, $species) {
     my $id = _fetch_id_for_name($genus, $species);
