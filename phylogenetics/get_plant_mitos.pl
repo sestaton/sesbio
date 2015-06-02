@@ -5,17 +5,12 @@ use strict;
 use warnings;
 use autodie;
 use File::Basename;
-use File::Find;
-use File::Copy;
-use Try::Tiny;
-use Capture::Tiny qw(capture);
-use Time::HiRes   qw(gettimeofday);
 use HTTP::Tiny;
 use HTML::TableExtract;
 use XML::LibXML;
 use Getopt::Long;
 use Pod::Usage;
-use Data::Dump;
+use Time::HiRes  qw(gettimeofday);
 use experimental 'signatures';
 
 my $infile;
@@ -50,7 +45,7 @@ my $non_atgcn = 0;
 
 my $url = 'http://www.ncbi.nlm.nih.gov/genomes/GenomesGroup.cgi?taxid=33090&opt=organelle';
 $outfile //= 'viridiplantae_organelles_xx.html';
-my $response = _fetch_file($url, $outfile);
+#my $response = _fetch_file($url, $outfile);
 my %mt;
 
 my $te = HTML::TableExtract->new( attribs => { border => 0 } );
