@@ -18,12 +18,12 @@ my $merlength;
 my $help;
 
 GetOptions(
-           'i|infile=s'                   => \$infile,
-           'a|five_prime_outfile=s'       => \$five_prime_outfile,
-	   'b|three_prime_outfile=s'      => \$three_prime_outfile,
-           't|threshold=i'                => \$threshold,
-           'l|merlength=i'                => \$merlength,
-           'h|help'                       => \$help,
+           'i|infile=s'              => \$infile,
+           'a|five_prime_outfile=s'  => \$five_prime_outfile,
+	   'b|three_prime_outfile=s' => \$three_prime_outfile,
+           't|threshold=i'           => \$threshold,
+           'l|merlength=i'           => \$merlength,
+           'h|help'                  => \$help,
            );
 
 #
@@ -62,6 +62,7 @@ for my $fkey (reverse sort { $fseqhash{$a} <=> $fseqhash{$b} } keys %fseqhash) {
 	say $fout join "\t", $fkey, $fseqhash{$fkey};
     }
 }
+
 for my $rkey (reverse sort { $rseqhash{$a} <=> $rseqhash{$b} } keys %rseqhash) {
     if ($rseqhash{$rkey} > $threshold) {
 	say $rout join "\t", $rkey, $rseqhash{$rkey};
