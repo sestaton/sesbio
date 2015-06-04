@@ -46,11 +46,11 @@ open my $rout, '>', $three_prime_outfile or die "ERROR: Could not open file: $th
 my (%rseqhash, %fseqhash);
 
 my @aux = undef;
-my ($name, $seq, $qual);
+my ($name, $comm, $seq, $qual);
 $threshold //= 100;
 $merlength //= 25;
 
-while (($name, $seq, $qual) = readfq(\*$in, \@aux)) {
+while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
     my $radapter = substr($seq, -$merlength, $merlength);
     my $fadapter = substr($seq, 0, $merlength);
     $rseqhash{$radapter}++;
