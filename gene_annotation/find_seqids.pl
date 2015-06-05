@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+## Print on only sequences matching those in a list
+
 use 5.010;
 use strict;
 use warnings;
