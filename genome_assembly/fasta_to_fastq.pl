@@ -2,11 +2,11 @@
 
 =head1 NAME 
                                                                        
-fasta_len_to_fastq.pl - Extract the seq and qual string from a Fastq file given a Fasta
+fasta_to_fastq.pl - Extract the seq and qual string from a Fastq file given a Fasta
 
 =head1 SYNOPSIS    
 
- fasta_len_to_fastq.pl -fa seqs.fasta -fq orig_seqs.fastq.gz -o seqs.fastq
+ fasta_to_fastq.pl -fa seqs.fasta -fq orig_seqs.fastq.gz -o seqs.fastq
 
 =head1 DESCRIPTION
                                                                    
