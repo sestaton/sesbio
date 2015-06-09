@@ -92,8 +92,7 @@ for my $match (keys %$bl_match_hash) {
 	else {
 	    say "$species_f\t$match\t$gene_f_copy";
 	}
-    }
-    
+    }    
     close $out;
 }
 
@@ -113,16 +112,12 @@ sub blast2hash {
 	next if $line =~ /^Query/ || $line =~ /^#/;
 	my @fields = split /\t/, $line;
 	my $contigID = $fields[0];
-	#$contigID =~ s/\_\d\_ORF\d//;           # this is for cleaning up ids from sixpack translation to match velvet contig IDs
+	#$contigID =~ s/\_\d\_ORF\d//;           
+        # the above is for cleaning up ids from sixpack translation to match velvet contig IDs
 	my $geneID = $fields[1];
 	$geneID =~ s/\|.*//;
 	# This is where multiple hits are kept for each gene
-	if (exists $hash{$geneID}) {
-	    push(@{ $hash{$geneID} }, $contigID); # I am using the old push @{} syntax for backwards compatability (anything prior to Perl 5.14)
-	}
-	else {
-	    $hash{$geneID} = [ $contigID ];
-	}
+	push @{$hash{$geneID}}, $contigID;
     }
     close $fh;
 
