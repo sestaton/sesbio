@@ -1,8 +1,5 @@
 #!/usr/bin/env perl
 
-## TODO: use hash slice for splitting report and list-moreutils 'any' for
-## finding matches
-
 use 5.010;
 use strict;
 use warnings;
@@ -45,16 +42,13 @@ close $in;
 while (<$hmm>) {
     chomp;
     next if /^\#/;
-    my ($target_name, $accession, $query_name, $accession_q, $E_value_full, $score_full, 
-	$bias_full, $E_value_best, $score_best, $bias_best, $exp, $reg, $clu, $ov, $env, 
-	$dom,$rev, $inc, $description_of_target) = split /\t/;
-
-    for my $key (sort keys %ids) {
-	if ($key eq $query_name) {
-	    say $out join "\t", $target_name, $accession, $query_name, $accession_q, $E_value_full, 
-	        $score_full, $bias_full, $E_value_best, $score_best, $bias_best, $exp, 
-	        $reg, $clu, $ov, $env, $dom, $rev, $inc, $description_of_target;
-	}
+    #my ($target_name, $accession, $query_name, $accession_q, $E_value_full, $score_full, 
+	#$bias_full, $E_value_best, $score_best, $bias_best, $exp, $reg, $clu, $ov, $env, 
+	#$dom,$rev, $inc, $description_of_target) = split /\t/;
+    my @fields = split /\t/;
+    
+    if (grep { $_ eq $fields[2] } keys %ids) { # use grep because we want to search the whole list
+	say join "\t", @fields;
     }
 }
 close $hmm;
