@@ -7,7 +7,8 @@ use strict;
 use warnings;
 use autodie;
 use Getopt::Long;
-use Time::HiRes qw(gettimeofday);
+use Sort::Naturally qw(nsort);
+use Time::HiRes     qw(gettimeofday);
 
 my $infile;
 my $outfile;
@@ -48,7 +49,7 @@ while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
     $seqct++;
 }
 
-for my $k (sort keys %seqhash) {
+for my $k (nsort keys %seqhash) {
     if ($format =~ /fastq/i) {
 	my ($seq, $qual) = split /\|\|/, $seqhash{$k};
 	say $out join "\n", "@".$k, $seq, "+", $qual;
