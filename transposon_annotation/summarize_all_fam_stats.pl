@@ -1,14 +1,16 @@
 #!/usr/bin/env perl
 
+## NB: This is hardcode for certain species. Change as needed or contact me.
+
 ## Input: summary files from Transposome
 ## Output: tab-delimited file in the format:
-#          Species   Families   Family_mean   Genome_size
+##         Species   Families   Family_mean   Genome_size
 
-use 5.014;
+use 5.010;
 use strict;
 use warnings;
-use autodie qw(open);
-use Data::Dump qw(dd);
+use autodie;
+use Data::Dump;
 use Statistics::Descriptive;
 
 my @summaries = glob "*summary.tsv";
