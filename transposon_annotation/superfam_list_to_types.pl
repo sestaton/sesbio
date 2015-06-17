@@ -72,12 +72,7 @@ for my $file (@files) {
 	my @f = split;
 	if (exists $typemap{$f[0]}) {
 	    my ($type, $class ) = map { $_, $typemap{$f[0]}->{$_} } keys %{$typemap{$f[0]}};    
-	    if (exists $classes{$sp}{$class}) {
-		push @{$classes{$sp}{$class}}, $f[2];
-	    }
-	    else {
-		$classes{$sp}{$class} = [ $f[2] ];
-	    }
+	    push @{$classes{$sp}{$class}}, $f[2];
 	}
 	else {
 	    say "Time for more work: DEBUG! ====> ", $f[0];
