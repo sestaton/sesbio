@@ -1,7 +1,6 @@
 #!/usr/bin/env perl
 
 use 5.020;
-use strict;
 use warnings;
 use autodie;
 use Cwd;
@@ -11,7 +10,6 @@ use Sort::Naturally;
 use Parallel::ForkManager;
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(:all);
-use Try::Tiny;
 use experimental 'signatures';
 use Data::Dump;
 
@@ -22,8 +20,6 @@ my $threads  = 1;
 
 find( sub { push @reads, $File::Find::name if -f and /\.rehead.bam$/ }, $dir );
 
-#dd \@reads and exit;
-
 my $pm = Parallel::ForkManager->new($threads);
 $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump) = @_;
 			  say basename($ident)," just finished with PID $pid and exit code: $exit_code";
@@ -32,7 +28,6 @@ $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump
 for my $bam (nsort @reads) {
     my ($acc) = ($bam =~ /(\w+\d+)-?\w+?.rehead\.bam$/);
     $pm->start($acc) and next;
-    #say "DEBUG: $acc";
     my ($fq) = bam2fq($bam, $samtools);
 
     $pm->finish;
