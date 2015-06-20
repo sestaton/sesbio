@@ -10,7 +10,7 @@ my $filtered_matches = shift or die $usage;
 my $simple_repeat_match_stats = shift or die $usage;
 
 my $ratio; # for taking as an option (not implemented)
-my $repeat_ratio = defined($ratio) ? $ratio : "0.80";
+my $repeat_ratio //= 0.80;
 my ($match_ct, $simple_match_ct) = (0, 0);
 
 open my $filtered_out, '>', $filtered_matches;
@@ -28,7 +28,8 @@ my %complex_matches;
 	next if /^#/;
 	my @record = split /\n/;
 	my ($match_coords, $subj, $qry) = map { split /\n/ } @record;
-	# for some reason, vmatch prints only the alignment if it's not a good match, which means $qry is not defined 
+	# for some reason, vmatch prints only the alignment if it's not a good match, 
+	# which means $qry is not defined 
         # though, I check all for other corner cases like this
 	next unless defined $match_coords && defined $subj && defined $qry; 
 	$match_coords =~ s/^\s+//;
@@ -67,7 +68,7 @@ for my $repeat_match (reverse sort { $simple_matches{$a} <=> $simple_matches{$b}
 close $simple_stats;
 
 #
-# Subs
+# Methods
 #
 sub filter_simple {
     my ($match_string, $merlen) = @_;
