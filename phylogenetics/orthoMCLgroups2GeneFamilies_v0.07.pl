@@ -65,7 +65,7 @@ my $gblocks = find_prog("Gblocks");
 my $pal2nal = find_prog("pal2nal");
 my $raxml = find_prog("raxml");
 
-my $knseq = Bio::Kseq->new($nt_fas); ## TODO: Check if file exists
+my $knseq = Bio::Kseq->new($nt_fas);
 my $nt_it = $knseq->iterator;
 
 my $kpseq = Bio::Kseq->new($pep_fas);
@@ -81,23 +81,19 @@ while (my $pseq = $pep_it->next_seq) {
     }
 }
 
-my $clusters = parse_groups($infile, %seqhash);
+my $clusters = parse_groups($infile);
 
 for my $cluster (sort keys %$clusters) {
     my $cluster_size = scalar @{$clusters->{$cluster}};
     push @stats, $cluster_size;
     if ($cluster_size  > 10 && $cluster_size < 12) { # for testing
-	my @species = map { s/\|.*//r } @{$clusters->{$cluster}};  # need Perl 5.14+ to do non-destructive substitution
+	# need Perl 5.14+ to do non-destructive substitution
+	my @species = map { s/\|.*//r } @{$clusters->{$cluster}};  
 	my %ortho_group; 
 	for my $gene (@{$clusters->{$cluster}}) {
 	    my $species = $gene;
 	    $species =~ s/\|.*//;
-	    if (exists $ortho_group{$cluster}{$species}) {
-		push @{$ortho_group{$cluster}{$species}}, $gene;
-	    }
-	    else {
-		$ortho_group{$cluster}{$species} = [ $gene ];
-	    }
+	    push @{$ortho_group{$cluster}{$species}}, $gene;
 	}
         	
         for my $group (keys %ortho_group) {
@@ -150,11 +146,11 @@ for my $cluster (sort keys %$clusters) {
 undef %seqhash;
 untie %seqhash;
 
-my $count = scalar @stats;
-my $mean = mean(@stats);
+my $count  = scalar @stats;
+my $mean   = mean(@stats);
 my $median = median(@stats);
-my $min = min(@stats);
-my $max = max(@stats);
+my $min    = min(@stats);
+my $max    = max(@stats);
 
 open my $report, ">", $outfile or die "\nERROR: Could not open file: $outfile\n";
 say $report "=-=" x 25;
@@ -203,12 +199,7 @@ sub parse_groups {
 	my $protein_ct = @proteins;
 	for my $protein ( @proteins) {
 	    if ($protein  =~ /((\w+)\|(\w+))/) {
-		if (exists $clusters{$cluster}) {
-		    push @{$clusters{$cluster}}, $1;
-		}
-		else {
-		    $clusters{$cluster} = [ $1 ];
-		}
+		push @{$clusters{$cluster}}, $1;
 	    }		
 	}
     }		
@@ -458,7 +449,7 @@ sub pal2nal {
     my $gene_phy = $clustalw_to_phylip->($pal2nal_aln);
     my $gene_aln_fas = $clustalw_to_fasta->($pal2nal_aln);
 
-    return($gene_phy, $gene_aln_fas); 
+    return ($gene_phy, $gene_aln_fas); 
 }
 
 sub align {
