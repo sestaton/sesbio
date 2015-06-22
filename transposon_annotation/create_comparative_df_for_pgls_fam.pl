@@ -8,9 +8,9 @@ use utf8;
 use strict;
 use warnings;
 use warnings FATAL => "utf8";
-use autodie qw(open);
+use autodie    qw(open);
 use Data::Dump qw(dd);
-use charnames qw(:full :short);
+use charnames  qw(:full :short);
 
 my $usage = "perl $0 outfile\n";
 my $outfile = shift or die $usage;
@@ -44,22 +44,22 @@ my $cvalh = {
 };
 
 for my $file (@files) {
-    my ($species) = split(/\_/, $file, 2);
-    $species = 'Ager'        if $species =~ /ager/;
-    $species = 'Ann1238'     if $species =~ /ann1238/;
-    $species = 'CP'          if $species =~ /cp/;
-    $species = 'Calyc'       if $species =~ /calyc/;
-    $species = 'Dasy'        if $species =~ /dasy/;
-    $species = 'Gerb'        if $species =~ /gerb/;
-    $species = 'Gnaph'       if $species =~ /gnaph/;
-    $species = 'Harg'        if $species =~ /harg/;
-    $species = 'Hport'       if $species =~ /hport/;
-    $species = 'Hteph'       if $species =~ /hteph/;
-    $species = 'Hvert'       if $species =~ /hvert/;
-    $species = 'Phoeb'       if $species =~ /phoeb/;
-    $species = 'Saff'        if $species =~ /saff/;
-    $species = 'Sene'        if $species =~ /sene/;
-    $species = 'TKS'         if $species =~ /tks/;
+    my ($species) = split /\_/, $file, 2;
+    $species = 'Ager'    if $species =~ /ager/;
+    $species = 'Ann1238' if $species =~ /ann1238/;
+    $species = 'CP'      if $species =~ /cp/;
+    $species = 'Calyc'   if $species =~ /calyc/;
+    $species = 'Dasy'    if $species =~ /dasy/;
+    $species = 'Gerb'    if $species =~ /gerb/;
+    $species = 'Gnaph'   if $species =~ /gnaph/;
+    $species = 'Harg'    if $species =~ /harg/;
+    $species = 'Hport'   if $species =~ /hport/;
+    $species = 'Hteph'   if $species =~ /hteph/;
+    $species = 'Hvert'   if $species =~ /hvert/;
+    $species = 'Phoeb'   if $species =~ /phoeb/;
+    $species = 'Saff'    if $species =~ /saff/;
+    $species = 'Sene'    if $species =~ /sene/;
+    $species = 'TKS'     if $species =~ /tks/;
 
     open my $in, '<', $file;
     while (<$in>) {
