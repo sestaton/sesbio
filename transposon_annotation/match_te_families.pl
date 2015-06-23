@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+## NB: This code will take a repeat database in FASTA format and 
+##     transform the repeat name to the proper family name
+ 
 use 5.020;
 use warnings;
 use autodie;
