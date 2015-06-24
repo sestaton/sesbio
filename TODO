@@ -11,7 +11,7 @@ script: gsAssembler.pl
 
 ## transposon_annotation
 script: find_graph_edges.pl
-    - remove use of BerkeleyDB in favor of SQLite, like in Transposome
+    - remove use of BerkeleyDB and DBM::Deep in favor of SQLite, like in Transposome
 script: find_graph_edges.pl
     - update to use latest indexing and edge-finding methods
 script: repbase_to_typemap.pl
