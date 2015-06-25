@@ -1,15 +1,13 @@
 #!/usr/bin/env perl
 
-##TODO: 1) Filter matches by length,       DONE 
-##      2) Filter matches by repeat ratio  (This could generate artifacts since there will be repetitive regions of most targets)
-##      3) Putting the program in the background seems to cause capture to throw an exception
+##TODO: 1) Filter matches by repeat ratio 
+           - This could generate artifacts since there will be repetitive regions of most targets
+
 ##NB: this method with vmatch returns the best match, often resulting in only short, identical matches.
 
-use utf8;
-use 5.012;
+use 5.010;
 use strict;
 use warnings;
-use warnings FATAL => "utf8";
 use autodie qw(open);
 use Getopt::Long;
 use File::Basename;
@@ -85,7 +83,7 @@ if ($keep) {
 
 # set paths to programs used
 my $mkvtree = find_prog("mkvtree");
-my $vmatch = find_prog("vmatch");
+my $vmatch  = find_prog("vmatch");
 my $records = find_prog("faSomeRecords");
 
 #
@@ -255,7 +253,7 @@ if ($clean) {
 }
 
 #
-# Subs
+# methods
 #
 sub find_prog {
     my $prog = shift;
