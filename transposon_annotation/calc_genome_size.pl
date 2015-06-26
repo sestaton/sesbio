@@ -70,12 +70,7 @@ while (<$in>) {
     # sstart   | the starting coordinate of the alignment in the subject sequence
     # send     | the ending coordinate of the alignment in the subject sequence
     if ($alignlen >= $filter_len && $pcident >= $pid) {
-	if (exists $matches{$qid}) {
-	    push @{$matches{$qid}}, $sid;
-	}
-	else {
-	    $matches{$qid} = [ $sid ];
-	}
+	push @{$matches{$qid}}, $sid;
     }
 }
 say STDERR "Finished summarizing mapped hits to each transcript.";
