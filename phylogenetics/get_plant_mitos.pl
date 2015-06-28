@@ -45,7 +45,7 @@ my $non_atgcn = 0;
 
 my $url = 'http://www.ncbi.nlm.nih.gov/genomes/GenomesGroup.cgi?taxid=33090&opt=organelle';
 $outfile //= 'viridiplantae_organelles_xx.html';
-#my $response = _fetch_file($url, $outfile);
+my $response = _fetch_file($url, $outfile);
 my %mt;
 
 my $te = HTML::TableExtract->new( attribs => { border => 0 } );
