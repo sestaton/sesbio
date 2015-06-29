@@ -13,12 +13,7 @@ my %res;
 while (<>) {
     chomp;
     my @f = split;
-    if (exists $res{$f[0]}) {
-	push @{$res{$f[0]}}, { $f[3] => $f[5] };
-    }
-    else {
-	$res{$f[0]} = [ {$f[3] => $f[5] } ];
-    }
+    push @{$res{$f[0]}}, { $f[3] => $f[5] };
 }
 
 my %sfamtot;
