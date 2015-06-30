@@ -1,7 +1,8 @@
 #!/usr/bin/env perl
 
-## Take the output of gt tirvish and classify TEs into superfamilies
-## after filtering out retroelements.
+## Take the gff output file from gt tirvish and classify TEs into superfamilies.
+##
+## NB: It is important to first filter out retroelements.
 
 use 5.020;
 use warnings;
