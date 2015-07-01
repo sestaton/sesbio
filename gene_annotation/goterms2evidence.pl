@@ -4,7 +4,6 @@ use 5.010;
 use strict; 
 use warnings;
 use Getopt::Long;
-use Data::Dumper;
 
 my $usage = "\n$0 -i annot -o outfile\n";
 my $infile;
@@ -29,7 +28,7 @@ open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 while (<$in>) {
     chomp;
     my @f = split /\t/;
-    say join "\t", $out $f[4], "ND", $f[0];
+    say $out join "\t", $f[4], "ND", $f[0];
 }
 
 close $in;
