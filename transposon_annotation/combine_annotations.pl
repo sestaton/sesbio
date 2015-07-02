@@ -19,7 +19,7 @@ my %res;
 GetOptions( 'i|infiles=s{1,}' => \@files );
 
 if (@files < 1) {
-    say "\nERROR: Command line not parsed correctly. Incorrect number of parameters passed. Exiting.\n";
+    say "\nERROR: Command line not parsed correctly. At least one file is required. Exiting.\n";
     say $usage;
     exit(1);
 }
@@ -31,12 +31,7 @@ for my $file (@files) {
 	next if /^ReadNum/;
 	#ReadNum Superfamily Family ReadCt/ReadsWithHit HitPerc GenomePerc
 	my @f = split;
-	if (exists $res{$f[1]}{$f[2]}) {
-	    push @{$res{$f[1]}{$f[2]}}, $f[5];
-	}
-	else {
-	    $res{$f[1]}{$f[2]} = [ $f[5] ];
-	}
+	push @{$res{$f[1]}{$f[2]}}, $f[5];
     }
     close $in;
 }
