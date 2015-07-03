@@ -16,7 +16,9 @@ script: find_graph_edges.pl
     - update to use latest indexing and edge-finding methods
 script: repbase_to_typemap.pl
     - update to use latest mapping methods; incorporate unknowns
-
+script: pfam_fetch
+    - get GO terms and other metadata with models
+    
 ## phylogenetics
 script: eutils_taxonomy_methods.pl
     - remove use of bioperl and use REST API to eutils
