@@ -7,10 +7,10 @@
 use 5.010;
 use strict;
 use warnings;
-use autodie qw(open);
-use Data::Dump qw(dd);
+use autodie;
+use Data::Dump;
 use JSON;
-use List::MoreUtils qw(first_index any);
+use List::MoreUtils qw(first_index);
 
 my $usage   = "$0 fastadb tophit\n";
 my $infile  = shift or die $usage;
@@ -243,20 +243,16 @@ sub map_repeat_types {
 	    for my $tes (keys %{$matches->{$type}}) {
 		if ($tes eq 'dna_transposon') {
 		    $repeats{'dna_transposon'} = $matches->{$type}{$tes};
-		    #$repeats{'dna_transposon'}{'unclassified'} = [];
 		}
                 elsif ($tes eq 'ltr_retrotransposon') {
                     $repeats{'ltr_retrotransposon'} = $matches->{$type}{$tes};
-		    #$repeats{'ltr_retrotransposon'}{'unclassified'} = [];
                 }
                 elsif ($tes eq 'non-ltr_retrotransposon') {
 		    $repeats{'non-ltr_retrotransposon'} = $matches->{$type}{$tes};
-		    #$repeats{'non-ltr_retrotransposon'}{'unclassified'} = [];
                 }
                 elsif ($tes eq 'endogenous_retrovirus') {
                     $repeats{'endogenous_retrovirus'} = $matches->{$type}{$tes};
-		    #$repeats{'endogenous_retrovirus'}{'unclassified'} = [];
-                }
+                     }
             }
 	}        
 	elsif ($type eq 'simple_repeat') { 
