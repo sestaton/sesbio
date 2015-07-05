@@ -34,13 +34,13 @@ open my $out, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
 while (my $qline = <$query>) {
     chomp $qline;
-    next if $qline =~ /^#/;
+    next if $qline =~ /^#/; # for mgblast or other variants
     my @query_fields = split /\t/, $qline;
     die "\nERROR: The input must be a tab-delimited BLAST report. Exiting.\n"
 	unless @query_fields == 12;
 
-    my $hkey = join ",", $query_fields[0],$query_fields[1];
-    $qhash{$hkey} = join "~~", $query_fields[2],$query_fields[3],$query_fields[10],$query_fields[11];
+    my $hkey = join ",", @query_fields[0..1];
+    $qhash{$hkey} = join "~~", @query_fields[2..3], @query_fields[10..11];
 }
 
 say $out "Query\tHit\tPID_query\tHSP_len_query\tEval_query\tBits_query\tPID_hit\tHSP_len_hit\tEval_hit\tBits_hit";
@@ -57,8 +57,7 @@ while (my $sline = <$subj>) {
 	my ($qpid, $qaln_len, $qeval, $qbits) = split /\~\~/, $qhit;
 	if ($qq =~ /$subj_fields[1]/ && $qh =~ /$subj_fields[0]/) {
 	    $recip_hit++;
-	    say $out join "\t", $qq,$qh,$qpid,$qaln_len,$qeval,$qbits,$subj_fields[2],
-	                        $subj_fields[3],$subj_fields[10],$subj_fields[11];
+	    say $out join "\t", $qq,$qh,$qpid,$qaln_len,$qeval,$qbits,@subj_fields[2..3],@subj_fields[10..11];
 	}
     }
 }
