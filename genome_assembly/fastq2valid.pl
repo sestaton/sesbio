@@ -26,10 +26,7 @@ GetOptions(
 #
 # check input
 #
-if (!$infile || !$outfile) {
-    usage();
-    exit(1);
-}
+usage() and exit(1) if !$infile || !$outfile;
 
 my $knseq = Bio::Kseq->new($infile);
 my $nt_it = $knseq->iterator;
@@ -43,10 +40,7 @@ while (my $nseq = $nt_it->next_seq) {
 	$seq =~ s/^.//;
 	$qual =~ s/^.//;
     }
-    say $out "@".$nseq->{name};
-    say $out $seq;
-    say $out "+";
-    say $out $qual;
+    say $out join "\n", "@".$nseq->{name}, $seq, "+", $qual;
 }
 close $out;
 
