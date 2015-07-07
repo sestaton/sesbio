@@ -35,19 +35,15 @@ sub map_family_name ($family) {
 
     if ($family =~ /(^RL[GCX][_-][a-zA-Z]*\d*?[_-]?[a-zA-Z-]+?\d*?)/) {
         $family_name = $1;
-        #$family_name .= $2 if $2;
     }
     elsif ($family =~ /(^D[HT][ACHMT][_-][a-zA-Z]+\d*?)/) {
         $family_name = $1;
-        #$family_name .= $2 if $2;
     }
     elsif ($family =~ /(^PPP[_-][a-zA-Z]+\d*?)/) {
         $family_name = $1;
-        #$family_name .= $2 if $2;
     }
     elsif ($family =~ /(^R[IS][LT][_-][a-zA-Z]+\d*?)/) {
         $family_name = $1;
-        #$family_name .= $2 if $2;
     }
     else {
         $family_name = $family;
