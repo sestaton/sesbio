@@ -49,17 +49,14 @@ while (<$an>) {
     #$total_ct += $fields[1];
     if (scalar @fields == 5) {
         #CL95    866     pseudogene      SSU-rRNA_Ath     0.87
-	#$annoh{$fields[2]} = $fields[3];
 	$annoh{$fields[0]} = $fields[2];
     }
     #CL109   673     integrated_virus        Caulimoviridae  Caulimovirus-4_STu     0.84
     elsif (scalar @fields == 6) {
-	#$annoh{$fields[3]} = $fields[4];
 	$annoh{$fields[0]} = $fields[3];
     }
     #G0	4669	transposable_element	ltr_retrotransposon	Gypsy	RLG-iketas	RLG-iketas-3_Contig173_BWAZ_227-1_66704_76056	0.10
     else {
-	#$annoh{$fields[4]} = $fields[5];
 	$annoh{$fields[0]} = $fields[4];
     }
 }
