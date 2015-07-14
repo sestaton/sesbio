@@ -62,8 +62,6 @@ print 'Best model by LRT was: ' + best
 
 com.generate_random_neutral_distribution(model=best)
 
-## NB: There appears to be a bug with the method='loglike' function,
-##     so it is only possible to compare Shannon's entropy FIXED as of 3/18/14
 pval, neut_h = com.test_neutrality (model=best, gens=10000, full=True, method='shannon', n_cpus=4)
 draw_shannon_distrib(neut_h, com.shannon, outfile='test_log_shannon_dist.pdf', filetype='pdf')
 print 'P-value for neutrality test was: ', pval
