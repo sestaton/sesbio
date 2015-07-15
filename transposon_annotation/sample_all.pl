@@ -2,6 +2,7 @@
 
 ## Read a directory that contains many sub-directories of quality trimmed files,
 ## pair the reads, and randomly sample the files. Do it all in parallel!
+## TODO: Use pipeline for sampling, adding pair info and joining pairs. No intermediate files necessary.
 
 use 5.010;
 use strict;
