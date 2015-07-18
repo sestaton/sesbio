@@ -1,11 +1,11 @@
 #!/usr/bin/env perl
 
-use 5.014;
+use 5.010;
 use strict;
 use warnings;
 use autodie qw(open);
 use Statistics::Descriptive;
-use Data::Dump qw(dd);
+use Data::Dump;
 
 my $usage = "perl $0\n";
 
@@ -66,20 +66,9 @@ for my $file (@files) {
 	next if /^Superfamily/;
 	my @f = split;
 	if (exists $typemap{$f[0]}) {
-	    my ($type, $class ) = map { $_, $typemap{$f[0]}->{$_} } keys %{$typemap{$f[0]}};    
-	    if (exists $classes{$class}) {
-		push @{$classes{$class}}, $f[2];
-	    }
-	    else {
-		$classes{$class} = [ $f[2] ];
-	    }
-	    
-	    if (exists $species_types{$sp}{$f[0]}) {
-		push @{$species_types{$sp}{$f[0]}}, { $f[1] => $f[2] };
-	    }
-	    else {
-		$species_types{$sp}{$f[0]} = [ {$f[1] => $f[2] } ];
-	    }
+	    my ($type, $class) = map { $_, $typemap{$f[0]}->{$_} } keys %{$typemap{$f[0]}};    
+	    push @{$classes{$class}}, $f[2];
+	    push @{$species_types{$sp}{$f[0]}}, { $f[1] => $f[2] };
 	}
 	else {
 	    say "Superfamily NOT defined =====> ", $f[0];
