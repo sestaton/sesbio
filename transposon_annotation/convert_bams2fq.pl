@@ -14,8 +14,10 @@ use experimental 'signatures';
 use Data::Dump;
 
 my @reads;
-my $dir      = '/moonriseNFS2/grassa/Highcopy_survey/';
-my $samtools = '/home/statonse/github/samtools/samtools';
+my $usage = "perl ".basename($0)." dir_with_bams\n";
+my $dir   = shift;      
+$dir //= '/moonriseNFS2/grassa/Highcopy_survey/';
+my $samtools = '/home/statonse/github/samtools/samtools'; # add better check for this
 my $threads  = 1;
 
 find( sub { push @reads, $File::Find::name if -f and /\.rehead.bam$/ }, $dir );
