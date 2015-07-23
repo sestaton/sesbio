@@ -12,7 +12,8 @@ use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 
 my $host = "ftp.ncbi.nlm.nih.gov";
 my $dir  = "/refseq/release/plant";
-my $faa  = "plant_refseq_all.faa";
+my $faa  = shift;
+$faa     //= "plant_refseq_all.faa";
 open my $outfh, '>>', $faa;
 
 my $ftp = Net::FTP->new($host, Passive => 1, Debug => 0)
