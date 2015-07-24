@@ -22,7 +22,7 @@ open my $in, '<', $opt{infile};
 while (<$in>) {
     chomp;
     next if /^#/;
-    my @f = split;
+    my @f = split /\t/;
 
     if ($f[2] eq 'gene') {
 	$exons = 0;
@@ -55,7 +55,7 @@ for my $gene (keys %genes) {
     my @exons = map  { $_->[0] }
      	        sort { $a->[1] <=> $b->[1] }
                 map  { [ $_, /(\d+)/ ] }
-                     keys %{$genes{$gene}};
+                keys %{$genes{$gene}};
 
     for my $exon (@exons) {
 	my ($start, $end) = split /\-/, $genes{$gene}{$exon};
