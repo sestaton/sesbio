@@ -2,8 +2,6 @@
 
 ## this is a dead simple demonstration of how to get
 ## overlaps for an interval range
-## TODO: Need to find a good alternative to Set::IntervalTree because
-##       it currently won't compile and may not be maintained.
 
 use 5.010;
 use strict;
