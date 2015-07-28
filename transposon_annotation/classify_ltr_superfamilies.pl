@@ -29,7 +29,7 @@ chomp $header;
 
 my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
 
-my ($start, $end, $region, %feature);
+my ($start, $end, $region, %features);
 while (my $feature = $gffio->next_feature()) {
     if ($feature->primary_tag eq 'repeat_region') {
 	my @string = split /\t/, $feature->gff_string;
@@ -39,25 +39,25 @@ while (my $feature = $gffio->next_feature()) {
     next $feature unless defined $start && defined $end;
     if ($feature->primary_tag ne 'repeat_region') {
 	if ($feature->start >= $start && $feature->end <= $end) {
-	    push @{$feature{$region.".".$start.".".$end}}, join "||", split /\t/, $feature->gff_string;
+	    push @{$features{$region.".".$start.".".$end}}, join "||", split /\t/, $feature->gff_string;
 	}
     }
 }
 
-my $all_ct = (keys %feature);
-find_gypsy(\%feature, $header, $gff);
-my $gyp_ct = (keys %feature);
-find_copia(\%feature, $header, $gff);
-my $cop_ct = (keys %feature);
-write_unclassified_ltrs(\%feature, $header, $gff);
-my $rem_ct = (keys %feature);
+my $all_ct = (keys %features);
+find_gypsy(\%features, $header, $gff);
+my $gyp_ct = (keys %features);
+find_copia(\%features, $header, $gff);
+my $cop_ct = (keys %features);
+write_unclassified_ltrs(\%features, $header, $gff);
+my $rem_ct = (keys %features);
 
 say STDERR join "\t", "all", "after_gypsy", "after_copia", "after_rem";
 say STDERR join "\t", $all_ct, $gyp_ct, $cop_ct, $rem_ct;
 #
 # methods
 #
-sub find_gypsy ($feature, $header, $gff) {
+sub find_gypsy ($features, $header, $gff) {
     my @lengths;
     my $gyp_feats;
     my $is_gypsy = 0;
@@ -69,13 +69,13 @@ sub find_gypsy ($feature, $header, $gff) {
     open my $out, '>>', $outfile;
     say $out $header;
 
-    for my $ltr (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
+    for my $ltr (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$features) {
 	my ($rreg, $s, $e) = split /\./, $ltr;
 	my $len = ($e - $s) + 1;
-	my $region = @{$feature->{$ltr}}[0];
+	my $region = @{$features->{$ltr}}[0];
 	my ($loc, $source) = (split /\|\|/, $region)[0..1];
 
-	for my $feat (@{$feature->{$ltr}}) {
+	for my $feat (@{$features->{$ltr}}) {
 	    my @feats = split /\|\|/, $feat;
 	    $feats[8] =~ s/\s\;\s/\;/g;
 	    $feats[8] =~ s/\s+/=/g;
@@ -93,7 +93,7 @@ sub find_gypsy ($feature, $header, $gff) {
 	    chomp $gyp_feats;
 	    say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
 	    say $out $gyp_feats;
-	    delete $feature->{$ltr};
+	    delete $features->{$ltr};
 	    push @lengths, $len;
 	    $pdoms++ if $has_pdoms;
 	}
@@ -113,7 +113,7 @@ sub find_gypsy ($feature, $header, $gff) {
     say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
 }
 
-sub find_copia ($feature, $header, $gff) {
+sub find_copia ($features, $header, $gff) {
     my @lengths;
     my $cop_feats;
     my $is_copia = 0;
@@ -125,13 +125,13 @@ sub find_copia ($feature, $header, $gff) {
     open my $out, '>>', $outfile;
     say $out $header;
 
-    for my $ltr (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
+    for my $ltr (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$features) {
         my ($rreg, $s, $e) = split /\./, $ltr;
         my $len = ($e - $s) + 1;
-        my $region = @{$feature->{$ltr}}[0];
+        my $region = @{$features->{$ltr}}[0];
         my ($loc, $source) = (split /\|\|/, $region)[0..1];
 
-        for my $feat (@{$feature->{$ltr}}) {
+        for my $feat (@{$features->{$ltr}}) {
 	    my @feats = split /\|\|/, $feat;
 	    $feats[8] =~ s/\s\;\s/\;/g;
 	    $feats[8] =~ s/\s+/=/g;
@@ -149,7 +149,7 @@ sub find_copia ($feature, $header, $gff) {
 	    chomp $cop_feats;
 	    say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
 	    say $out $cop_feats;
-	    delete $feature->{$ltr};
+	    delete $features->{$ltr};
 	    push @lengths, $len;
 	    $pdoms++ if $has_pdoms;
         }
@@ -169,7 +169,7 @@ sub find_copia ($feature, $header, $gff) {
     say STDERR join "\t", $count, $min, $max, sprintf("%.2f", $mean), $pdoms;
 }
 
-sub write_unclassified_ltrs ($feature, $header, $gff) {
+sub write_unclassified_ltrs ($features, $header, $gff) {
     my @lengths;
     my $unc_feats;
     my $is_unclass = 0;
@@ -181,12 +181,12 @@ sub write_unclassified_ltrs ($feature, $header, $gff) {
     open my $out, '>>', $outfile;
     say $out $header;
 
-    for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$feature) {
+    for my $tir (nsort_by { m/repeat_region(\d+)/ and $1 } keys %$features) {
         my ($rreg, $s, $e) = split /\./, $tir;
         my $len = ($e - $s) + 1;
-        my $region = @{$feature->{$tir}}[0];
+        my $region = @{$features->{$tir}}[0];
         my ($loc, $source) = (split /\|\|/, $region)[0..1];
-        for my $feat (@{$feature->{$tir}}) {
+        for my $feat (@{$features->{$tir}}) {
             my @feats = split /\|\|/, $feat;
             $feats[8] =~ s/\s\;\s/\;/g;
             $feats[8] =~ s/\s+/=/g;
@@ -198,7 +198,7 @@ sub write_unclassified_ltrs ($feature, $header, $gff) {
 	    say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
             say $out join "\t", @feats;
         }
-	delete $feature->{$tir};
+	delete $features->{$tir};
 	push @lengths, $len;
 	$pdoms++ if $has_pdoms;
 	$has_pdoms = 0;
@@ -218,7 +218,6 @@ sub write_unclassified_ltrs ($feature, $header, $gff) {
 sub get_source {
     my ($ref) = @_;
 
-    #dd $ref and exit;
     for my $feat (@$ref) {
 	for my $rfeat (@$feat) {
 	    my @feats = split /\|\|/, $rfeat;
