@@ -29,7 +29,7 @@ my $ltrrt = 0;
 my @rt = qw(rve rvt rvp gag chromo);
 my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
 
-my ($start, $end, $region, %feature);
+my ($start, $end, $region, %features);
 while (my $feature = $gffio->next_feature()) {
     if ($feature->primary_tag eq 'repeat_region') {
 	my @string = split /\t/, $feature->gff_string;
@@ -39,23 +39,23 @@ while (my $feature = $gffio->next_feature()) {
     next $feature unless defined $start && defined $end;
     if ($feature->primary_tag ne 'repeat_region') {
 	if ($feature->start >= $start && $feature->end <= $end) {
-	    push @{$feature{$region.".".$start.".".$end}}, join "||", split /\t/, $feature->gff_string;
+	    push @{$features{$region.".".$start.".".$end}}, join "||", split /\t/, $feature->gff_string;
 	}
     }
 }
 
 #dd \%feature;
 my ($tirct, $filtct) = (0, 0);
-for my $tir (nsort keys %feature) {
+for my $tir (nsort keys %features) {
     $tirct++;
-    for my $feat (@{$feature{$tir}}) {
+    for my $feat (@{$features{$tir}}) {
 	my @feats = split /\|\|/, $feat;
 	if ($feats[2] eq 'protein_match') {
 	    my ($type, $pdom) = ($feats[8] =~ /(name) ("?\w+"?)/);
 	    $pdom =~ s/"//g;
 	    my $dom = lc($pdom);
 	    if ($dom =~ /rve|rvt|rvp|gag|chromo|rnase|athila|zf/) {
-		delete $feature{$tir};
+		delete $features{$tir};
 	    }
 	}
     }
@@ -63,14 +63,14 @@ for my $tir (nsort keys %feature) {
 
 my @lengths;
 
-for my $tir (keys %feature) {
+for my $tir (keys %features) {
     my ($rreg, $s, $e) = split /\./, $tir;
     my $len = ($e - $s);
     push @lengths, $len;
-    my $region = @{$feature{$tir}}[0];
+    my $region = @{$features{$tir}}[0];
     my ($loc, $source) = (split /\|\|/, $region)[0..1];
     say join "\t", $loc, $source, 'repeat_region', $s, $e, '.', '?', '.', "ID=$rreg";
-    for my $feat (@{$feature{$tir}}) {
+    for my $feat (@{$features{$tir}}) {
         my @feats = split /\|\|/, $feat;
 	$feats[8] =~ s/\s\;\s/\;/g;
 	$feats[8] =~ s/\s+/=/g;
