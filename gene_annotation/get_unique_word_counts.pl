@@ -10,7 +10,8 @@ my $usage = "\nUSAGE: $0 -i in -o out <--stats>
 This script takes as input a list of words that may be separated by spaces;
 the words are evaluated by unique lines.
 
-Input may be a file or from stdin.\n";
+Input may be a file or from stdin. 
+The --stats option will print the unique/nonunique counts.\n";
 
 my $infile;
 my $outfile;
