@@ -17,10 +17,10 @@ my @reads;
 my $usage = "perl ".basename($0)." dir_with_bams\n";
 my $dir   = shift;      
 $dir //= '/moonriseNFS2/grassa/Highcopy_survey/';
-my $samtools = '/home/statonse/github/samtools/samtools'; # add better check for this
+my $samtools = findprog('samtools');
 my $threads  = 1;
 
-find( sub { push @reads, $File::Find::name if -f and /\.rehead.bam$/ }, $dir );
+find( sub { push @reads, $File::Find::name if -f and /\.rehead.bam\z/ }, $dir );
 
 my $pm = Parallel::ForkManager->new($threads);
 $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump) = @_;
@@ -28,7 +28,7 @@ $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump
 		    } );
 
 for my $bam (nsort @reads) {
-    my ($acc) = ($bam =~ /(\w+\d+)-?\w+?.rehead\.bam$/);
+    my ($acc) = ($bam =~ /(\w+\d+)-?\w+?.rehead\.bam\z/);
     $pm->start($acc) and next;
     my ($fq) = bam2fq($bam, $samtools);
 
@@ -64,3 +64,13 @@ sub run_cmd ($cmd) {
     my ($stdout, $stderr, @res) = capture { system([0..5], $cmd); };
 }
 
+sub findprog ($prog) {
+    my ($path, $err, @res) = capture { system([0..5], "which $prog 2> /dev/null") };    
+    chomp $path;
+    if ( ! -e $path && ! -x $path ) {
+        die "\nERROR: Cannot find $prog binary. Exiting.\n\n";
+    } 
+    else {
+        return $path;
+    }
+}
