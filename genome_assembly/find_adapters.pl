@@ -1,3 +1,4 @@
+
 #!/usr/bin/env perl
 
 use 5.010;
@@ -28,8 +29,6 @@ GetOptions(
 
 #
 # Check @ARGV
-# TODO: Add POD and other useful options (help, man)
-
 #pod2usage( -verbose => 2 ) if $man;
 usage() and exit(0) if $help;
 
@@ -136,7 +135,6 @@ Options:
     -t|threshold            :       Set the lower threshold of counts for matches to report (Default: 100).
     -l|merlength            :       The length to search on either end of a read for adapters (Default: 25).
     -h|help                 :       Print a usage statement.
-    -m|man                  :       Print the full documentation.
 
 EOF
 }
