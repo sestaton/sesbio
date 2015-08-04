@@ -19,7 +19,6 @@ my $fullgff = shift or die $usage;
 my $partgff = shift or die $usage;
 
 my ($all_feats, $intervals) = collect_features($fullgff);
-#say scalar(keys %$all_feats), " features."; exit;
 my ($part_feats, $part_int) = collect_features($partgff);
 
 my $best_elements = get_overlaps($all_feats, $part_feats, $intervals);
@@ -43,7 +42,7 @@ sub sort_features ($gff, $best_elements) {
     close $in;
     chomp $header;
 
-    #say $header;
+    say $header;
     for my $str (@$best_elements) {
 	for my $chr (keys %$str) {
 	    push @{$features{$chr}}, @{$str->{$chr}};
@@ -118,7 +117,7 @@ sub get_overlaps ($allfeatures, $partfeatures, $intervals) {
 	    if (exists $chr_intervals{$source}) {
 		my ($reg, $start, $end, $length) = split /\./, $rregion;
 		my $res = $chr_intervals{$source}->fetch($start, $end);
-		say "Found: ",scalar(@$res)," overlaps.";
+		#say "Found: ",scalar(@$res)," overlaps.";
 		
 		my ($score99, $sim99) = summarize_features($partfeatures->{$source}{$rregion});
 		#say join q{ }, "LTR99 element: ", $reg, $start, $end, $length, $score99, $sim99;
