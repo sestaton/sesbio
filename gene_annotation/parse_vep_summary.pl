@@ -1,7 +1,8 @@
 #!/usr/bin/env perl
 
+## get summary from VEP html summary file
+
 use 5.020;
-use strict;
 use warnings;
 use autodie;
 use File::Find;
@@ -18,8 +19,6 @@ find( sub { push @files, $File::Find::name if -f and /\.txt_summary.html$/ }, $d
 
 my @calls = grep { /calls/ } @files;
 my @filt  = grep { /filt/  } @files;
-#dd \@calls; # and exit;
-#dd \@filt and exit;
 
 my %allstats;
 for my $file (@calls) {
@@ -28,7 +27,6 @@ for my $file (@calls) {
     $allstats{$acc} = $stats;
 }
 
-#dd \%allstats;
 for my $samp (keys %allstats) {
     for my $tab (keys %{$allstats{$samp}}) {
 	my $outfile = $dir."_".$tab."_calls_vep_summary.tsv";
