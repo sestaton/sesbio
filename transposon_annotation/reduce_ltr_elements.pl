@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+ #!/usr/bin/env perl
 
 use 5.020;
 use warnings;
@@ -14,20 +14,95 @@ use Set::IntervalTree;
 use Data::Dump;
 use experimental 'signatures';
 
+use Array::Utils qw(:all);
+
 my $usage = "$0 ltrdigest85.gff3 ltrdigest99.gff3";
 my $fullgff = shift or die $usage;
 my $partgff = shift or die $usage;
 
-my ($all_feats, $intervals) = collect_features($fullgff);
-my ($part_feats, $part_int) = collect_features($partgff);
+my ($all_feats, $intervals, $aids) = collect_features($fullgff);
+my ($part_feats, $part_int, $pids) = collect_features($partgff);
 
 my $best_elements = get_overlaps($all_feats, $part_feats, $intervals);
-sort_features($fullgff, $best_elements);
+#exit;
+#dd $best_elements and exit;
+my $combined_features = reduce_features($all_feats, $part_feats, $best_elements, $aids);
+exit;
+
+sort_features($fullgff, $combined_features);
 
 #
 # methods
 #
-sub sort_features ($gff, $best_elements) {
+sub reduce_features ($all_feats, $part_feats, $best_elements, $aids) {
+    my ($all, $best, $part, $comb) = (0, 0, 0, 0);
+
+    my (%best_features, %all_features);
+    for my $str (@$best_elements) {
+	for my $chr (keys %$str) {
+	    for my $element (keys %{$str->{$chr}}) {
+		$best++;
+		$best_features{$chr}{$element} = $str->{$chr}{$element};
+	    }
+	}
+    }
+
+    #dd \%best_features and exit;
+    #dd $all_feats and exit;
+    #dd $part_feats and exit;
+    ## another approach would be to combine, instead of deleting
+    for my $chromosome (keys %best_features) {
+	for my $element (keys %{$best_features{$chromosome}}) {
+	    if (exists $all_feats->{$chromosome}{$element}) {
+		delete $all_feats->{$chromosome}{$element};
+	    }
+	    elsif (exists $part_feats->{$chromosome}{$element}) {
+		delete $part_feats->{$chromosome}{$element};
+	    }
+	}
+    }
+
+    for my $source (keys %$all_feats) {
+	for my $element (keys %{$all_feats->{$source}}) {
+	    $all++;
+	    $best_features{$source}{$element} = $all_feats->{$source}{$element};
+	}
+    }
+
+    for my $source (keys %$part_feats) {
+	for my $element (keys %{$part_feats->{$source}}) {
+	    $part++;
+	    #say join "\t", @{$part_feats->{$source}{$element}};
+	    $best_features{$source}{$element} = $part_feats->{$source}{$element};
+	}
+    }
+
+    #exit;
+
+    my %dups; my @ids;
+    for my $source (keys %best_features) {
+	for my $element (keys %{$best_features{$source}}) {
+	    push @ids, $element;
+	    unless (exists $dups{$element}) {
+		$comb++;
+	    }
+	    $dups{$element} = 1;
+	}
+    }
+
+    #my @allids = sort @$aids;
+    #@ids = sort @ids;
+    
+    #my @diff = array_diff(@ids, @allids);
+    #dd \@diff and exit;
+
+    say STDERR join q{ }, "All", "part", "best", "combined";
+    say STDERR join q{ }, $all, $part, $best, $comb;
+    
+    return \%best_features;
+}
+
+sub sort_features ($gff, $combined_features) {
     my ($header, %features);
     open my $in, '<', $gff;
     while (<$in>) {
@@ -41,27 +116,20 @@ sub sort_features ($gff, $best_elements) {
     }
     close $in;
     chomp $header;
+    #say $header;
 
-    say $header;
-    for my $str (@$best_elements) {
-	for my $chr (keys %$str) {
-	    push @{$features{$chr}}, @{$str->{$chr}};
-	}
-    }
-
-    for my $chromosome (nsort keys %features) {
-	for my $elements (nsort @{$features{$chromosome}}) {
-	    for my $ltr (sort { $a =~ /repeat_region(\d+)/ <=> $b =~ /repeat_region(\d+)/ } keys %$elements) {
-		for my $entry (@{$elements->{$ltr}}) {
-		    my @feats = split /\|\|/, $entry;
-		    $feats[8] =~ s/\s\;\s/\;/g;
-		    $feats[8] =~ s/\s+$//;
-		    $feats[8] =~ s/\"//g;
-		    $feats[8] =~ s/(\;\w+)\s/$1=/g;
-		    $feats[8] =~ s/\s;/;/;
-		    $feats[8] =~ s/^(\w+)\s/$1=/;
-		    say join "\t", @feats;
-		}
+    for my $chromosome (nsort keys %$combined_features) {
+	for my $ltr (sort { $a =~ /repeat_region(\d+)/ <=> $b =~ /repeat_region(\d+)/ } 
+		     keys %{$combined_features->{$chromosome}}) {
+	    for my $entry (@{$combined_features->{$chromosome}{$ltr}}) {
+		my @feats = split /\|\|/, $entry;
+		$feats[8] =~ s/\s\;\s/\;/g;
+		$feats[8] =~ s/\s+$//;
+		$feats[8] =~ s/\"//g;
+		$feats[8] =~ s/(\;\w+)\s/$1=/g;
+		$feats[8] =~ s/\s;/;/;
+		$feats[8] =~ s/^(\w+)\s/$1=/;
+		say join "\t", @feats;
 	    }
 	}
     }
@@ -70,7 +138,8 @@ sub sort_features ($gff, $best_elements) {
     
 sub collect_features ($gff) {
     my %intervals;
-
+    my @ids;
+    
     my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
 
     my ($source, $start, $end, $length, $region, %features);
@@ -87,13 +156,14 @@ sub collect_features ($gff) {
 	    if ($feature->start >= $start && $feature->end <= $end) {
 		$intervals{$region} = join ".", $start, $end, $length;
 		my $region_key = join ".", $region, $start, $end, $length;
+		push @ids, $region_key;
 		push @{$features{$source}{$region_key}}, join "||", split /\t/, $feature->gff_string;
 	    }
 	}
     }
 
     my $filtered = filter_compound_elements(\%features);
-    return $filtered, \%intervals;
+    return $filtered, \%intervals, \@ids;
 }
 
 sub get_overlaps ($allfeatures, $partfeatures, $intervals) {
@@ -113,11 +183,15 @@ sub get_overlaps ($allfeatures, $partfeatures, $intervals) {
 	for my $rregion (keys %{$partfeatures->{$source}}) {
 	    my (%scores, %sims);
 
-	    my $tree;
 	    if (exists $chr_intervals{$source}) {
 		my ($reg, $start, $end, $length) = split /\./, $rregion;
 		my $res = $chr_intervals{$source}->fetch($start, $end);
-		#say "Found: ",scalar(@$res)," overlaps.";
+
+		#say join "\t", "Found: ",scalar(@$res)," overlaps.";
+		##overlaps count
+		#1 1125
+		#0  6
+		#2  2 (or 2x2)
 		
 		my ($score99, $sim99) = summarize_features($partfeatures->{$source}{$rregion});
 		#say join q{ }, "LTR99 element: ", $reg, $start, $end, $length, $score99, $sim99;
@@ -136,8 +210,10 @@ sub get_overlaps ($allfeatures, $partfeatures, $intervals) {
 		    $sims{$source}{$region_key} = $sim85;
 		}
 
-		my $best_element = get_ltr_score_dups(\%scores, \%sims, $allfeatures, $partfeatures);
-		push @best_elements, $best_element;
+		if (@$res > 0) {
+		    my $best_element = get_ltr_score_dups(\%scores, \%sims, $allfeatures, $partfeatures);
+		    push @best_elements, $best_element;
+		}
 	    }
 	}
     }
@@ -149,7 +225,8 @@ sub get_ltr_score_dups ($scores, $sims, $allfeatures, $partfeatures) {
     my %sccounts;
     my %sicounts;
     my %best_element;
-
+    my ($score_best, $sims_best) = (0, 0);
+    
     my $max_score = max(values %$scores);
     my $max_sims  = max(values %$sims);
 
@@ -176,24 +253,23 @@ sub get_ltr_score_dups ($scores, $sims, $allfeatures, $partfeatures) {
 	$best_sim_key = (reverse sort { $sims->{$src}{$a} <=> $sims->{$src}{$b} } keys %{$sims->{$src}})[0];
     }
 
-    #say "DEBUG: $best_score_key";
-    #say "DEBUG: $best_sim_key";
-    #dd $scores and exit;
-    #dd \%sccounts and exit;
-    #dd $sims and exit;
+    ## Need to be removing elements not passing the thresholds
+    ## here...............somehow 
     for my $source (keys %$scores) {
 	if (@{$sccounts{ $scores->{$source}{$best_score_key} }} == 1 &&
 	    @{$sicounts{ $sims->{$source}{$best_sim_key} }} == 1  &&
 	    $best_score_key eq $best_sim_key) {
+	    $score_best = 1;
 	    my $bscore = $scores->{$source}{$best_score_key};
 	    my $bsim   = $sims->{$source}{$best_score_key};
 	    if (exists $partfeatures->{$source}{$best_score_key}) {
 		#say join q{ }, "BEST: LTR99 element: ", $best_score_key, $bscore, $bsim;
-		push @{$best_element{$source}}, { $best_score_key => $partfeatures->{$source}{$best_score_key} };
+		#push @{$best_element{$source}}, { $best_score_key => $partfeatures->{$source}{$best_score_key} };
+		$best_element{$source}{$best_score_key} = $partfeatures->{$source}{$best_score_key};
 	    }
 	    elsif (exists $allfeatures->{$source}{$best_score_key}) {
 		#say join q{ }, "BEST: LTR85 element: ", $best_score_key, $bscore, $bsim;
-		push @{$best_element{$source}}, { $best_score_key => $allfeatures->{$source}{$best_score_key} };
+		$best_element{$source}{$best_score_key} = $allfeatures->{$source}{$best_score_key};
 	    }
 	    else {
 		say "\nERROR: Something went wrong....'$best_score_key' not found in hash. This is a bug. Exiting.";
@@ -202,16 +278,19 @@ sub get_ltr_score_dups ($scores, $sims, $allfeatures, $partfeatures) {
 	}
 	elsif (@{$sccounts{ $scores->{$source}{$best_score_key} }} >= 1 && 
 	       @{$sicounts{ $sims->{$source}{$best_sim_key} }} >=  1) {
+	    $sims_best = 1;
 	    my $best = @{$sicounts{ $sims->{$source}{$best_sim_key} }}[0];
 	    my $bscore = $scores->{$source}{$best_score_key};
 	    my $bsim   = $sims->{$source}{$best_score_key};
 	    if (exists $partfeatures->{$source}{$best}) {
 		#say join q{ }, "BEST: LTR99 element: ", $best, $bscore, $bsim;
-		push @{$best_element{$source}},  { $best_score_key => $partfeatures->{$source}{$best} };
+		#push @{$best_element{$source}},  { $best_score_key => $partfeatures->{$source}{$best} };
+		$best_element{$source}{$best_score_key} = $partfeatures->{$source}{$best};
 	    }
 	    elsif (exists $allfeatures->{$source}{$best}) {
 		#say join q{ }, "BEST: LTR85 element: ", $best, $bscore, $bsim;
-		push @{$best_element{$source}}, { $best_score_key => $allfeatures->{$source}{$best} };
+		#push @{$best_element{$source}}, { $best_score_key => $allfeatures->{$source}{$best} };
+		$best_element{$source}{$best_score_key} = $allfeatures->{$source}{$best};
 	    }
 	    else {
 		say "\nERROR: Something went wrong....'$best' not found in hash. This is a bug. Exiting.";
@@ -220,12 +299,40 @@ sub get_ltr_score_dups ($scores, $sims, $allfeatures, $partfeatures) {
 	    
 	}
 	else {
+	    # should never get here, but it would be helpful to know why, hence the debug statements
 	    say "DEBUG: $best_score_key"; dd $scores;
 	    say "DEBUG 2: $best_sim_key"; dd $sims;
 	    say "DEBUG 3: "; dd \%sccounts;
 	    say "DEBUG 4: "; dd \%sicounts;
 	}
     }
+
+    if ($score_best) {
+	for my $src (keys %$scores) {
+	    for my $element (keys %{$scores->{$src}}) {
+		if (exists $allfeatures->{$src}{$element}) {
+		    delete $allfeatures->{$src}{$element};
+		}
+		elsif (exists $partfeatures->{$src}{$element}) {
+		    delete $partfeatures->{$src}{$element};
+		}
+	    }
+	}
+    }
+    elsif ($sims_best) {
+	for my $src (keys %$sims) {
+	    for my $element (keys %{$sims->{$src}}) {
+		if (exists $allfeatures->{$src}{$element}) {
+		    delete $allfeatures->{$src}{$element};
+		}
+		elsif (exists $partfeatures->{$src}{$element}) {
+		    delete $partfeatures->{$src}{$element};
+		}
+	    }
+	}
+    }
+    $score_best = 0;
+    $sims_best  = 0;
     
     return \%best_element;
 }
