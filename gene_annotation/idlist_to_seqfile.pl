@@ -14,11 +14,13 @@ my $idlist;
 my $infile;
 my $outfile;
 my $format;
+my $invert;
 
 GetOptions(
 	   'id|idlist=s' => \$idlist,
 	   'i|infile=s'  => \$infile,
 	   'o|outfile=s' => \$outfile,
+           'v|invert'    => \$invert,
 	   );
 
 # check @ARGV
@@ -37,13 +39,25 @@ my $ids = id2hash($idlist);
 
 while (($name, $comm, $seq, $qual) = readfq(\*$fh, \@aux)) {
     $seq =~ s/.{60}\K/\n/g;
-    if (exists $ids->{$name}) {
-	if (defined $qual) {
-	    say $out join "\n", "@".$name, $seq, "+", $qual;
+    if ($invert) {
+	unless (exists $ids->{$name}) {
+	    if (defined $qual) {
+		say $out join "\n", "@".$name, $seq, "+", $qual;
+	    }
+	    else {
+		say $out join "\n", ">".$name, $seq;
+	    }
 	}
-	else {
-	    say $out join "\n", ">".$name, $seq;
-	}
+    }
+    else {
+	if (exists $ids->{$name}) {
+            if (defined $qual) {
+                say $out join "\n", "@".$name, $seq, "+", $qual;
+            }
+            else {
+                say $out join "\n", ">".$name, $seq;
+            }
+        }
     }
 }
 close $fh;
@@ -57,7 +71,7 @@ sub id2hash {
     my $idlist = shift;
     open my $fh, '<', $idlist or die "\nERROR: Could not open file: $!\n";
 
-    my %ids = map { $_ => 1 } <$fh>;
+    my %ids = map { chomp; $_ => 1 } <$fh>;
 
     return \%ids;
 }
@@ -132,6 +146,7 @@ sub readfq {
 sub usage {
     my $script = basename($0);
     print STDERR<<EOF
+
 USAGE: $script [-id] [-i] [-o]
 
 Required:
@@ -139,6 +154,9 @@ Required:
     -i|infile     :      A FASTA/Q file to pull sequences from 
                          (input may be compressed with gzip or bzip2).
     -o|outfile    :      A file to write the records to.
+
+Options:
+    -v|invert     :      Write out those sequences not in the list.
 
 EOF
 }
