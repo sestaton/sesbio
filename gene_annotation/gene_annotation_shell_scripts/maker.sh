@@ -2,6 +2,7 @@
 
 cd `pwd`
 
+##TODO: check if we want to run with mpi and how many cpus to use
 export LD_PRELOAD=/usr/local/lib/libmpi.so
 
 maker=/home/statonse/apps/maker/bin/maker
