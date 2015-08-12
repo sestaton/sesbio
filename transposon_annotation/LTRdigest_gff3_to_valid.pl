@@ -3,12 +3,14 @@
 use 5.010;
 use strict;
 use warnings;
+use File::Basename;
 use autodie qw(open);
 use Getopt::Long;
 
 my $infile;
 my $outfile;
-my $usage = "USAGE: $0 -i in.gff3 -o out.gff3";
+my $script = basename($0, ());
+my $usage  = "USAGE: $script -i in.gff3 -o out.gff3";
 
 GetOptions( 'i|infile=s' => \$infile, 'o|outfile=s' => \$outfile );
 
