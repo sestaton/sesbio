@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+##NB: it is possible to also use a tied hash with an sqlite database,
+##    which is useful in some cases. It would be nice to add an example...
+
 use 5.010;
 use strict;
 use warnings;
