@@ -12,36 +12,48 @@ use List::MoreUtils     qw(first_index);
 use List::UtilsBy       qw(nsort_by);
 use IPC::System::Simple qw(system);
 use Set::IntervalTree;
-use Data::Dump;
+use Data::Printer;
 use Try::Tiny;
-use Term::ProgressBar;
+use Getopt::Long;
 use experimental 'signatures';
 
-#$| = 1;
+my $usage = "$0 -fg ltrdigest85.gff3 -pg ltrdigest99.gff3 -f fasta -og out.gff3";
+my $fullgff; # = shift or die $usage;
+my $partgff; # = shift or die $usage;
+my $fasta;   #   = shift or die $usage;
+my $outfile;
 
-my $usage = "$0 ltrdigest85.gff3 ltrdigest99.gff3 fasta";
-my $fullgff = shift or die $usage;
-my $partgff = shift or die $usage;
-my $fasta   = shift or die $usage;
+GetOptions(
+    'fg|fullgff85=s' => \$fullgff,
+    'pg|partgff99=s' => \$partgff,
+    'f|fasta=s'      => \$fasta,
+    'og|outgff=s'    => \$outfile,
+    );
+
+if (!$fullgff || !$partgff || !$fasta || !$outfile) {
+    say $usage;
+    exit(1);
+}
 
 my ($all_feats, $all_stats, $intervals) = collect_features($fullgff, $fasta);
 my ($part_feats, $part_stats, $part_int) = collect_features($partgff, $fasta);
 
 my $best_elements = get_overlaps($all_feats, $part_feats, $intervals);
-my $combined_features = reduce_features($all_feats, $part_feats, $best_elements, $all_stats, $part_stats);
-sort_features($fullgff, $combined_features);
+my $combined_features = reduce_features($all_feats, $part_feats, $best_elements, 
+					$all_stats, $part_stats, $fasta);
+sort_features($fullgff, $fasta, $combined_features, $outfile);
 
 #
 # methods
 #
-sub reduce_features ($all_feats, $part_feats, $best_elements, $all_stats, $part_stats) {
+sub reduce_features ($all_feats, $part_feats, $best_elements, $all_stats, $part_stats, $fasta) {
     my ($all, $best, $part, $comb) = (0, 0, 0, 0);
 
-    my (%best_features, %all_features, %all_stats);
+    my (%best_features, %all_features, %best_stats);
 
-    for my $stat (keys %all_stats) {
+    for my $stat (keys %$all_stats) {
 	if (exists $part_stats->{$stat}) {
-	    $all_stats{$stat} = $all_stats->{$stat} + $part_stats->{$stat};
+	    $best_stats{$stat} = $all_stats->{$stat} + $part_stats->{$stat};
 	}
     }
     
@@ -79,20 +91,39 @@ sub reduce_features ($all_feats, $part_feats, $best_elements, $all_stats, $part_
 	}
     }
 
-    my %dups;
+    my $n_perc_filtered = 0;
+    my $n_thresh = 0.30;
+
     for my $source (keys %best_features) {
 	for my $element (keys %{$best_features{$source}}) {
-	    #push @ids, $element;
-	    unless (exists $dups{$element}) {
-		$comb++;
+	    $comb++;
+	    my ($region, $start, $end, $length) = split /\./, $element;
+	    my $key = join "||", $region, $start, $end;
+
+	    my $n_perc = filterNpercent($source, $key, $fasta);
+	    if ($n_perc >= $n_thresh) {
+		#say STDERR "=====> Over thresh: $n_perc";
+		delete $best_features{$source}{$element};
+		$n_perc_filtered++;
+		$comb--;
 	    }
-	    $dups{$element} = 1;
 	}
     }
 
+    say STDERR "all stats: ";
+    p $all_stats;
+    say STDERR "part stats: ";
+    p $part_stats;
+    say STDERR "best stats: ";
+    p %best_stats;
+    $best_stats{n_perc_filtered} = $n_perc_filtered;
+    say STDERR "best stats: ";
+    p %best_stats;
+    
+
     say STDERR join q{ }, "filtered_type", "num_filtered";
-    for my $s (keys %all_stats) {
-	say join q{ }, $s, $all_stats->{$s};
+    for my $s (keys %best_stats) {
+	say STDERR join q{ }, $s, $best_stats{$s};
     }
 
     say STDERR join q{ }, "All", "part", "best", "combined";
@@ -101,7 +132,12 @@ sub reduce_features ($all_feats, $part_feats, $best_elements, $all_stats, $part_
     return \%best_features;
 }
 
-sub sort_features ($gff, $combined_features) {
+sub sort_features ($gff, $fasta, $combined_features, $outfile) {
+    my ($name, $path, $suffix) = fileparse($outfile, qr/\.[^.]*/);
+    my $outfasta = $name.".fasta";
+    open my $ogff, '>', $outfile;
+    open my $ofas, '>>', $outfasta;
+
     my ($header, %features);
     open my $in, '<', $gff;
     while (<$in>) {
@@ -115,23 +151,47 @@ sub sort_features ($gff, $combined_features) {
     }
     close $in;
     chomp $header;
-    say $header;
+    say $ogff $header;
 
     for my $chromosome (nsort keys %$combined_features) {
 	for my $ltr (sort { $a =~ /repeat_region(\d+)/ <=> $b =~ /repeat_region(\d+)/ } 
 		     keys %{$combined_features->{$chromosome}}) {
 	    for my $entry (@{$combined_features->{$chromosome}{$ltr}}) {
 		my @feats = split /\|\|/, $entry;
+		if ($feats[2] eq 'LTR_retrotransposon') {
+		    my ($start, $end) = @feats[3..4];
+		    my ($elem) = ($feats[8] =~ /(LTR_retrotransposon\d+)/);
+		    my $id = $elem."_".$chromosome."_".$start."_".$end;
+		    my $tmp = $elem.".fasta";
+		    my $cmd = "samtools faidx $fasta $chromosome:$start-$end > $tmp";
+		    try {
+			system([0..5], $cmd);
+		    }
+		    catch {
+			die "\nERROR: $cmd failed. Here is the exception: $_\n";
+		    };
+		    my @aux = undef;
+		    my ($name, $comm, $seq, $qual);
+		    open my $in, '<', $tmp;
+		    while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
+			$seq =~ s/.{60}\K/\n/g;
+			say $ofas join "\n", ">".$id, $seq;
+		    }
+		    close $in;
+		    unlink $tmp;
+		}
 		$feats[8] =~ s/\s\;\s/\;/g;
 		$feats[8] =~ s/\s+$//;
 		$feats[8] =~ s/\"//g;
 		$feats[8] =~ s/(\;\w+)\s/$1=/g;
 		$feats[8] =~ s/\s;/;/;
 		$feats[8] =~ s/^(\w+)\s/$1=/;
-		say join "\t", @feats;
+		say $ogff join "\t", @feats;
 	    }
 	}
     }
+    close $ogff;
+    close $ofas;
     
 }
     
@@ -278,13 +338,6 @@ sub get_ltr_score_dups ($scores, $sims, $allfeatures, $partfeatures) {
 	    }
 	    
 	}
-	else {
-	    # should never get here, but it would be helpful to know why, hence the debug statements
-	    say "DEBUG: $best_score_key"; dd $scores;
-	    say "DEBUG 2: $best_sim_key"; dd $sims;
-	    say "DEBUG 3: "; dd \%sccounts;
-	    say "DEBUG 4: "; dd \%sicounts;
-	}
     }
 
     if ($score_best) {
@@ -339,7 +392,7 @@ sub summarize_features ($feature) {
 	$has_ir  = 1 if $part[2] eq 'inverted_repeat';
 	$has_pdoms++ if $part[2] eq 'protein_match';
     }
-    dd $feature and exit(1) unless defined $ltr_sim;
+    p $feature and exit(1) unless defined $ltr_sim;
     $tsd_eq = 1 if $five_pr_tsd == $three_pr_tsd;
 
     my $ltr_score = sum($has_pbs, $has_ppt, $has_pdoms, $has_ir, $tsd_eq);
@@ -363,8 +416,6 @@ sub filter_compound_elements ($features, $fasta) {
 	}
     }
     
-    my $progress = Term::ProgressBar->new($allct);
-    my %ltr_regions;
     for my $source (keys %$features) {
 	for my $ltr (nsort_by { m/repeat_region(\d+)/ and $1 } keys %{$features->{$source}}) {
 	    $curct++;
@@ -379,9 +430,7 @@ sub filter_compound_elements ($features, $fasta) {
 		$feats[8] =~ s/=$//;
 		$feats[8] =~ s/=\;/;/g;
 		$feats[8] =~ s/\"//g;
-		if ($feats[2] eq 'LTR_retrotransposon') {
-		    $ltr_regions{$source}{$ltr} = join "||", @feats[3..4];
-		}
+
 		if ($feats[2] =~ /protein_match/) {
 		    $has_pdoms = 1;
 		    @pdoms = ($feats[8] =~ /name=(\S+)/);
@@ -396,7 +445,6 @@ sub filter_compound_elements ($features, $fasta) {
 	    
 	    if ($is_gypsy && $is_copia) {
 		delete $features->{$ltr};
-		delete $ltr_regions{$source}{$ltr};
 		$gyp_cop_filtered++;
 	    }
 	    
@@ -405,78 +453,52 @@ sub filter_compound_elements ($features, $fasta) {
 		for my $element (@pdoms) {
 		    $element =~ s/\;.*//;
 		    next if $element =~ /chromo/i; # we expect these elements to be duplicated
-		    delete $features->{$ltr} if $uniq{$element}++;
-		    delete $ltr_regions{$source}{$ltr} if $uniq{$element}++;
-		    $dup_pdoms_filtered++;
+		    delete $features->{$ltr} && $dup_pdoms_filtered++ if $uniq{$element}++;
 		}
 	    }
 	    
 	    if ($l >= $len_thresh) {
 		delete $features->{$ltr};
-		delete $ltr_regions{$source}{$ltr};
 		$len_filtered++;
 	    }
 
-	    next unless %ltr_regions;
-	    my $n_perc = filterNpercent(\%ltr_regions, $fasta);
-	    if ($n_perc >= $n_thresh) {
-		#say STDERR "=====> Over thresh: $n_perc";
-		delete $features->{$ltr};
-		$n_perc_filtered++;
-	    }
-	    
 	    @pdoms = ();
 	    $is_gypsy  = 0;
 	    $is_copia  = 0;
 	    $has_pdoms = 0;
-
-	    $progress->update($curct);
-	    #printf STDERR "Elements seen: %d", $allct;
 	}
     }
-    #print STDERR "\n";
 
     my %stats = ( gyp_cop_filtered   => $gyp_cop_filtered, 
 		  len_filtered       => $len_filtered, 
-		  n_perc_filtered    => $n_perc_filtered,
 		  dup_pdoms_filtered => $dup_pdoms_filtered );
 
     return $features, \%stats;
 }
 
-sub filterNpercent ($ltr_regions, $fasta) {
+sub filterNpercent ($source, $key, $fasta) {
     my $n_perc = 0;
-    #open my $in, '<', $fasta;
-    #my @aux = undef;
-    #my ($name, $comm, $seq, $qual);
-    for my $source (keys %$ltr_regions) {
-	for my $ltr (keys %{$ltr_regions->{$source}}) {
-	    #my ($rreg, $s, $e, $l) = split /\|\|/, $ltr;
-	    my ($start, $end) = split /\|\|/, $ltr_regions->{$source}{$ltr};
-	    #my $ltrlen = ($end - $start) + 1;
-	    my $tmp = $ltr.".fasta";
-	    my $cmd = "samtools faidx $fasta $source:$start-$end > $tmp";
-	    try { 
-		system([0..5], $cmd);
-	    }
-	    catch {
-		die "\nERROR: $cmd failed. Here is the exception: $_\n";
-	    };
-
-	    my @aux = undef;
-	    my ($name, $comm, $seq, $qual);
-	    open my $in, '<', $tmp;
-	    while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
-		my $ltrlength = length($seq);
-		my $n_count = ($seq =~ tr/Nn//);
-		$n_perc  = sprintf("%.2f",$n_count/$ltrlength);
-		#say STDERR join q{ }, $source, $ltr, $start, $end, $ltrlength, $n_perc;
-	    }
-	    close $in;
-	    unlink $tmp;
-	}
+    my ($element, $start, $end) = split /\|\|/, $key;
+    my $tmp = $element.".fasta";
+    my $cmd = "samtools faidx $fasta $source:$start-$end > $tmp";
+    try { 
+	system([0..5], $cmd);
     }
-    #close $in;
+    catch {
+	die "\nERROR: $cmd failed. Here is the exception: $_\n";
+    };
+    
+    my @aux = undef;
+    my ($name, $comm, $seq, $qual);
+    open my $in, '<', $tmp;
+    while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
+	my $ltrlength = length($seq);
+	my $n_count = ($seq =~ tr/Nn//);
+	$n_perc  = sprintf("%.2f",$n_count/$ltrlength);
+	#say STDERR join q{ }, $source, $ltr, $start, $end, $ltrlength, $n_perc;
+    }
+    close $in;
+    unlink $tmp;
 
     return $n_perc;
 }
