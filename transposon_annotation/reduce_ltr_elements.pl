@@ -18,35 +18,39 @@ use Getopt::Long;
 use experimental 'signatures';
 
 my $usage = "$0 -fg ltrdigest85.gff3 -pg ltrdigest99.gff3 -f fasta -og out.gff3";
-my $fullgff; # = shift or die $usage;
-my $partgff; # = shift or die $usage;
-my $fasta;   #   = shift or die $usage;
+my $fullgff;
+my $partgff;
+my $fasta;  
 my $outfile;
+my $n_thresh;
 
 GetOptions(
     'fg|fullgff85=s' => \$fullgff,
     'pg|partgff99=s' => \$partgff,
     'f|fasta=s'      => \$fasta,
     'og|outgff=s'    => \$outfile,
-    );
+    'nt|n_thresh=f'  => \$n_thresh 
+);
 
 if (!$fullgff || !$partgff || !$fasta || !$outfile) {
     say $usage;
     exit(1);
 }
 
-my ($all_feats, $all_stats, $intervals) = collect_features($fullgff, $fasta);
+$n_thresh //= 0.30;
+
+my ($all_feats, $all_stats, $intervals)  = collect_features($fullgff, $fasta);
 my ($part_feats, $part_stats, $part_int) = collect_features($partgff, $fasta);
 
 my $best_elements = get_overlaps($all_feats, $part_feats, $intervals);
 my $combined_features = reduce_features($all_feats, $part_feats, $best_elements, 
-					$all_stats, $part_stats, $fasta);
+					$all_stats, $part_stats, $fasta, $n_thresh);
 sort_features($fullgff, $fasta, $combined_features, $outfile);
 
 #
 # methods
 #
-sub reduce_features ($all_feats, $part_feats, $best_elements, $all_stats, $part_stats, $fasta) {
+sub reduce_features ($all_feats, $part_feats, $best_elements, $all_stats, $part_stats, $fasta, $n_thresh) {
     my ($all, $best, $part, $comb) = (0, 0, 0, 0);
 
     my (%best_features, %all_features, %best_stats);
@@ -92,7 +96,6 @@ sub reduce_features ($all_feats, $part_feats, $best_elements, $all_stats, $part_
     }
 
     my $n_perc_filtered = 0;
-    my $n_thresh = 0.30;
 
     for my $source (keys %best_features) {
 	for my $element (keys %{$best_features{$source}}) {
