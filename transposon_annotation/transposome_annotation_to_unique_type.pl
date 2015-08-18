@@ -7,26 +7,32 @@
 use 5.010;
 use strict;
 use warnings;
+use autodie;
 
 my %res;
+my $usage = "perl $0 annotations_summary.tsv";
+my $file = shift or die $usage;
+open my $in, '<', $file;
 
-while (<>) {
+while (<$in>) {
     chomp;
+    next if /^ReadNum/;
     my @f = split;
-    push @{$res{$f[0]}}, { $f[3] => $f[5] };
+    push @{$res{$f[1]}}, { $f[2] => $f[5] };
 }
+close $in;
 
 my %sfamtot;
 
-for my $species (keys %res) {
-    for my $sfamh (@{$res{$species}}) {
+for my $sfamh (keys %res) {
+    for my $sfam (@{$res{$sfamh}}) {
 	my $sfam_tot = 0;
-	for my $sfam (keys %$sfamh) {
-	   $sfamtot{$sfam} += $sfamh->{$sfam};
+	for my $fam (keys %$sfam) {
+	   $sfamtot{$fam} += $sfam->{$fam};
 	}
     }
     for my $sfamname (reverse sort { $sfamtot{$a} <=> $sfamtot{$b} } keys %sfamtot) {
-	say join "\t", $species, $sfamname, $sfamtot{$sfamname};
+	say join "\t", $sfamh, $sfamname, $sfamtot{$sfamname};
     }
     %sfamtot = ();
 }
