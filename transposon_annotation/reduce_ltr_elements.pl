@@ -8,7 +8,6 @@ use Statistics::Descriptive;
 use Bio::Tools::GFF;
 use Sort::Naturally     qw(nsort);
 use List::Util          qw(sum max);
-use List::MoreUtils     qw(first_index);
 use List::UtilsBy       qw(nsort_by);
 use IPC::System::Simple qw(system);
 use Set::IntervalTree;
