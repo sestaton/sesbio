@@ -446,7 +446,7 @@ sub filter_compound_elements ($features, $fasta) {
 	    }
 	    
 	    if ($is_gypsy && $is_copia) {
-		delete $features->{$ltr};
+		delete $features->{$source}{$ltr};
 		$gyp_cop_filtered++;
 	    }
 	    
@@ -455,12 +455,12 @@ sub filter_compound_elements ($features, $fasta) {
 		for my $element (@pdoms) {
 		    $element =~ s/\;.*//;
 		    next if $element =~ /chromo/i; # we expect these elements to be duplicated
-		    delete $features->{$ltr} && $dup_pdoms_filtered++ if $uniq{$element}++;
+		    delete $features->{$source}{$ltr} && $dup_pdoms_filtered++ if $uniq{$element}++;
 		}
 	    }
 	    
 	    if ($l >= $len_thresh) {
-		delete $features->{$ltr};
+		delete $features->{$source}{$ltr};
 		$len_filtered++;
 	    }
 
