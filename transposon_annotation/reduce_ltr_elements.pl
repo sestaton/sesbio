@@ -8,9 +8,11 @@ use Statistics::Descriptive;
 use Bio::Tools::GFF;
 use Sort::Naturally     qw(nsort);
 use List::Util          qw(sum max);
+use List::MoreUtils     qw(first_index);
 use List::UtilsBy       qw(nsort_by);
 use IPC::System::Simple qw(system);
 use Set::IntervalTree;
+use Data::Dump;
 use Data::Printer;
 use Try::Tiny;
 use Getopt::Long;
@@ -21,35 +23,33 @@ my $fullgff;
 my $partgff;
 my $fasta;  
 my $outfile;
-my $n_thresh;
 
 GetOptions(
     'fg|fullgff85=s' => \$fullgff,
     'pg|partgff99=s' => \$partgff,
     'f|fasta=s'      => \$fasta,
     'og|outgff=s'    => \$outfile,
-    'nt|n_thresh=f'  => \$n_thresh 
-);
+    );
 
 if (!$fullgff || !$partgff || !$fasta || !$outfile) {
     say $usage;
     exit(1);
 }
 
-$n_thresh //= 0.30;
-
-my ($all_feats, $all_stats, $intervals)  = collect_features($fullgff, $fasta);
-my ($part_feats, $part_stats, $part_int) = collect_features($partgff, $fasta);
+my ($all_feats, $all_stats, $intervals)  = collect_features($fullgff, $fasta, '85');
+my ($part_feats, $part_stats, $part_int) = collect_features($partgff, $fasta, '99');
 
 my $best_elements = get_overlaps($all_feats, $part_feats, $intervals);
+
 my $combined_features = reduce_features($all_feats, $part_feats, $best_elements, 
-					$all_stats, $part_stats, $fasta, $n_thresh);
+					$all_stats, $part_stats, $fasta);
 sort_features($fullgff, $fasta, $combined_features, $outfile);
 
+exit;
 #
 # methods
 #
-sub reduce_features ($all_feats, $part_feats, $best_elements, $all_stats, $part_stats, $fasta, $n_thresh) {
+sub reduce_features ($all_feats, $part_feats, $best_elements, $all_stats, $part_stats, $fasta) {
     my ($all, $best, $part, $comb) = (0, 0, 0, 0);
 
     my (%best_features, %all_features, %best_stats);
@@ -95,6 +95,7 @@ sub reduce_features ($all_feats, $part_feats, $best_elements, $all_stats, $part_
     }
 
     my $n_perc_filtered = 0;
+    my $n_thresh = 0.30;
 
     for my $source (keys %best_features) {
 	for my $element (keys %{$best_features{$source}}) {
@@ -155,12 +156,27 @@ sub sort_features ($gff, $fasta, $combined_features, $outfile) {
     chomp $header;
     say $ogff $header;
 
+    my $elem_tot = 0;
     for my $chromosome (nsort keys %$combined_features) {
-	for my $ltr (sort { $a =~ /repeat_region(\d+)/ <=> $b =~ /repeat_region(\d+)/ } 
+	for my $ltr (nsort_by { m/repeat_region\d+\_\d+\.(\d+)\.\d+/ and $1 }
 		     keys %{$combined_features->{$chromosome}}) {
+	    my ($rreg, $rreg_start, $rreg_end, $rreg_length) = split /\./, $ltr;
+	    my ($first) = @{$combined_features->{$chromosome}{$ltr}}[0];
+	    my ($source, $strand) = (split /\|\|/, $first)[1,6];
+	    say $ogff join "\t", $chromosome, $source, 'repeat_region', 
+	        $rreg_start, $rreg_end, '.', $strand, '.', "ID=$rreg";
 	    for my $entry (@{$combined_features->{$chromosome}{$ltr}}) {
 		my @feats = split /\|\|/, $entry;
+		$feats[8] =~ s/\s\;\s/\;/g;
+		$feats[8] =~ s/\s+$//;
+		$feats[8] =~ s/\"//g;
+		$feats[8] =~ s/(\;\w+)\s/$1=/g;
+		$feats[8] =~ s/\s;/;/;
+		$feats[8] =~ s/^(\w+)\s/$1=/;
+		say $ogff join "\t", @feats;
+
 		if ($feats[2] eq 'LTR_retrotransposon') {
+		    $elem_tot++;
 		    my ($start, $end) = @feats[3..4];
 		    my ($elem) = ($feats[8] =~ /(LTR_retrotransposon\d+)/);
 		    my $id = $elem."_".$chromosome."_".$start."_".$end;
@@ -178,26 +194,20 @@ sub sort_features ($gff, $fasta, $combined_features, $outfile) {
 		    while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
 			$seq =~ s/.{60}\K/\n/g;
 			say $ofas join "\n", ">".$id, $seq;
-		    }
+		    }   
 		    close $in;
 		    unlink $tmp;
-		}
-		$feats[8] =~ s/\s\;\s/\;/g;
-		$feats[8] =~ s/\s+$//;
-		$feats[8] =~ s/\"//g;
-		$feats[8] =~ s/(\;\w+)\s/$1=/g;
-		$feats[8] =~ s/\s;/;/;
-		$feats[8] =~ s/^(\w+)\s/$1=/;
-		say $ogff join "\t", @feats;
+		} 
 	    }
 	}
     }
     close $ogff;
     close $ofas;
-    
+
+    say STDERR "Total elements written: $elem_tot";
 }
     
-sub collect_features ($gff, $fasta) {
+sub collect_features ($gff, $fasta, $which) {
     my %intervals;
     
     my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
@@ -214,9 +224,15 @@ sub collect_features ($gff, $fasta) {
 	next $feature unless defined $start && defined $end;
 	if ($feature->primary_tag ne 'repeat_region') {
 	    if ($feature->start >= $start && $feature->end <= $end) {
-		$intervals{$region} = join ".", $start, $end, $length;
-		my $region_key = join ".", $region, $start, $end, $length;
-		push @{$features{$source}{$region_key}}, join "||", split /\t/, $feature->gff_string;
+		$intervals{$region."_".$which} = join ".", $start, $end, $length;
+		my $region_key = join ".", $region."_".$which, $start, $end, $length;
+		my @feats = split /\t/, $feature->gff_string;
+		if ($feats[8] =~ /(repeat_region\d+)/) {
+		    my $old_parent = $1;
+		    my $new_parent = $old_parent."_".$which;
+		    $feats[8] =~ s/$old_parent/$new_parent/g;
+		}
+		push @{$features{$source}{$region_key}}, join "||", @feats; #split /\t/, $feature->gff_string;
 	    }
 	}
     }
@@ -338,7 +354,6 @@ sub get_ltr_score_dups ($scores, $sims, $allfeatures, $partfeatures) {
 		say "\nERROR: Something went wrong....'$best' not found in hash. This is a bug. Exiting.";
 		exit(1);
 	    }
-	    
 	}
     }
 
@@ -419,10 +434,9 @@ sub filter_compound_elements ($features, $fasta) {
     }
     
     for my $source (keys %$features) {
-	for my $ltr (nsort_by { m/repeat_region(\d+)/ and $1 } keys %{$features->{$source}}) {
+	for my $ltr (keys %{$features->{$source}}) {
 	    $curct++;
 	    my ($rreg, $s, $e, $l) = split /\./, $ltr;
-	    my $region = @{$features->{$source}{$ltr}}[0];
 	    
 	    for my $feat (@{$features->{$source}{$ltr}}) {
 		my @feats = split /\|\|/, $feat;
@@ -435,11 +449,11 @@ sub filter_compound_elements ($features, $fasta) {
 
 		if ($feats[2] =~ /protein_match/) {
 		    $has_pdoms = 1;
-		    @pdoms = ($feats[8] =~ /name=(\S+)/);
+		    @pdoms = ($feats[8] =~ /name=(\S+)/g);
 		    if ($feats[8] =~ /name=RVT_1|name=Chromo/i) {
 			$is_gypsy  = 1;
 		    }
-		    if ($feats[8] =~ /name=RVT_2/i) {
+		    elsif ($feats[8] =~ /name=RVT_2/i) {
 			$is_copia  = 1;
 		    }
 		}
