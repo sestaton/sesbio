@@ -95,7 +95,9 @@ sub get_orfs ($query) {
 }
 
 sub run_blast ($query, $blastdb) {
-    my $cmd = "blastall -p blastp -i $query -d $blastdb -m 8 | sort -nrk 12 |sort -k1,1 -u |head -1 | cut -f1";
+    my $cmd = "blastall -p blastp -i $query -d $blastdb -m 8 | ";
+    $cmd .= "sort -nrk 12 |sort -k1,1 -u |head -1 | cut -f1";
+
     my $bestid;
     try {
 	my ($stdout, $stderr, @res) = capture { system([0..5], $cmd); };
