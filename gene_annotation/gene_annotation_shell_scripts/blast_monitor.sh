@@ -1,9 +1,11 @@
 #!/bin/bash
 
+script=$(basename $0)
+
 function usage() {
 cat <<EOF
 
-USAGE: $0 <blast> <seq_file> 
+USAGE: $script <blast> <seq_file> 
 
 blast      :   A tab-delimited BLAST report (only tested with blastall style).
 seq_file   :   A (nucleotide) Fasta file to analyze.
