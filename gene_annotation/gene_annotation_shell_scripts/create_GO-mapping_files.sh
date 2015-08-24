@@ -17,10 +17,11 @@
 #
 #==============================================================
 # TODO: add logging of progress/results, not just runtime
+script=$(basename $0)
 
 function usage() {
 cat <<EOF 
-USAGE: $0 input_study_directory_name input_popn_dir_name output_directory_name species_name
+USAGE: $script input_study_directory_name input_popn_dir_name output_directory_name species_name
 
 input_study_directory_name  :  Name of directory holding ONLY the study HMMscan output files (output of option --tblout).
 input_popn_dir_name         :  Name of directory holding population HMMscan output file.
