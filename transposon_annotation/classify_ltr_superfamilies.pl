@@ -1,8 +1,5 @@
 #!/usr/bin/env perl
 
-## only write gff files after annotating unclassfied. pass back hash of features,
-## not path to gff file
-
 use 5.020;
 use warnings;
 use autodie;
@@ -19,7 +16,7 @@ use Getopt::Long;
 use experimental 'signatures';
 
 my $usage = "$0 -g gff -db repeatdb -f genome.fas";
-my $gff; #   = shift or die $usage;
+my $gff;
 my $fasta;
 my $repeatdb;
 
@@ -31,52 +28,58 @@ GetOptions(
 
 die $usage if !$gff || !$repeatdb || !$fasta;
 
-my $header;
-open my $in, '<', $gff;
-while (<$in>) {
-    chomp;
-    if (/^#/) {
-	$header .= $_."\n";
-    }
-    else {
-	last;
-    }
-}
-close $in;
-chomp $header;
+my ($header, $features) = collect_ltr_features($gff);
 
-my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
-
-my ($start, $end, $region, %features);
-while (my $feature = $gffio->next_feature()) {
-    if ($feature->primary_tag eq 'repeat_region') {
-	my @string = split /\t/, $feature->gff_string;
-	($region) = ($string[8] =~ /ID=?\s+?(repeat_region\d+)/);
-	($start, $end) = ($feature->start, $feature->end);
-    }
-    next $feature unless defined $start && defined $end;
-    if ($feature->primary_tag ne 'repeat_region') {
-	if ($feature->start >= $start && $feature->end <= $end) {
-	    push @{$features{$region.".".$start.".".$end}}, join "||", split /\t/, $feature->gff_string;
-	}
-    }
-}
-
-my $all_ct  = (keys %features);
-my ($gypsy, $copia) = find_gypsy_copia(\%features);
-my ($unc_fas, $ltr_rregion_map) = find_unclassified(\%features, $gff, $fasta);
+my $all_ct  = (keys %$features);
+my ($gypsy, $copia) = find_gypsy_copia($features);
+my ($unc_fas, $ltr_rregion_map) = find_unclassified($features, $gff, $fasta);
 
 my $blastdb   = make_blastdb($repeatdb);
 my $blast_out = search_unclassified($blastdb, $unc_fas);
-annotate_unclassified($blast_out, $gypsy, $copia, \%features, $ltr_rregion_map);
+annotate_unclassified($blast_out, $gypsy, $copia, $features, $ltr_rregion_map);
 write_gypsy($gypsy, $header, $gff);
 write_copia($copia, $header, $gff);
-write_unclassified(\%features, $header, $gff);
+write_unclassified($features, $header, $gff);
 
 say join "\n", "all_ct", $all_ct;
 #
 # methods
 #
+sub collect_ltr_features ($gff) {
+    my $header;
+    open my $in, '<', $gff;
+    while (<$in>) {
+	chomp;
+	if (/^#/) {
+	    $header .= $_."\n";
+	}
+	else {
+	    last;
+	}
+    }
+    close $in;
+    chomp $header;
+    
+    my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
+    
+    my ($start, $end, $region, %features);
+    while (my $feature = $gffio->next_feature()) {
+	if ($feature->primary_tag eq 'repeat_region') {
+	    my @string = split /\t/, $feature->gff_string;
+	    ($region) = ($string[8] =~ /ID=?\s+?(repeat_region\d+)/);
+	    ($start, $end) = ($feature->start, $feature->end);
+	}
+	next $feature unless defined $start && defined $end;
+	if ($feature->primary_tag ne 'repeat_region') {
+	    if ($feature->start >= $start && $feature->end <= $end) {
+		push @{$features{$region.".".$start.".".$end}}, join "||", split /\t/, $feature->gff_string;
+	    }
+	}
+    }
+    
+    return ($header, \%features);
+}
+
 sub find_gypsy_copia ($features) {
     my $is_gypsy = 0;
     my $is_copia = 0;
@@ -157,65 +160,42 @@ sub annotate_unclassified ($blast_out, $gypsy, $copia, $features, $ltr_rregion_m
     open my $in, '<', $blast_out;
     my (%gypsy_re, %copia_re);
     
-    #dd $features and exit;
     while (<$in>) {
 	chomp;
 	my @f = split /\t/;
-	if ($f[2] >= 80 && $f[3] >= 80) {
+	if ($f[2] >= 80 && $f[3] >= 80) { #make thresholds options
 	    my ($family) = ($f[1] =~ /(^RL[GCX][_-][a-zA-Z]*\d*?)/);
-	    #say "Family: $family";
 	    if ($family =~ /^RLG/) {
-		#if (defined $features->{ $ltr_rregion_map->{$f[0]} }) {
-		    $gypsy->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
-		    delete $features->{ $ltr_rregion_map->{$f[0]} };
-		#}
+		$gypsy->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
+		delete $features->{ $ltr_rregion_map->{$f[0]} };
 	    }
 	    elsif ($family =~ /^RLC/) {
-		#if (defined $features->{ $ltr_rregion_map->{$f[0]} }) {
-		    $copia->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
-		    delete $features->{ $ltr_rregion_map->{$f[0]} };
-		#}
+		$copia->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
+		delete $features->{ $ltr_rregion_map->{$f[0]} };
 	    }
 	}
     }
     close $in;
     unlink $blast_out;
-
-    #for my $gkey (keys %gypsy_re) {
-	#$gypsy->{ $gkey } = $features->{ $gkey };
-	#delete $features->{ $gkey };
-    #}
-
-    #for my $ckey (keys %copia_re) {
-	#$copia->{ $ckey } = $features->{ $ckey };
-	#delete $features->{ $ckey };
-    #}
-
 }
 
 sub write_gypsy ($gypsy, $header, $gff) {
     my @lengths;
     my $gyp_feats;
+    my %pdom_index;
+    my $pdom_org;
     my $has_pdoms  = 0;
     my $pdoms      = 0;
 
-    #dd $gypsy and exit;
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = $name."_gypsy.gff3";
     open my $out, '>>', $outfile;
     say $out $header;
 
+    my @all_pdoms;
     for my $ltr (nsort_by { m/repeat_region\d+\.(\d+)\.\d+/ and $1 } keys %$gypsy) {
-    #say STDERR "DEBUG: $ltr";
 	my ($rreg, $s, $e) = split /\./, $ltr;
-	#my $len = ($e - $s) + 1;
 	my $region = @{$gypsy->{$ltr}}[0];
-	unless (defined $region) {
-	    say "DEBUG write gypsy: $ltr";
-	    say "DEBUG write gypsy: ";
-	    dd $gypsy->{$ltr};
-	    exit;
-	}
 	my ($loc, $source, $strand) = (split /\|\|/, $region)[0,1,6];
 
 	for my $feat (@{$gypsy->{$ltr}}) {
@@ -226,27 +206,35 @@ sub write_gypsy ($gypsy, $header, $gff) {
 	    $feats[8] =~ s/=$//;
 	    $feats[8] =~ s/=\;/;/g;
 	    $feats[8] =~ s/\"//g;
-	    $has_pdoms = 1 if $feats[2] =~ /protein_match/;
+	    if ($feats[8] =~ /Parent=repeat_region\d+_(\d+)/i) {
+		$feats[8] =~ s/$1//g;
+	    }
+	    if ($feats[2] =~ /protein_match/) {
+		$has_pdoms = 1;
+		my ($doms) = ($feats[8] =~ /name=(\w+)/);
+		push @all_pdoms, $doms;
+	    }
 	    if ($feats[2] =~ /LTR_retrotransposon/) {
 		my $ltrlen = $feats[4] - $feats[3] + 1;
 		push @lengths, $ltrlen;
 	    }
-	    #push @lengths, $len if $feats[2] =~ /LTR_retrotransposon/;
 	    $gyp_feats .= join "\t", @feats, "\n";
 	}
 	chomp $gyp_feats;
 	say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg";
 	say $out $gyp_feats;
 
-	#delete $features->{$ltr};
-	#push @lengths, $len;
+	$pdom_org = join ",", @all_pdoms;
+	push @{$pdom_index{$strand}}, $pdom_org if $pdom_org;
 	$pdoms++ if $has_pdoms;
-
 	undef $gyp_feats;
+	undef $pdom_org;
+	@all_pdoms = ();
 	$has_pdoms  = 0;
     }
     close $out;
 
+    #dd \%pdom_index and exit;
     say STDERR join "\t", "gypsy_count", "min_length", "max_length", "mean_length", "elements_with_protein_matches";
     my $stat = Statistics::Descriptive::Full->new;
     $stat->add_data(@lengths);
@@ -262,25 +250,18 @@ sub write_copia ($copia, $header, $gff) {
     my $cop_feats;
     my $has_pdoms  = 0;
     my $pdoms      = 0;
+    my $pdom_org;
+    my @all_pdoms;
+    my %pdom_index;
     
     my ($name, $path, $suffix) = fileparse($gff, qr/\.[^.]*/);
     my $outfile = $name."_copia.gff3";
     open my $out, '>>', $outfile;
     say $out $header;
 
-    #dd $copia and exit;
     for my $ltr (nsort_by { m/repeat_region\d+\.(\d+)\.\d+/ and $1 } keys %$copia) {
         my ($rreg, $s, $e) = split /\./, $ltr;
-        #my $len = ($e - $s) + 1;
         my $region = @{$copia->{$ltr}}[0];
-	unless (defined $region) {
-	    say "DEBUG write copia: $ltr";
-	    say "DEBUG write copia: ";
-	    dd $copia->{$ltr};
-	    #dd $copia;
-	    exit;
-	}
-	
 	my ($loc, $source, $strand) = (split /\|\|/, $region)[0,1,6];
         for my $feat (@{$copia->{$ltr}}) {
 	    my @feats = split /\|\|/, $feat;
@@ -290,23 +271,32 @@ sub write_copia ($copia, $header, $gff) {
 	    $feats[8] =~ s/=$//;
 	    $feats[8] =~ s/=\;/;/g;
 	    $feats[8] =~ s/\"//g;
-	    $has_pdoms = 1 if $feats[2] =~ /protein_match/;
+	    if ($feats[8] =~ /Parent=repeat_region\d+_(\d+)/i) {
+		$feats[8] =~ s/$1//g;
+	    }
+	    if ($feats[2] =~ /protein_match/) {
+		$has_pdoms = 1;
+		my ($doms) = ($feats[8] =~ /name=(\w+)/);
+		push @all_pdoms, $doms;
+		#push @{$pdom_index{$strand}}, $pdom_org;
+	    }
 	    if ($feats[2] =~ /LTR_retrotransposon/) {
 		my $ltrlen = $feats[4] - $feats[3] + 1;
 		push @lengths, $ltrlen;
 	    }
-	    #push @lengths, $len if $feats[2] =~ /LTR_retrotransposon/;
 	    $cop_feats .= join "\t", @feats, "\n";
 	}
 	chomp $cop_feats;
 	say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg";
 	say $out $cop_feats;
-	#delete $features->{$ltr};
 
-	#push @lengths, $len;
+	$pdom_org = join ",", @all_pdoms;
+	push @{$pdom_index{$strand}}, $pdom_org if $pdom_org;
 	$pdoms++ if $has_pdoms;
         undef $cop_feats;
-        $has_pdoms  = 0;
+	undef $pdom_org;
+	@all_pdoms = ();
+	$has_pdoms  = 0;
     }
     close $out;
 
@@ -333,7 +323,6 @@ sub write_unclassified ($features, $header, $gff) {
 
     for my $ltr (nsort_by { m/repeat_region\d+\.(\d+)\.\d+/ and $1 } keys %$features) {
         my ($rreg, $s, $e, $l) = split /\./, $ltr;
-        #my $len = ($e - $s) + 1;
         my $region = @{$features->{$ltr}}[0];
         my ($loc, $source, $strand) = (split /\|\|/, $region)[0,1,6];
         for my $feat (@{$features->{$ltr}}) {
@@ -344,6 +333,9 @@ sub write_unclassified ($features, $header, $gff) {
             $feats[8] =~ s/=$//;
             $feats[8] =~ s/=\;/;/g;
             $feats[8] =~ s/\"//g;
+	    if ($feats[8] =~ /Parent=repeat_region\d+_(\d+)/i) {
+		$feats[8] =~ s/$1//g;
+	    }
 	    $has_pdoms = 1 if $feats[2] =~ /protein_match/;
 	    if ($feats[2] =~ /LTR_retrotransposon/) {
 		my $ltrlen = $feats[4] - $feats[3] + 1;
@@ -354,9 +346,7 @@ sub write_unclassified ($features, $header, $gff) {
 	chomp $unc_feats;
 	say $out join "\t", $loc, $source, 'repeat_region', $s, $e, '.', $strand, '.', "ID=$rreg";
 	say $out $unc_feats;
-	#delete $features->{$tir};
 
-	#push @lengths, $len;
 	$pdoms++ if $has_pdoms;
 	$has_pdoms = 0;
 	undef $unc_feats;
@@ -383,10 +373,12 @@ sub get_source ($ref) {
 }
 
 sub search_unclassified ($blastdb, $unc_fas) {
-    my $blast_out = 'tmp_out.bl6';
+    my ($bname, $bpath, $bsuffix) = fileparse($unc_fas, qr/\.[^.]*/);
+    my ($fname, $fpath, $fsuffix) = fileparse($unc_fas, qr/\.[^.]*/);
+    my $outfile = $fname."_".$bname.".bln";
 
     my @blastcmd = "blastn -dust no -query $unc_fas -evalue 10 -db $blastdb ".
-	"-outfmt 6 -num_threads 12 | sort -nrk12,12 | sort -k1,1 -u > $blast_out";
+	"-outfmt 6 -num_threads 12 | sort -nrk12,12 | sort -k1,1 -u > $outfile";
 
     try {
 	my @blasts_out = system(EXIT_ANY, @blastcmd);
@@ -395,8 +387,9 @@ sub search_unclassified ($blastdb, $unc_fas) {
 	say STDERR "blastn failed. Caught error: $_.";
 	exit(1);
     }; 
+    unlink glob("$blastdb*");
 
-    return $blast_out;
+    return $outfile;
 }
 
 sub make_blastdb ($db_fas) {
@@ -407,16 +400,16 @@ sub make_blastdb ($db_fas) {
     my $db_path = Path::Class::File->new($dir, $db);    
     unlink $db_path if -e $db_path;
 
-    #try {
-        #my @makedbout = capture([0..5],"makeblastdb -in $db_fas -dbtype nucl -title $db -out $db_path 2>&1 > /dev/null");
-    #}
-    #catch {
-	#say STDERR "Unable to make blast database. Here is the exception: $_.";
-	#say STDERR "Ensure you have removed non-literal characters (i.e., "*" or "-") in your repeat database file.";
-	#say STDERR "These cause problems with BLAST+. Exiting.";
-        #exit(1);
-    #};
-
+    try {
+	my @makedbout = capture([0..5],"makeblastdb -in $db_fas -dbtype nucl -title $db -out $db_path 2>&1 > /dev/null");
+    }
+    catch {
+	say STDERR "Unable to make blast database. Here is the exception: $_.";
+	say STDERR "Ensure you have removed non-literal characters (i.e., "*" or "-") in your repeat database file.";
+	say STDERR "These cause problems with BLAST+. Exiting.";
+        exit(1);
+    };
+    
     return $db_path;
 }
 
