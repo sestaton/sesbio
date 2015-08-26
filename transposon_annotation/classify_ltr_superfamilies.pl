@@ -206,7 +206,7 @@ sub write_gypsy ($gypsy, $header, $gff) {
 	    $feats[8] =~ s/=$//;
 	    $feats[8] =~ s/=\;/;/g;
 	    $feats[8] =~ s/\"//g;
-	    if ($feats[8] =~ /Parent=repeat_region\d+_(\d+)/i) {
+	    if ($feats[8] =~ /Parent=repeat_region\d+(_\d+)/i) {
 		$feats[8] =~ s/$1//g;
 	    }
 	    if ($feats[2] =~ /protein_match/) {
@@ -271,7 +271,7 @@ sub write_copia ($copia, $header, $gff) {
 	    $feats[8] =~ s/=$//;
 	    $feats[8] =~ s/=\;/;/g;
 	    $feats[8] =~ s/\"//g;
-	    if ($feats[8] =~ /Parent=repeat_region\d+_(\d+)/i) {
+	    if ($feats[8] =~ /Parent=repeat_region\d+(_\d+)/i) {
 		$feats[8] =~ s/$1//g;
 	    }
 	    if ($feats[2] =~ /protein_match/) {
@@ -333,7 +333,7 @@ sub write_unclassified ($features, $header, $gff) {
             $feats[8] =~ s/=$//;
             $feats[8] =~ s/=\;/;/g;
             $feats[8] =~ s/\"//g;
-	    if ($feats[8] =~ /Parent=repeat_region\d+_(\d+)/i) {
+	    if ($feats[8] =~ /Parent=repeat_region\d+(_\d+)/i) {
 		$feats[8] =~ s/$1//g;
 	    }
 	    $has_pdoms = 1 if $feats[2] =~ /protein_match/;
