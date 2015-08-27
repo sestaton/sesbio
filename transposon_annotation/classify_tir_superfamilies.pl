@@ -17,57 +17,61 @@ use experimental 'signatures';
 my $usage = "$0 gff fasta";
 my $gff   = shift or die $usage;
 my $fasta = shift or die $usage;
-my $header;
 
 my $hash = seq_to_hash($fasta);
+my ($header, $feature) = collect_features($gff);
 
-open my $in, '<', $gff;
-while (<$in>) {
-    chomp;
-    if (/^#/) {
-	$header .= $_."\n";
-    }
-    else {
-	last;
-    }
-}
-close $in;
-chomp $header;
-
-my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
-
-my ($start, $end, $region, %feature);
-while (my $feature = $gffio->next_feature()) {
-    if ($feature->primary_tag eq 'repeat_region') {
-	my @string = split /\t/, $feature->gff_string;
-	($region) = ($string[8] =~ /ID=?\s+?(repeat_region\d+)/);
-	($start, $end) = ($feature->start, $feature->end);
-    }
-    next $feature unless defined $start && defined $end;
-    if ($feature->primary_tag ne 'repeat_region') {
-	if ($feature->start >= $start && $feature->end <= $end) {
-	    push @{$feature{$region.".".$start.".".$end}}, join "||", split /\t/, $feature->gff_string;
-	}
-    }
-}
-
-my $all_ct = (keys %feature);
-find_tc1_mariner(\%feature, $header, $hash, $gff);
-my $tc1_ct = (keys %feature);
-find_hat(\%feature, $header, $hash, $gff);
-my $hat_ct = (keys %feature);
-find_mutator(\%feature, $header, $hash, $gff);
-my $mut_ct = (keys %feature);
-find_cacta(\%feature, $header, $hash, $gff);
-my $cacta_ct = (keys %feature);
-write_unclassified_tirs(\%feature, $header, $hash, $gff);
-my $rem_ct = (keys %feature);
+my $all_ct = (keys %$feature);
+find_tc1_mariner($feature, $header, $hash, $gff);
+my $tc1_ct = (keys %$feature);
+find_hat($feature, $header, $hash, $gff);
+my $hat_ct = (keys %$feature);
+find_mutator($feature, $header, $hash, $gff);
+my $mut_ct = (keys %$feature);
+find_cacta($feature, $header, $hash, $gff);
+my $cacta_ct = (keys %$feature);
+write_unclassified_tirs($feature, $header, $hash, $gff);
+my $rem_ct = (keys %$feature);
 
 say STDERR join "\t", "all", "after_tc1", "after_hat", "after_mut", "after_cacta", "after_rem";
 say STDERR join "\t", $all_ct, $tc1_ct, $hat_ct, $mut_ct, $cacta_ct, $rem_ct;
 #
 # methods
 #
+sub collect_features ($gff) {
+    open my $in, '<', $gff;
+    while (<$in>) {
+	chomp;
+	if (/^#/) {
+	    $header .= $_."\n";
+	}
+	else {
+	    last;
+	}
+    }
+    close $in;
+    chomp $header;
+
+    my $gffio = Bio::Tools::GFF->new( -file => $gff, -gff_version => 3 );
+
+    my ($start, $end, $region, %feature);
+    while (my $feature = $gffio->next_feature()) {
+	if ($feature->primary_tag eq 'repeat_region') {
+	    my @string = split /\t/, $feature->gff_string;
+        ($region) = ($string[8] =~ /ID=?\s+?(repeat_region\d+)/);
+	    ($start, $end) = ($feature->start, $feature->end);
+	}
+	next $feature unless defined $start && defined $end;
+	if ($feature->primary_tag ne 'repeat_region') {
+	    if ($feature->start >= $start && $feature->end <= $end) {
+		push @{$feature{$region.".".$start.".".$end}}, join "||", split /\t/, $feature->gff_string;
+	    }
+	}
+    }
+
+    return ($header, \%feature);
+}
+
 sub find_tc1_mariner ($feature, $header, $hash, $gff) {
     my @lengths;
     my $mar_feats;
