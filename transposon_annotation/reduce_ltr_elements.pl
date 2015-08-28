@@ -38,6 +38,7 @@ if (!$fullgff || !$partgff || !$fasta || !$outfile) {
 
 my ($all_feats, $all_stats, $intervals)  = collect_features($fullgff, $fasta, '85');
 my ($part_feats, $part_stats, $part_int) = collect_features($partgff, $fasta, '99');
+#dd $all_feats and exit;
 
 my $best_elements = get_overlaps($all_feats, $part_feats, $intervals);
 
@@ -420,12 +421,14 @@ sub filter_compound_elements ($features, $fasta) {
     my @pdoms;
     my $is_gypsy   = 0;
     my $is_copia   = 0;
+    my $has_tpase  = 0;
     my $has_pdoms  = 0;
     my $len_thresh = 25000; # are elements > 25kb real? probably not
     my $n_thresh   = 0.30;
 
     my ($allct, $curct) = (0, 0);
-    my ($gyp_cop_filtered, $dup_pdoms_filtered, $len_filtered, $n_perc_filtered) = (0, 0, 0, 0);
+    my ($gyp_cop_filtered, $dup_pdoms_filtered, $len_filtered, 
+	$n_perc_filtered, $classII_filtered) = (0, 0, 0, 0, 0);
     
     for my $source (keys %$features) {
 	for my $ltr (keys %{$features->{$source}}) {
@@ -434,9 +437,11 @@ sub filter_compound_elements ($features, $fasta) {
     }
     
     for my $source (keys %$features) {
+	#for my $ltr (nsort_by { m/repeat_region(\d+)/ and $1 } keys %{$features->{$source}}) {
 	for my $ltr (keys %{$features->{$source}}) {
 	    $curct++;
 	    my ($rreg, $s, $e, $l) = split /\./, $ltr;
+	    #my $region = @{$features->{$source}{$ltr}}[0];
 	    
 	    for my $feat (@{$features->{$source}{$ltr}}) {
 		my @feats = split /\|\|/, $feat;
@@ -456,12 +461,20 @@ sub filter_compound_elements ($features, $fasta) {
 		    elsif ($feats[8] =~ /name=RVT_2/i) {
 			$is_copia  = 1;
 		    }
+		    elsif ($feats[8] =~ /transposase/i) {
+			$has_tpase = 1;
+		    }
 		}
 	    }
 	    
 	    if ($is_gypsy && $is_copia) {
 		delete $features->{$source}{$ltr};
 		$gyp_cop_filtered++;
+	    }
+
+	    if ($has_tpase) {
+		delete $features->{$source}{$ltr};
+		$classII_filtered++;
 	    }
 	    
 	    my %uniq;
@@ -482,12 +495,14 @@ sub filter_compound_elements ($features, $fasta) {
 	    $is_gypsy  = 0;
 	    $is_copia  = 0;
 	    $has_pdoms = 0;
+	    $has_tpase = 0;
 	}
     }
 
     my %stats = ( gyp_cop_filtered   => $gyp_cop_filtered, 
 		  len_filtered       => $len_filtered, 
-		  dup_pdoms_filtered => $dup_pdoms_filtered );
+		  dup_pdoms_filtered => $dup_pdoms_filtered,
+	          class_II_filtered  => $classII_filtered );
 
     return $features, \%stats;
 }
