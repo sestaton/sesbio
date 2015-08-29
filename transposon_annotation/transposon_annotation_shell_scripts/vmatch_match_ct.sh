@@ -1,9 +1,11 @@
 #!/bin/bash
 
+script=$(basename $0)
+
 function usage() {
 cat <<EOF
 
-USAGE: $0 <subj_seq_file> <qry_seq_file> <kmer_len> 
+USAGE: $script <subj_seq_file> <qry_seq_file> <kmer_len> 
 
 subj_seq_file   :   A (nucleotide) Fasta file to index.
 qry_seq_file    :   Fasta file to search the index.
