@@ -1,6 +1,7 @@
 #!/bin/bash
 
 ## NB: This program has bugs and never finshes, don't use it.
+## use Transposome instead: https://github.com/sestaton/Transposome
 
 cd `pwd`
 
