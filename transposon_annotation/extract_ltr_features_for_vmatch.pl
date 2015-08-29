@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
 ## features: LTRs, PBS/PPT, protein_domains
+##TODO: need to add feature name, element source, to header
 
 use 5.010;
 use strict;
@@ -31,12 +32,9 @@ unless ( -d $opt{dir} ) {
     make_path( $opt{dir}, {verbose => 0, mode => 0771,} );
 }
 
-#my $hash = seq_to_hash($opt{fasta}); # use faidx instead
 extract_features($opt{fasta}, $opt{dir}, $opt{infile});
-#combine_ltr_elements($opt{dir});
 
 sub extract_features ($fasta, $dir, $infile) {
-
     my ($name, $path, $suffix) = fileparse($fasta, qr/\.[^.]*/);
     my $comp = File::Spec->catfile($dir, $name."_complete.fasta")
     my $ppts = File::Spec->catfile($dir, $name."_ppts.fasta");
@@ -94,21 +92,16 @@ sub extract_features ($fasta, $dir, $infile) {
 	}
     }
 
-    #dd \%ltrs and exit;
     my %pdoms;
     
     for my $ltr (sort keys %ltrs) {
-	#my ($reg, $st, $en) = split /\./, $ltr;
-	#my $key = 
 	# full element
 	my ($source, $element, $start, $end) = split /\-/, $ltrs{$ltr}{'full'};
 	my $outfile = File::Spec->catfile($dir, $ltr.".fasta");
 	subseq($fasta, $source, $start, $end, $outfile, $allfh);
-	#my $key = join ".", $element, $start, $end;
 
 	# pbs
 	if ($ltrs{$ltr}{'pbs'}) {
-	    #dd $ltrs{$ltr}{'pbs'} and exit;
 	    my ($pbssource, $pbselement, $trna, $pbsstart, $pbsend) = split /\|\|/, $ltrs{$ltr}{'pbs'};
 	    my $pbs_tmp = File::Spec->catfile($dir, $ltr."_pbs.fasta");
 	    subseq($fasta, $pbssource, $pbsstart, $pbsend, $pbs_tmp, $pbsfh);
@@ -116,7 +109,6 @@ sub extract_features ($fasta, $dir, $infile) {
 	
 	# ppt
 	if ($ltrs{$ltr}{'ppt'}) {
-	    #dd $ltrs{$ltr}{'ppt'} and exit;
 	    my ($pptsource, $pptelement, $pptstart, $pptend) = split /\|\|/, $ltrs{$ltr}{'ppt'};
 	    my $ppt_tmp = File::Spec->catfile($dir, $ltr."_ppt.fasta");
 	    subseq($fasta, $source, $pptstart, $pptend, $ppt_tmp, $pptfh);
@@ -124,22 +116,13 @@ sub extract_features ($fasta, $dir, $infile) {
 	
 	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
 	    my ($src, $ltre, $s, $e) = split /\|\|/, $ltr_repeat;
-	    #my $ltrlen = ($e - $s) + 1;
-	    #my $ltrseq = substr $hash->{$src}, $s, $ltrlen;
-	    #$ltrseq =~ s/.{60}\K/\n/g;
 	    if ($ltrct) { 
 		my $fiveprime_tmp = File::Spec->catfile($dir, $ltr."_5prime-ltr.fasta");
 		subseq($fasta, $src, $s, $e, $fiveprime_tmp, $fivefh);
-		#open my $tout, '>', $fiveprime_outfile;
-		#say $tout join "\n", ">".$ltr."_5prime_ltr_".$s."-".$e, $ltrseq;
-		#close $tout;
 	    }
 	    else {
 		my $threeprime_tmp = File::Spec->catfile($dir, $ltr."_3prime-ltr.fasta");
 		subseq($fasta, $src, $s, $e, $threeprime_tmp, $threfh);
-		#open my $tout, '>', $threeprime_outfile;
-		#say $tout join "\n", ">".$ltr."_3prime_ltr_".$s."-".$e, $ltrseq;
-		#close $tout;
 		$ltrct++;
 	    }
 	}
@@ -191,38 +174,6 @@ sub subseq ($fasta, $loc, $start, $end, $tmp, $out) {
     }
     close $in;
     unlink $tmp;
-}
-
-sub combine_ltr_elements {
-    my ($dir) = @_;
-
-    my @five_prime_ltrs;
-    my @three_prime_ltrs;
-    my @pbs;
-    my @ppts;
-    my @files;
-    find( sub { push @files, $File::Find::name if -f and ! /ltr.fasta$/ }, $dir);
-
-    my $outfile = File::Spec->catfile($dir, $dir."_all_full-length_elements.fasta");
-    open my $out, '>>', $outfile;
-
-    my @aux = undef;
-    my ($name, $comm, $seq, $qual);
-    
-    for my $file (@files) {
-	my @aux = undef;
-	my ($name, $comm, $seq, $qual);
-	my ($element) = ($file =~ /(LTR_retrotransposon\d+)/);
-	open my $in, '<', $file;
-
-	while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
-	    my ($start, $stop) = ($name =~ /(\d+)-(\d+)$/);
-	    $seq =~ s/.{60}\K/\n/g;
-	    say $out join "\n", ">".$element."_".$start."-".$stop, $seq;
-	}
-	close $in;
-    }
-    close $out;
 }
 
 sub readfq {
