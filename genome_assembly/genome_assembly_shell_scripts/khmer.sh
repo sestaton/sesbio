@@ -1,8 +1,10 @@
 #!/bin/bash
 
+script=$(basename $0)
+
 function usage() {
 cat <<EOF
-USAGE: $0 <seq> <mer>
+USAGE: $script <seq> <mer>
 
 seq   : fasta/q file to index and summarize/normalize for k-mer counts
 mer   : k-mer length to use in querying <seq> data
