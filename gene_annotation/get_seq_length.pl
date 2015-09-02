@@ -4,8 +4,10 @@
 use 5.010;
 use strict;
 use warnings;
-       
-my $usage  = "USAGE: $0 seqs.fq.gz";
+use File::Basename;
+
+my $script = basename($0, ());       
+my $usage  = "USAGE: $script seqs.fq.gz";
 my $infile = shift or die "ERROR: No sequence file given.\n", $usage;
 
 my @aux = undef;
