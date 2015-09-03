@@ -3,6 +3,7 @@
 use 5.010;
 use strict;
 use warnings;
+use File::Basename;
 use autodie qw(open);
 use Getopt::Long;
 use List::Util qw(min max);
@@ -11,9 +12,10 @@ use Data::Dump;
 my %opt;
 my %genes;
 
+my $script = basename($0, ());
 GetOptions(\%opt, 'infile|i=s', 'fasta|f=s', 'debug');
 
-my $usage = "$0 -i file.gff -f seq.fasta\n";
+my $usage = "$script -i file.gff -f seq.fasta\n";
 die $usage if !$opt{infile} or !$opt{fasta};
 
 my ($id, $eid);
