@@ -2,4 +2,8 @@
 
 cd `pwd`
 
-time RepeatMasker MID_18_LargeContigs.fasta -e wublast # -lib ~/db/SUN1.fasta
+rm=$HOME/apps/maker/exe/RepeatMasker/RepeatMasker
+lib=Ha412v1r1_complete_transposons_8-16.fas
+genome=Ha412v1r1_genome_no_cp-mt-rd_chr-q.fasta
+
+$rm -excln -pa 24 -no_is -gff -lib $lib $genome
