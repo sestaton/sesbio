@@ -1,5 +1,7 @@
 #!/bin/bash
 
+## NB: rmblastn is set to use 4 CPUs by default, so be aware if running
+##     multiple threads
 cd `pwd`
 
 rm=$HOME/apps/maker/exe/RepeatMasker/RepeatMasker
