@@ -21,6 +21,7 @@ trnas=/db/eukaryotic-tRNAs.fas
 ###################################################
 # create suffix array for ltrharvest
 #time $gt suffixerator -db $db -indexname $index -tis -suf -lcp -ssp -sds -des -dna -v
+# reuse db from LTR analysis
 
 time $gt ltrharvest \
 -seqids yes \
