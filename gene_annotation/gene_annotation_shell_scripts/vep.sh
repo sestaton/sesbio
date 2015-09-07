@@ -1,5 +1,7 @@
 #!/bin/bash
 
+##NB: this is for human data with prebuilt database.
+
 cd `pwd`
 
 vep_dir=$HOME/apps/ensembl/ensembl-tools-release-75/scripts/variant_effect_predictor
