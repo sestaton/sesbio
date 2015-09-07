@@ -1,6 +1,7 @@
 #!/bin/bash
 
-##NB: this is for human data with prebuilt database.
+##NB: this is for human data with prebuilt database. Need to add method for
+##    installing/building database for new species.
 
 cd `pwd`
 
