@@ -1,11 +1,13 @@
 #!/bin/bash
 
+script=$(basename $0)
+
 function usage() {
 cat <<EOF
 
-USAGE: $0 <query_file> 
+USAGE: $script <query_file> 
 
-query_file    :   A fasta/q file to use for calculating basic statistics.
+query_file    :   A FASTA/Q file to use for calculating basic statistics.
 
 EOF
 }
