@@ -18,7 +18,8 @@ gff_bssm=H412v1r1_trinity_gth_bssm.gff3
 datadir=ha412_bssm
 
 # gth
-time $gth -genomic $seqfile \
+time $gth -v \
+     -genomic $seqfile \
      -cdna $cdna \
      -maskpolyatails \
      -gff3out \
@@ -41,7 +42,8 @@ time $gth -genomic $seqfile \
 #	      -bssmfile ha412.bssm
 
 # gth
-#time $gth -bssm ha412 \
+#time $gth -v \
+#     -bssm ha412 \
 #     -genomic $seqfile \
 #     -cdna $cdna \
 #     -protein $protein \
