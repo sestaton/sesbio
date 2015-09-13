@@ -1,8 +1,10 @@
 #!/bin/bash
 
+script=$(basename $0)
+
 function usage() {
 cat <<EOF
-USAGE: $0 <query> <target> <output>
+USAGE: $script <query> <target> <output>
 
 query   : A file of ESTs to query against a set of genomic sequences.
 target  : A set of genomic DNA sequences to be used as the target.
