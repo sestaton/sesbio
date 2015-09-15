@@ -33,8 +33,16 @@ query=$1
 target=$2
 output=$3
 
-exonerate=/usr/local/exonerate/latest/bin/exonerate
-$exonerate --ryo "%qi\t%ti\t%pi\t%qal\t%ql\t%tl\t%em\t%qab\t%qae\t%tab\t%tae\t%s\n" \
+for prog in exonerate
+do
+  hash $prog &> /dev/null
+  if [ $? -eq 1 ]; then
+      echo >&2 "$prog is required but it's not installed. Exiting."
+      exit 1
+  fi
+done
+
+exonerate --ryo "%qi\t%ti\t%pi\t%qal\t%ql\t%tl\t%em\t%qab\t%qae\t%tab\t%tae\t%s\n" \
 --verbose 0 \
 --showvulgar 0 \
 --showalignment 0 \
