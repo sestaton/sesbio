@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -e
+set -u
+set -o pipefail
+
 script=$(basename $0)
 
 function usage() {
