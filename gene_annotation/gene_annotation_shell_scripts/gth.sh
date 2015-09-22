@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -e
+set -u
+set -o pipefail
+
 export GTHDATADIR=/home/statonse/apps/genomethreader/gth-1.6.5-Linux_x86_64-64bit/bin/gthdata
 export BSSMDIR=/home/statonse/apps/genomethreader/gth-1.6.5-Linux_x86_64-64bit/bin/bssm
 

@@ -17,6 +17,11 @@
 #
 #==============================================================
 # TODO: add logging of progress/results, not just runtime
+
+set -e
+set -u
+set -o pipefail
+
 script=$(basename $0)
 
 function usage() {

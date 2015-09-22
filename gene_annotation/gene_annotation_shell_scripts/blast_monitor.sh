@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -e
+set -u
+set -o pipefail
+
 script=$(basename $0)
 
 function usage() {
@@ -7,8 +11,8 @@ cat <<EOF
 
 USAGE: $script <blast> <seq_file> 
 
-blast      :   A tab-delimited BLAST report (only tested with blastall style).
-seq_file   :   A (nucleotide) Fasta file to analyze.
+blast      :   A tab-delimited BLAST report (legacy "-m 8" or blast+ "-outfmt 6").
+seq_file   :   The FASTA query file.
 
 EOF
 }
@@ -43,7 +47,7 @@ if [ ! -e $query ]; then
 fi
 
 echo "The BLAST report is: $blast"
-echo "The Fasta query is : $query"
+echo "The FASTA query is : $query"
 echo ""
 curquery=$(tail -2 $blast | head -1 | cut -f 1)
 curline=$(grep ">" $query | grep -Fwn $curquery | cut -f 1 -d ':')
