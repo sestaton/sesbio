@@ -1,8 +1,10 @@
 #!/usr/bin/env perl
 
+use 5.010;
 use strict;
 use warnings;
 use Bio::AlignIO;
+use Getopt::Long;
 
 my $infile;
 my $outfile;
@@ -18,7 +20,7 @@ GetOptions(
            'of|outformat:s' => \$oformat,
     );
 
-usage() and exit(0) if !$infile or !$outfile;
+say $usage and exit(0) if !$infile or !$outfile;
 
 $iformat //= 'fasta';
 $oformat //= 'clustalw';
