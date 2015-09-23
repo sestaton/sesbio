@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -e
+set -u
+set -o pipefail
+
 ##TODO: take db and cpus as options
 
 cd `pwd`
