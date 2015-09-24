@@ -1,9 +1,18 @@
 #!/bin/bash
 
+## See also: https://github.com/sestaton/sesbio/blob/master/transposon_annotation/meryl.pl
+## for a better way of running meryl (including GFF output).
+
+set -e
+set -u
+set -o pipefail
+
+script=$(basename $0)
+
 function usage() {
 cat <<EOF
 
-USAGE: $0 <seq_file> <kmer_len> 
+USAGE: $script <seq_file> <kmer_len> 
 
 seq_file   :   A (nucleotide) Fasta file to analyze.
 kmer_len   :   An integer value to use in the analysis (e.g., 20).
