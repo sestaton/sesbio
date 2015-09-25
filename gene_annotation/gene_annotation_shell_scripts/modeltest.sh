@@ -1,9 +1,15 @@
 #!/bin/bash
 
+set -e
+set -u
+set -o pipefail
+
+script=$(basename $0)
+
 function usage() {
 cat <<EOF
 
-USAGE: $0 <seq_file>  
+USAGE: $script <seq_file>  
 
 seq_file   :   A (nucleotide) Fasta alignment file to test.
 
