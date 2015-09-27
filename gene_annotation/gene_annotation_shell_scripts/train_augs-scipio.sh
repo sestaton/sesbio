@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -e
+set -u
+set -o pipefail
+
 export PATH=/home/statonse/apps/blat:$PATH
 scipio=/home/statonse/apps/scipio/scipio-1.4/scipio.1.4.1.pl
 yaml2gff=/home/statonse/apps/scipio/scipio-1.4/yaml2gff.1.4.pl
