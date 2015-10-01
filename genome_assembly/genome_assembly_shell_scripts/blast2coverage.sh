@@ -1,9 +1,15 @@
 #!/bin/bash
 
+set -e
+set -u
+set -o pipefail
+
+script=$(basename $0)
+
 function usage() {
 cat <<EOF
 
-USAGE: $0 <subj_seq_file> <qry_seq_file> 
+USAGE: $script <subj_seq_file> <qry_seq_file> 
 
 subj_seq_file   :   A (nucleotide) Fasta file to index.
 qry_seq_file    :   A (nucleotide) Fasta file to query the index.
