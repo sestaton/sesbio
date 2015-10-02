@@ -53,6 +53,7 @@ db=${basename}_mkvtreedb
 vmerSearchFull=${basename}_${qryFile}_vmatch_full.out
 vmerSearchIDsCt=${basename}_${qryFile}_vmatch_IDs_ct.txt
 vmerSearchSupfamMatchCt=${basename}_${qryFile}_superfamily_vmatch_ct.tsv
+#vmatch_to_counts=$HOME/github/sesbio/transposon_annotation/vmatch_to_counts.pl
 
 # construct the persistent index
 #
@@ -75,8 +76,8 @@ vmatch -v -showdesc 0 -q $qrySeq -l $merLen -identity 100 $db |\
  uniq -c |\
  sort -bnr > $vmerSearchIDsCt
 
-perl all_vmatch_20mer_repbase_mapped_files/vmatch_to_counts_v0.01.pl all_vmatch_20mer_repbase_mapped_files/repbase_idlist.txt $vmerSearchIDsCt |\
- sort -nrk 2 > $vmerSearchSupfamMatchCt
+#perl $vmatch_to_counts all_vmatch_20mer_repbase_mapped_files/repbase_idlist.txt $vmerSearchIDsCt |\
+# sort -nrk 2 > $vmerSearchSupfamMatchCt
 
 # Clean up?
 rm ${db}.*
