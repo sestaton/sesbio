@@ -7,6 +7,11 @@ use Sort::Naturally;
 
 my @gffs = glob "Ha*gth.gff3";
 
+if (@gffs < 1) {
+    say "\nERROR: Expecting GFF files matching 'Ha*gth.gff3'. Exiting.\n";
+    exit(1);
+}
+
 my ($header, %files);
 
 for my $gff (nsort @gffs) {
