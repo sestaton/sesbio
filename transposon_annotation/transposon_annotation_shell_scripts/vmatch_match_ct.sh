@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -e
+set -u
+set -o pipefail
+
 script=$(basename $0)
 
 function usage() {
@@ -48,7 +52,7 @@ qrySeq=$2
 merLen=$3
 seqFile=$(echo ${subjSeq%.*})
 qryFile=$(echo ${qrySeq%.*})
-basename=${cwd}/${seqFile}_${merLen}mer
+basename=${seqFile}_${merLen}mer
 db=${basename}_mkvtreedb
 vmerSearchFull=${basename}_${qryFile}_vmatch_full.out
 vmerSearchIDsCt=${basename}_${qryFile}_vmatch_IDs_ct.txt
@@ -60,7 +64,7 @@ vmerSearchSupfamMatchCt=${basename}_${qryFile}_superfamily_vmatch_ct.tsv
 # For option "-pl n," n is the prefix length.
 # Option "-allout" is major convenience for constructing all the index tables automatically
 # instead of specifying each one individually on the command line (which is impossible to remember).
-mkvtree -db $subjSeq -dna -indexname $db -allout -v -pl 
+mkvtree -db $subjSeq -dna -indexname $db -allout -pl 
 
 # run Vmatch for some query
 #
