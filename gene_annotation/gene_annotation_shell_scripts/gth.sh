@@ -22,8 +22,6 @@ do
     protein=plant_refseq_non-hypothetical.faa
     gff=${filebase}_trinity_gth.gff3
     log=${filebase}_gth_phase1.out
-    #gff_bssm=${filebase}_trinity_gth_bssm.gff3
-    #datadir=ha412_bssm
     
     # gth
     time $gth -v \
@@ -37,26 +35,38 @@ do
 	 -introndistri \
 	 -exondistri \
 	 -refseqcovdistri > $log
-    
-    # gthbssmtrain
-    #time $gthbssmtrain -seqfile $seqfile \
-    #	      -outdir $datadir $gff
-    
-    # gthbssmbuild
-    #time $gthbssmbuild -gtdonor \
-    #	      -gcdonor \
-    #	      -agacceptor \
-    #	      -datapath $datadir \
-    #	      -bssmfile ha412.bssm
-
-    # gth
-    #time $gth -bssm ha412 \
-    #     -genomic $seqfile \
-    #     -cdna $cdna \
-    #     -protein $protein \
-    #     -o $gff_bssm \
-    #     -paralogs \
-    #     -introndistri \
-    #     -exondistri \
-    #     -refseqcovdistri
 done
+
+comb_gff=HA412_trinity_gth.gff3
+comb_gff_sort=HA412_trinity_gth_sort.gff3
+gff_bssm=HA412_trinity_gth_sort_bssm.gff3
+datadir=ha412_bssm
+
+## merge GFF, then train and build models
+perl ~/github/sesbio/gene_annotation/merge_gth_gffs.pl > $comb_gff
+
+## sort features
+gt -gff3 -sort -addintrons $comb_gff > $comb_gff_sort
+
+# gthbssmtrain
+time $gthbssmtrain -v -usedesc -seqfile $seqfile -outdir $datadir $comb_gff_sort
+
+# gthbssmbuild
+time $gthbssmbuild \
+     -gtdonor \
+     -gcdonor \
+     -agacceptor \
+     -datapath $datadir \
+     -bssmfile ha412.bssm
+
+# gth
+time $gth -v \
+     -bssm ha412 \
+     -genomic $seqfile \
+     -cdna $cdna \
+     -protein $protein \
+     -o $gff_bssm \
+     -paralogs \
+     -introndistri \
+     -exondistri \
+     -refseqcovdistri
