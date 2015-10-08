@@ -1,8 +1,6 @@
 #!/bin/bash
 
-set -e
-set -u
-set -o pipefail
+set -euo pipefail
 
 export GTHDATADIR=/home/statonse/apps/genomethreader/gth-1.6.5-Linux_x86_64-64bit/bin/gthdata
 export BSSMDIR=/home/statonse/apps/genomethreader/gth-1.6.5-Linux_x86_64-64bit/bin/bssm
@@ -43,6 +41,7 @@ gff_bssm=HA412_trinity_gth_sort_bssm.gff3
 datadir=ha412_bssm
 
 ## merge GFF, then train and build models
+# script link: https://github.com/sestaton/sesbio/blob/master/gene_annotation/merge_gth_gffs.pl
 perl ~/github/sesbio/gene_annotation/merge_gth_gffs.pl > $comb_gff
 
 ## sort features
