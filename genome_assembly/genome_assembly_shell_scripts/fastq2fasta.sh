@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefile
+
 ## Three methods for converting Fastq to Fasta. It appears that seqtk is the easist to 
 ## use and the fastest method.
 
@@ -10,7 +12,7 @@
 #awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}' input.fastq > output.fasta
 
 # seqtk
-for file in Phoeb_ATCACG_L005_R1_001_trimmed.fastq Phoeb_ATCACG_L005_R2_001_trimmed.fastq
+for file in ./*.fastq
 do
     f=$(echo ${file%.*})
     fa=${f}.fasta
