@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-use 5.022;
+use 5.020;
 use strict;
 use warnings;
 use Config;
@@ -15,19 +15,21 @@ use Getopt::Long;
 use Data::Dump;
 use experimental 'signatures';
 
-my $usage    = basename($0).' -i bamdir -o cnvresdir -f ref_split_fas_dir';
+my $usage    = basename($0).' -i bamdir -o cnvresdir -f ref_split_fas_dir -c <chr1 chr2 ...>';
 my $cnvnator = $ENV{HOME}.'/apps/CNVnator_v0.3.2/src/cnvnator';
-my $chrom    = 'scf7180038271797 scaffold_500';
 
 my %opt;
 GetOptions(
-    'i|indir=s'    => \$opt{indir},
-    'o|outdir=s'   => \$opt{outdir},
-    'f|fastadir=s' => \$opt{fasdir},
-    'b|binsize=i'  => \$opt{binsize},
+    'i|indir=s'      => \$opt{indir},
+    'o|outdir=s'     => \$opt{outdir},
+    'f|fastadir=s'   => \$opt{fasdir},
+    'b|binsize=i'    => \$opt{binsize},
+    'c|chroms=s{1,}' => \@{$opt{chroms}},
     );
 
-die $usage if !$opt{indir} or !$opt{outdir} or !$opt{fasdir};
+die $usage if !$opt{indir} or !$opt{outdir} or !$opt{fasdir} or !@{$opt{chroms}};
+
+my $chrom = join q{ }, @{$opt{chroms}};
 
 unless ( -d $opt{outdir} ) {
     make_path( $opt{outdir}, {verbose => 0, mode => 0771,} );
@@ -44,8 +46,6 @@ my %gene_coords = (
     'scf7180038271797' => $scf7180_tree,
     'scaffold_500'     => $scaf500_tree,
     );
-
-#my $int = Set::IntervalTree->new;
 
 my @bams;
 find( sub { push @bams, $File::Find::name if -f and /\.bam$/ }, $opt{indir} );
