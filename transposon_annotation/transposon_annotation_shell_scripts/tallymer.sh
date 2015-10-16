@@ -2,10 +2,12 @@
 
 set -euo pipefail
 
+script=$(basename $0)
+
 function usage() {
 cat <<EOF
 
-USAGE: $0 <seq_file> <kmer_len> 
+USAGE: $script <seq_file> <kmer_len> 
 
 seq_file   :   A (nucleotide) Fasta file to analyze.
 kmer_len   :   An integer value to use in the analysis (e.g., 20).
