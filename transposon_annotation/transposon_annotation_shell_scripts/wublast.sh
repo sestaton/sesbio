@@ -1,8 +1,12 @@
 #!/bin/bash
 
+set -euo pipefile
+
+script=$(basename $0)
+
 function usage() {
 cat <<EOF
-USAGE: bash $0 <query> <target>
+USAGE: bash $script <query> <target>
 
 <query>    :        File of reads to use as the query
 <target>   :        A FastA database to use as the target
