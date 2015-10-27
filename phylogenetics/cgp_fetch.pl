@@ -63,7 +63,6 @@ use File::Basename;
 use LWP::UserAgent;
 use Time::HiRes qw(gettimeofday);
 use HTML::TreeBuilder;
-use Try::Tiny;
 use Pod::Usage;
 
 #
@@ -150,7 +149,7 @@ unless ($response->is_success) {
 #
 open my $out, '>', $cgp_response or die "\nERROR: Could not open file: $!\n";
 say $out $response->content;
-close $out;# exit;
+close $out;
 $tree->parse_file($cgp_response);
 
 ##TODO parse tag 'b' and check available; also, fetch by category such as mono vs multi sp.
@@ -246,17 +245,17 @@ sub usage {
 USAGE: perl $script [-seq] [-aln] [-asm] [-g] [-s] [--all]
 
 Required Arguments:
-  o|outfile         :      File to place the results (NOT IMPLEMENTED).
-  seq|sequences     :      Specifies that the raw EST sequences should be fetched.
-  aln|alignments    :      Specifies that the assemblies aligned to Arabidopsis should be fetched.
-  asm|assemblies    :      Specifies that the EST assemblies should be fetched.
+  -o|outfile         :      File to place the results (NOT IMPLEMENTED).
+  -seq|sequences     :      Specifies that the raw EST sequences should be fetched.
+  -aln|alignments    :      Specifies that the assemblies aligned to Arabidopsis should be fetched.
+  -asm|assemblies    :      Specifies that the EST assemblies should be fetched.
 
 Options:
-  all               :      Download files of the specified type for all species in the database.
-  g|genus           :      The name of a genus query.
-  s|species         :      The name of a species to query.
-  h|help            :      Print a help statement.
-  m|man             :      Print the full manual. 
+  --all              :      Download files of the specified type for all species in the database.
+  -g|genus           :      The name of a genus query.
+  -s|species         :      The name of a species to query.
+  -h|help            :      Print a help statement.
+  -m|man             :      Print the full manual. 
 
 END
 }
