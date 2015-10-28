@@ -19,6 +19,7 @@ do
     $samtools depth -b $bed $bam > $out/$covfile
 done
 
-perl sum_eps_cov.pl $out $out/all_cov_summaries.tsv
+# link to script: https://github.com/sestaton/sesbio/blob/master/gene_annotation/sum_mapped_coverage.pl
+perl sum_mapped_cov.pl $out $out/all_cov_summaries.tsv
 
 echo "coverage est. done";
