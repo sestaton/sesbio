@@ -1,3 +1,6 @@
+# link to script to generate coverage:
+# https://github.com/sestaton/sesbio/blob/master/gene_annotation/gene_annotation_shell_scripts/get_cov.sh
+
 library(ggplot2)
 
 data <- read.table("test_11_Lines_cov.tsv",header=T,sep="\t")
