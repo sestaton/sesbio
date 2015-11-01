@@ -1,8 +1,13 @@
 #!/bin/bash
 
+set -euo pipefail
+
 #NB: RECON with generate a segmenation fault if there are periods (".") in
 #    the sequence names.
-
+#    RECON will also generate a segmentation fault with more than ~10k sequences,
+#    and it is very slow. Usage not recommended, but below is a guide on how to make it faster
+#    if the usage is necessary.
+#
 cd `pwd`
 
 # link to script: https://github.com/sestaton/sesbio/blob/master/gene_annotation/parallel_blast.pl
