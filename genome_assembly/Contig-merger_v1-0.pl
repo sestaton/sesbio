@@ -20,12 +20,13 @@
 #-------------------------------------------------LOAD LIBRARIES
   use strict;
   use Storable;
-  require "getopts.pl";
+  #require "getopts.pl";
+use Getopt::Std;
   use File::Path;
   use File::Basename;
 #-------------------------------------------------MAKE PARAMETERS
   use vars qw($opt_o $opt_s $opt_b $opt_c $opt_m $opt_l);
-  &Getopts('o:s:b:c:m:l:');
+  getopts('o:s:b:c:m:l:');
 
   my ($min_overlap,$outfile_base)=(50,"standard_output");
   my $seplines = ("-" x 80)."\n";
