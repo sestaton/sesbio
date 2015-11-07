@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
 ## R code is from the predecessor to RepeatExplorer (same authors).
+## Note the R dependencies: foreach, doMC, igraph, multicore
 
 use 5.010;
 use strict;
