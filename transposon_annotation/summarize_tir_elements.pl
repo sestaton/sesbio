@@ -23,3 +23,4 @@ while (<$in>) {
 	say join "\t", $id, $len, $pid;
     }
 }
+close $in;
