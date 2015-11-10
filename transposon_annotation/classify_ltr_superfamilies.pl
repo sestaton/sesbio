@@ -165,13 +165,23 @@ sub annotate_unclassified ($blast_out, $gypsy, $copia, $features, $ltr_rregion_m
 	my @f = split /\t/;
 	if ($f[2] >= 80 && $f[3] >= 80) { #make thresholds options
 	    my ($family) = ($f[1] =~ /(^RL[GCX][_-][a-zA-Z]*\d*?)/);
-	    if ($family =~ /^RLG/) {
+	    if (defined $family && $family =~ /^RLG/) {
 		$gypsy->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
 		delete $features->{ $ltr_rregion_map->{$f[0]} };
 	    }
-	    elsif ($family =~ /^RLC/) {
+	    elsif (defined $family && $family =~ /^RLC/) {
 		$copia->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
 		delete $features->{ $ltr_rregion_map->{$f[0]} };
+	    }
+	    else {
+		if ($f[1] =~ /gyp/i) {
+		    $gypsy->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
+		    delete $features->{ $ltr_rregion_map->{$f[0]} };
+		}
+		if ($f[1] =~ /cop/i) {
+		    $copia->{ $ltr_rregion_map->{$f[0]} } = $features->{ $ltr_rregion_map->{$f[0]} };
+		    delete $features->{ $ltr_rregion_map->{$f[0]} };
+		}
 	    }
 	}
     }
