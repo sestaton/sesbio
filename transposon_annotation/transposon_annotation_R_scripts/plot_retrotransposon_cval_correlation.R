@@ -1,4 +1,7 @@
-#library(ggplot2)
+## If you use this script, please cite: http://www.biomedcentral.com/1471-2164/16/623
+#
+#
+library(ggplot2)
 
 retro_abund <- read.table("retro_abund_genome_size_sort_tab.txt",header=T,sep="\t")
 
