@@ -50,7 +50,8 @@ sub collect_ltr_features ($gff) {
     open my $in, '<', $gff;
     while (<$in>) {
 	chomp;
-	if (/^#/) {
+	next if /^###$/;
+	if (/^##\w+/) {
 	    $header .= $_."\n";
 	}
 	else {
