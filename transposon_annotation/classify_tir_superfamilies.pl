@@ -1,3 +1,4 @@
+
 #!/usr/bin/env perl
 
 ## Take the gff output file from gt tirvish and classify TEs into superfamilies.
@@ -42,7 +43,8 @@ sub collect_features ($gff) {
     open my $in, '<', $gff;
     while (<$in>) {
 	chomp;
-	if (/^#/) {
+	next if /^###$/;
+	if (/^##\w+/) {
 	    $header .= $_."\n";
 	}
 	else {
