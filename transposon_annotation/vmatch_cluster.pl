@@ -58,9 +58,6 @@ sub collect_feature_args ($dir) {
 }
 
 sub cluster_features ($args) {
-    my $vmatch  = '/usr/local/bioinfo/vmatch/vmatch-2.2.4-Linux_x86_64-64bit/vmatch';
-    my $mkvtree = '/usr/local/bioinfo/vmatch/vmatch-2.2.4-Linux_x86_64-64bit/mkvtree';
-
     my $t0 = gettimeofday();
     my $doms = 0;
     my %reports;
@@ -100,7 +97,6 @@ sub cluster_features ($args) {
     my $final_time = sprintf("%.2f",$total_elapsed/60);
 
     say "\n========> Finished running vmatch on $doms domains in $final_time minutes";
-
 }
 
 sub process_cluster_args ($db) {
@@ -108,8 +104,8 @@ sub process_cluster_args ($db) {
     my $index = File::Spec->catfile($path, $name.".index");
     my $vmrep = File::Spec->catfile($path, $name."_vmatch-out.txt");
     my $log   = File::Spec->catfile($path, $name."_vmatch-out.log");;
-    my $mkvtreecmd = "time $mkvtree -db $db -dna -indexname $index -allout -v -pl 2>&1 > $log";
-    my $vmatchcmd  = "time $vmatch $args->{$type}{args} $index > $vmrep";
+    my $mkvtreecmd = "time mkvtree -db $db -dna -indexname $index -allout -v -pl 2>&1 > $log";
+    my $vmatchcmd  = "time vmatch $args->{$type}{args} $index > $vmrep";
     #say STDERR "=====> Running mkvtree on $type";
     run_cmd($mkvtreecmd);
     #say STDERR "=====> Running vmatch on $type";
