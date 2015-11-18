@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+## This is for merging GFFs from GenomeThreader run on separate chromosomes
+## into a single GFF for training.
+
 use 5.010;
 use strict;
 use warnings;
