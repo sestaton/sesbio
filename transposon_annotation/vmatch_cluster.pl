@@ -15,13 +15,15 @@ use experimental 'signatures';
 
 my %opt;
 my %ltrs;
+my $threads;
 
-GetOptions(\%opt, 'dir|d=s');
+GetOptions(\%opt, 'dir|d=s', 'threads|t=i');
 
 $opt{dir} //= getcwd();
+$opt{threads} //= 12;
+
 my $vmatch_args = collect_feature_args($opt{dir});
-#dd $vmatch_args and exit;
-cluster_features($vmatch_args);
+cluster_features($vmatch_args, $opt{threads});
 
 sub collect_feature_args ($dir) {
     my (@fiveltrs, @threeltrs, @ppt, @pbs, @pdoms, %vmatch_args); 
@@ -57,16 +59,13 @@ sub collect_feature_args ($dir) {
     return \%vmatch_args;
 }
 
-sub cluster_features ($args) {
-    my $vmatch  = '/usr/local/bioinfo/vmatch/vmatch-2.2.4-Linux_x86_64-64bit/vmatch';
-    my $mkvtree = '/usr/local/bioinfo/vmatch/vmatch-2.2.4-Linux_x86_64-64bit/mkvtree';
-
+sub cluster_features ($args, $threads) {
     my $t0 = gettimeofday();
     my $doms = 0;
     my %reports;
     my $outfile = 'all_vmatch_reports.txt';
     open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n"; 
-    my $pm = Parallel::ForkManager->new(12);
+    my $pm = Parallel::ForkManager->new($threads);
     $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 			  for my $bl (sort keys %$data_ref) {
 			      open my $report, '<', $bl or die "\nERROR: Could not open file: $bl\n";
@@ -100,7 +99,6 @@ sub cluster_features ($args) {
     my $final_time = sprintf("%.2f",$total_elapsed/60);
 
     say "\n========> Finished running vmatch on $doms domains in $final_time minutes";
-
 }
 
 sub process_cluster_args ($db) {
@@ -108,8 +106,8 @@ sub process_cluster_args ($db) {
     my $index = File::Spec->catfile($path, $name.".index");
     my $vmrep = File::Spec->catfile($path, $name."_vmatch-out.txt");
     my $log   = File::Spec->catfile($path, $name."_vmatch-out.log");;
-    my $mkvtreecmd = "time $mkvtree -db $db -dna -indexname $index -allout -v -pl 2>&1 > $log";
-    my $vmatchcmd  = "time $vmatch $args->{$type}{args} $index > $vmrep";
+    my $mkvtreecmd = "time mkvtree -db $db -dna -indexname $index -allout -v -pl 2>&1 > $log";
+    my $vmatchcmd  = "time vmatch $args->{$type}{args} $index > $vmrep";
     #say STDERR "=====> Running mkvtree on $type";
     run_cmd($mkvtreecmd);
     #say STDERR "=====> Running vmatch on $type";

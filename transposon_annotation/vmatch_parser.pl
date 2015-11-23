@@ -14,12 +14,12 @@ open my $in, '<', $file;
 while (my $line = <$in>) {
     chomp $line;
     next if $line =~ /^#/;
-    if ($line =~ /^(\d+):/) {
+    if ($line =~ /^(\d+):/) { # cluster number
 	$clusnum = $1;
     }
-    elsif ($line =~ /^\s+(\S+)/) {
+    elsif ($line =~ /^\s+(\S+)/) { #reads in cluster, one per line
 	push @{$cls{$clusnum}}, $1;
     }
 }
 
-p %cls;
+p %cls; # a nice hash with an array of read ids for values
