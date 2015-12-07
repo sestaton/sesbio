@@ -10,8 +10,11 @@ use Data::Dump;
 use Graph::GEXF;
 
 my $usage = "$0 hitsort_file cls_file\n";
-my $hitsort = shift or die $usage;
-my $clsfile = shift or die $usage;
+my $hitsort   = shift or die $usage;
+my $clsfile   = shift or die $usage;
+my $clusterid = shift;
+
+$clusterid //= 'CL100';
 
 my %nodes;
 my %idmap;
@@ -42,7 +45,7 @@ my $node = 0;
 	my @ids = split /\s+/, $seqids;
 	my @edges;
 	my $graph = Graph::GEXF->new( visualization => 0, graph_mode => 'static' );
-	if ($id =~ /^CL100$/) {
+	if ($id =~ /^$clusterid$/) {
 	    for my $i (@ids) {
 		my $i_j = $idmap{$i};
 		if (exists $nodes{$i}) {
