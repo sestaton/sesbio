@@ -37,7 +37,7 @@ my ($header, $features) = collect_gff_features($newgff);
 say $header;
 
 for my $ref (nsort keys %$features) {
-    for my $id (nsort_by { m/(\w+)\.(\d+)\.\d+/ and $1 } keys %{$features->{$ref}}) {
+    for my $id (nsort_by { m/\w+\.(\d+)\.\d+/ and $1 } keys %{$features->{$ref}}) {
 	my ($parentid, $start, $stop) = split /\./, $id;
 	for my $parent (keys %{$features->{$ref}{$id}}) {
 	    my @parent_feats = split /\|\|/, $parent;
