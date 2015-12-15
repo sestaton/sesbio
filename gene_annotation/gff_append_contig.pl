@@ -7,7 +7,6 @@ use autodie;
 use Sort::Naturally;
 use List::UtilsBy qw(nsort_by);
 use Bio::Tools::GFF;
-use Data::Dump::Color;
 
 my $usage  = "$0 orig.gff new.gff > updated.gff";
 my $infile = shift or die $usage;
