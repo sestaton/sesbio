@@ -4,7 +4,6 @@ use 5.010;
 use strict;
 use warnings;
 use Bio::Tools::GFF;
-use Data::Dump::Color;
 use File::Find;
 use Cwd;
 use Sort::Naturally;
@@ -21,7 +20,6 @@ my ($has_mrna, $has_cds) = (0, 0);
 
 for my $file (nsort @files) {
     my ($header, $features) = collect_gff_features($gff, $file);
-    #dd $features and exit;
     say $header if $headct;
     for my $id (nsort_by { m/\w+\.(\d+)\.\d+/ and $1 } keys %$features) {
 	my ($parentid, $start, $stop) = split /\./, $id;
