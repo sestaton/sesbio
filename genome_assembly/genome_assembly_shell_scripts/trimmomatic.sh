@@ -29,8 +29,8 @@ for (( i=0; i<${#files[@]} ; i+=2 )) ; do
     java -jar $trimmomatic PE -phred64 \
 	-threads 12 -trimlog $log \
 	${files[i]} ${files[i+1]} \
-	$paired $paired2 \
-	$unpaired $unpaired2 \
+	$paired $unpaired \
+	$paired2 $unpaired2 \
 	ILLUMINACLIP:$trimfile:2:30:10 LEADING:3 TRAILING:3 \
 	SLIDINGWINDOW:4:15 MINLEN:40
 
