@@ -34,7 +34,7 @@ for (( i=0; i<${#files[@]} ; i+=2 )) ; do
 	ILLUMINACLIP:$trimfile:2:30:10 LEADING:3 TRAILING:3 \
 	SLIDINGWINDOW:4:15 MINLEN:40
 
-    ## B-trim
+    ## B-trim (NB: this may require re-pairing the files)
     perl $Btrim -i $paired -l 40 -o STDOUT | gzip > $goodnoBp
     perl $Btrim -i $paired2 -l 40 -o STDOUT | gzip > $goodnoBp2
     perl $Btrim -i $unpaired -l 40 -o STDOUT | gzip > $goodnoBs
