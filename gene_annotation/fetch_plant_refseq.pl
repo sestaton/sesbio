@@ -8,12 +8,11 @@ use strict;
 use warnings;
 use autodie qw(open);
 use Net::FTP;
-use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 
 my $host = "ftp.ncbi.nlm.nih.gov";
 my $dir  = "/refseq/release/plant";
 my $faa  = shift;
-$faa     //= "plant_refseq_all.faa";
+$faa     //= "plant_refseq_all.faa.gz";
 open my $outfh, '>>', $faa;
 
 my $ftp = Net::FTP->new($host, Passive => 1, Debug => 0)
@@ -37,28 +36,22 @@ for my $file (@sorted) {
     my $lsize = -s $file;
     die "Failed to fetch complete file: $file (local size: $lsize, remote size: $rsize)"
 	unless $rsize == $lsize;
-    my $flatdb = $file;
-    $flatdb =~ s/\.gz$//;
 
     say "=====> working on file: $file";
-    my $status = gunzip $file => $flatdb
-        or die "gunzip failed: $GunzipError\n";
 
-    collate($flatdb, $outfh);
+    collate($file, $outfh);
     unlink $file;
-    unlink $flatdb;
     sleep 1;
 }
 
 $ftp->quit;
 
 sub collate {
-    my ($flatdb, $outfh) = @_;
-
-    open my $infh, '<', $flatdb;
-    while (<$infh>) {
-	print $outfh $_;
-    }
-    close $infh;
- }
-    
+    my ($file_in, $fh_out) = @_;
+    my $lines = do { 
+	local $/ = undef; 
+	open my $fh_in, '<', $file_in or die "\nERROR: Could not open file: $file_in\n";
+	<$fh_in>;
+    };
+    print $fh_out $lines;
+}
