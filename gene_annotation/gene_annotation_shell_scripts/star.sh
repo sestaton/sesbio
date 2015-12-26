@@ -41,8 +41,8 @@ genome=$(basename $subjSeq)
 subjseqFile=$(echo ${genome%.*})
 base=$(echo ${subjseqFile%.*})
 
-## create the index                                                                                          
-$star --runThreadN 4 \
+##TODO: make this an option as it takes a long time
+## create the index                                                            $star --runThreadN 4 \
     --runMode genomeGenerate \
     --genomeDir /home/statonse/db \
     --genomeFastaFiles $subjSeq \
