@@ -86,11 +86,15 @@ all_species_merged.df <- Reduce(function(...) merge(...,all=T), list(ager.dd.df,
 # copy df & filter by threshold
 fullcp <- all_species_merged.df
 filtered_full_df <- fullcp[fullcp$TotPerc >= 2.0,]
-bp <- ggplot(filtered_full_df, aes(x=Species, y=TotPerc, fill=Superfamily)) + ylim(0,100) + geom_bar(stat="identity",color="black") + coord_flip()
+bp <- ggplot(filtered_full_df, aes(x=Species, y=TotPerc, fill=Superfamily)) + 
+   ylim(0,100) + 
+   geom_bar(stat="identity",color="black") + 
+   coord_flip()
 bp + scale_x_discrete(limits=c("Caly","Dasy","Gerb","Saff","TKS","CP","Sene","Gnaph","Hann","Ager"),
                       labels=c("Nasanthus sp.","Dasyphyllum sp.","Gerbera hybrida","Carthamus tinctorius",
                                "Taraxacum kok-saghyz","Centrapallus pauciflorus","Senecio vulgaris","Gnaph. sp.",
-                               "Helianthus annuus","Ageratina sp.")) + scale_fill_manual(values = c("Copia" = "aquamarine4", "DIRS" = "lightgreen",
+                               		  "Helianthus annuus","Ageratina sp.")) + 
+					  scale_fill_manual(values = c("Copia" = "aquamarine4", "DIRS" = "lightgreen",
                                                                        "EnSpm" = "azure2", "Gypsy" = "darkgreen",
                                                                        "Harbinger" = "chartreuse", "hAT" = "darkkhaki",
                                                                        "Helitron" = "darkolivegreen3","Kiri" = "chocolate",
