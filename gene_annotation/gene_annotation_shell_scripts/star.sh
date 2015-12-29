@@ -42,11 +42,12 @@ subjseqFile=$(echo ${genome%.*})
 base=$(echo ${subjseqFile%.*})
 
 ##TODO: make this an option as it takes a long time
-## create the index                                                            $star --runThreadN 4 \
-    --runMode genomeGenerate \
-    --genomeDir /home/statonse/db \
-    --genomeFastaFiles $subjSeq \
-    --sjdbGTFfile $gtfFile
+## create the index
+#$star --runThreadN 4 \
+#    --runMode genomeGenerate \
+#    --genomeDir /home/statonse/db \
+#    --genomeFastaFiles $subjSeq \
+#    --sjdbGTFfile $gtfFile
 
 files=($(ls ./*[12].raw.fastq.gz))
 for (( i=0; i<${#files[@]} ; i+=2 )) ; do
