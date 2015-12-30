@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+##TODO: add description of inputs (scripts/files) for this formatting script
+
 use 5.010;
 use strict;
 use warnings;
