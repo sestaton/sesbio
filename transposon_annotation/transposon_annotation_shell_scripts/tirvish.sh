@@ -6,7 +6,7 @@ set -euo pipefail
 
 cd `pwd`
 
-db=$HOME/db/Ha412v1r1_genome_no_cp-mt-rd.fasta
+db=$1
 dbbase=$(echo ${db%.*})
 gff=${dbbase}_tirvish.gff3
 gff_sort=${dbbase}_tirvish_sort.gff3
