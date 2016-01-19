@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
-## simple script to print (tab-delimited) TIR information:
-## TIRname   Length    Percent_identity_of_TIRs
+## simple script to print (tab-delimited) LTR information:
+## LTRname   Length    Percent_identity_of_LTRs
 
 use 5.010;
 use strict;
@@ -23,3 +23,4 @@ while (<$in>) {
 	say join "\t", $id, $len, $pid;
     }
 }
+close $in;
