@@ -232,7 +232,7 @@ my $t2 = gettimeofday();
 my $total_elapsed = $t2 - $t0;
 my $final_time = sprintf("%.2f",$total_elapsed/60);
 
-say "\n========> Finihsed running BLAST on $seqct sequences in $final_time minutes";
+say "\n========> Finished running BLAST on $seqct sequences in $final_time minutes";
 
 exit;
 #
