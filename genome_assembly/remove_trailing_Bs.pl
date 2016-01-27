@@ -39,15 +39,15 @@ $length //= '50';
 my $knseq = Bio::Kseq->new($infile);
 my $nt_it = $knseq->iterator;
 
-open my $out, '>', $outfile;
+my $out = get_outfh($outfile);
 
 while (my $nseq = $nt_it->next_seq) {
-    my $seq = $nseq->{seq};
+    my $seq  = $nseq->{seq};
     my $qual = $nseq->{qual};
     my $qual_len = length($qual);
     if ($qual =~ /(B+)$/) {
 	my $b_len = length($1);
-	my $good_len = $qual_len - $b_len;
+	my $good_len  = $qual_len - $b_len;
 	my $no_b_qual = substr($qual,0,$good_len);
 	my $no_b_seq  = substr($seq,0,$good_len);
 	my $no_b_seq_len = length($no_b_seq);
@@ -62,6 +62,20 @@ while (my $nseq = $nt_it->next_seq) {
 close $out;
 
 # methods
+sub get_outfh {
+    my ($file) = @_;
+
+    my $fh;
+    if ($file =~ /^-$|STDOUT/i) {
+	open $fh, '>&', \*STDOUT or die "\nERROR: Could not open STDOUT\n";
+    }
+    else {
+	open $fh, '>', $file or die "\nERROR: Could not open file: $file\n";
+    }
+
+    return $fh;
+}
+
 sub usage {
     my $script = basename($0);
     print STDERR<<EOF
