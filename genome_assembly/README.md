@@ -8,7 +8,7 @@ A collection of scripts for working with assemblies and manipulating fasta/q fil
 
 Every script contains documentation or at least some minimal usage information. To find out the usage of a particular script just type "perl" followed by the script name. For example,
 
-    perl pairfq.pl
+    perl contig_stats_any.pl
 
 **INSTALLATION**
 
