@@ -2,6 +2,7 @@
 
 ## NB: Remove the "-phred64" option for recently generated data.
 ##     This was needed to processes some Illumina data generated in Nov. 2010.
+##     The B-trimming routine is also unnecessary now, as that special encoding is no longer used.
 
 cd `pwd`
 
