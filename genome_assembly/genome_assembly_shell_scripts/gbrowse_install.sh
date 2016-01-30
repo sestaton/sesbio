@@ -61,6 +61,7 @@ log `printf "\n"`
 ## get version
 
 ## Install webserver, db, and libs
+##TODO update for centos/rhel -> mariadb, etc...
 sudo apt-get install apache2
 sudo apt-get install mysql-server mysql-client
 sudo mysql_install_db
@@ -94,7 +95,7 @@ Text::ParseWords IO::String JSON LWP Statistics::Descriptive Time::HiRes \
 Digest::SHA Date::Parse Term::ReadKey parent
 
 ## Install SAMtools AND Bio-SAMTools
-wget http://sourceforge.net/projects/samtools/files/samtools/0.1.18/samtools- 0.1.18.tar.bz2
+wget http://sourceforge.net/projects/samtools/files/samtools/0.1.18/samtools-0.1.18.tar.bz2
 tar xjf samtools-0.1.18.tar.bz2 && cd samtools-0.1.18
 make CFLAGS=-fPIC
 export SAMTOOLS=`pwd`
@@ -107,21 +108,23 @@ perl Build.PL && ./Build test && ./Build install
 ##\\\\\\\\\\\\\\\\ Install Kent source /////////////////////////////////////
 sudo apt-get install mysql-server-5.0 apache2 libmysqlclient15-dev libpng12-dev libssl-dev openssl mysql-client-5.5  mysql-client-core-5.5
 # set variables for compilation
+##TODO MYSQLINC needs to be set simply to /usr/local/mysql on centos
 export MACHTYPE=$(uname -m)
 export MYSQLINC=`mysql_config --include`
 export MYSQLLIBS=`mysql_config --libs`
 
-DIRS='SCRIPTS=/usr/local/bin CGI_BIN=/usr/lib/cgi-bin DOCUMENTROOT=/var/www/genome BINDIR=/usr/local/bin'
+#DIRS='SCRIPTS=/usr/local/bin CGI_BIN=/usr/lib/cgi-bin DOCUMENTROOT=/var/www/genome BINDIR=/usr/local/bin'
 # this does not seem to be necessary anymore
 #ENCODE_PIPELINE_BIN=/usr/local/bin'
 
 # download
-cd /usr/local
+#cd /usr/local
 wget http://hgdownload.cse.ucsc.edu/admin/jksrc.zip
 unzip jksrc.zip
-mkdir -p /var/www/genome/
+#mkdir -p /var/www/genome/
 
 # compile libraries
+##TODO: edit common.mk to include -fPIC or try var above
 cd kent/src/lib
 make  
 
@@ -129,20 +132,25 @@ cd ../jkOwnLib
 make 
 
 # compile browser
-cd ..
-make $DIRS
+#cd ..
+#make $DIRS
 
 # set permissions
-cd /home/data/www
-chown apache:apache -R *
-cd
+#cd /home/data/www
+#chown apache:apache -R *
+#cd
 #\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 ## Install GBrowse recs
-cpanm Capture::Tiny Bio::Das Bio::DB::Sam Bio::DB::BigFile Crypt::SSLeay \
+cpanm Capture::Tiny Bio::Das Bio::DB::Sam Crypt::SSLeay \
 DB_File::Lock DBI DBD::mysql DBD::Pg DBD::SQLite Digest::SHA FCGI File::NFSLock \
 GD::SVG Math::BigInt Net::OpenID::Consumer Net::SMTP::SSL Template \
 VM::EC2 Parse::Apache::ServerStatus
+
+## Install Bio::DB::BigFile separately
+## export MACHTYPE=$(uname -a)
+## export KENT_SRC=
+..
 
 ## Install GBrowse
 #git clone git@github.com:GMOD/GBrowse.git
