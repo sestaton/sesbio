@@ -4,9 +4,7 @@
 ## However, genometools does not interpret the filename correctly when reading
 ## from a pipe, and this is no good for logging purposes.
 
-set -e
-set -u
-set -o pipefail
+set -euo pipefail
 
 for file in ./*.gz
 do
