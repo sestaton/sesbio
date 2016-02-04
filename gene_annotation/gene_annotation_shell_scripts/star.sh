@@ -49,15 +49,11 @@ base=$(echo ${subjseqFile%.*})
 #    --genomeFastaFiles $subjSeq \
 #    --sjdbGTFfile $gtfFile
 
-files=($(ls ./*[12].raw.fastq.gz))
+files=($(ls ./*[12].raw_trimmed_p.fq.gz))
 for (( i=0; i<${#files[@]} ; i+=2 )) ; do
-    #echo "Working on ${files[i]}" "${files[i+1]}"
-    fq_base=$(echo ${files[i]} | sed 's/\.f.*$//' -)
-    fq_base2=$(echo ${files[i+1]} | sed 's/\.f.*$//' -)
-    out_base=$(echo ${fq_base} | sed 's/\.1\.raw//' -)
-    paired=${fq_base}_trimmed_p_Bclip.fq.gz
-    #paired2=${fq_base2}_trimmed_p_Bclip.fq.gz
-    paired2=${fq_base}_trimmed_s_Bclip.fq.gz
+    out_base=$(echo ${files[i]} | sed 's/\.1\.raw.*//' -)
+    paired=${files[i]}
+    paired2=${files[i+1]}
 
     bamsort=${out_base}_${base}_sort.bam
     echo "Working on $paired $paired2"
@@ -74,4 +70,10 @@ for (( i=0; i<${#files[@]} ; i+=2 )) ; do
 	--outStd BAM_SortedByCoordinate > $bamsort
 
     echo -e "star done...\n"
+
+    ## NB: may have to manually increase buffer size in __init__.py of HTSeq code
+    ## or it will die
+    out=${out_base}_counts-exon.txt
+    samtools view $bamsort | htseq-count -f sam --order pos --minaqual 1 -s no -t exon -i gene_id - $gtfFile > $out
+    echo -e "htseq-count done...\n"
 done
