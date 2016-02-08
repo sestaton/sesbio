@@ -2,7 +2,7 @@
 
 =head1 NAME 
                                                                        
-pickNreads.pl - Extract N reads from a FastA/Q file
+pickNreads.pl - Extract N reads from a FASTA/Q file
 
 =head1 SYNOPSIS    
 
@@ -10,7 +10,7 @@ pickNreads.pl -i seqs.fasta -n 1000
 
 =head1 DESCRIPTION
                                                                    
-Takes a FastA/Q file and picks the first N, where N
+Takes a FASTA/Q file and picks the first N, where N
 can be any number, sequences. The selection of sequences
 is sequential and is based on the order in the file, so 
 the sequences are NOT picked randomly. There are many 
@@ -30,7 +30,7 @@ statonse at gmail dot com
 
 =item -i, --infile
 
-The FastA/Q file from which to select sequences.
+The FASTA/Q file from which to select sequences.
 
 =item -n, --numreads
 
@@ -122,6 +122,9 @@ sub get_fh {
     elsif ($file =~ /\.bz2$/) {
         open $fh, '-|', 'bzcat', $file or die "\nERROR: Could not open file: $file\n";
     }
+    elsif ($file =~ /^-$|STDIN/i) {
+	open $fh, '<&', \*STDIN or die "\nERROR: Could not open STDIN\n";
+    }
     else {
         open $fh, '<', $file or die "\nERROR: Could not open file: $file\n";
     }
@@ -182,7 +185,7 @@ sub usage {
 USAGE: $script -i s_1_sequence.fasta -o s_1_sequence_100k.fasta -n 100000 
 
 Required:
-    -i|infile   :    FastA/Q file of reads/contigs.
+    -i|infile   :    FASTA/Q file of reads/contigs. Input may be STDIN.
     -n|num      :    The number of reads to select.
     -o|outfile  :    The file to place the selected reads.
 
