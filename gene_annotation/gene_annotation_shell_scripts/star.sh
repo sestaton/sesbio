@@ -7,7 +7,7 @@ script=$(basename $0)
 function usage() {
 cat <<EOF
 
-USAGE: $script <subj_seq_file>
+USAGE: $script <subj_seq_file> <gtf_file>
 
 subj_seq_file   :   A (nucleotide) genome FASTA file to index.
 gtf_file        :   The GTF file for the genome.
