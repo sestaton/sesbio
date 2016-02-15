@@ -5,7 +5,7 @@ set -euo pipefail
 cd `pwd`
 
 stringtie=$HOME/github/stringtie/stringtie
-gtf=Ha412v1r1_genes.gtf
+gtf=$1
 
 for file in ./*bam
 do
