@@ -20,9 +20,8 @@ use Getopt::Long;
 use Data::Dump::Color;
 use experimental 'signatures';
 
-my $usage = basename($0).' -o resdir -r reference -u username [-t 8]';
+my $usage = basename($0).' -o resdir -r reference -u username -h host [-t 8]';
 
-my $host      = 'silo.zoology.ubc.ca';
 my $datadir   = File::Spec->catdir('/', 'data', 'raid5part5', 'EST', 'annuus');
 my $bwa       = File::Spec->catfile($ENV{HOME}, 'github', 'bwa', 'bwa');
 my $samtools  = File::Spec->catfile($ENV{HOME}, 'github', 'samtools', 'samtools');
@@ -33,9 +32,10 @@ GetOptions(
     'u|username=s'  => \$opt{username},
     'r|reference=s' => \$opt{reference},
     't|threads=i'   => \$opt{threads},
+    'h|host=s'      => \$opt{hostname},
     );
 
-die $usage if !$opt{reference} or !$opt{username};
+die $usage if !$opt{reference} or !$opt{username} or !$opt{hostname};
 
 my $elitedir  = 'elite';
 my $wilddir   = 'wild';
@@ -52,7 +52,7 @@ unless (-e $sums) {
 }
 
 for my $dir ($elitedir, $wilddir, $landrcdir) {
-    my $sftp = Net::SFTP::Foreign->new($host, user => $opt{username}, autodie => 1);
+    my $sftp = Net::SFTP::Foreign->new($opt{hostname}, user => $opt{username}, autodie => 1);
     $sftp->setcwd($datadir) or die "unable to change cwd: " . $sftp->error;
 
     say STDERR "LDIR => $dir";
@@ -101,7 +101,6 @@ sub copy_files ($sftp, $dir) {
     unless ( -d $dir ) {
         make_path( $dir, {verbose => 0, mode => 0771,} );
     }
-    #dd $files;
 
     for my $file ( nsort grep { $_->{filename} =~ /_[12].fq$/ } 
 		   grep { $_->{longname} !~ /^l/ } @$files ) {
@@ -146,19 +145,4 @@ sub run_cmd ($cmd) {
     catch {
         say "\nERROR: $cmd exited. Here is the exception: $_\n";
     };
-}
-
-sub parse_calls ($calls, $gene_coords) {
-    #deletion scf7180038271797:6001-10000 4000 0 1.95573e-05 3.62188e+07 188.22 3.22466e+08 1
-    open my $in, '<', $calls;
-    while (<$in>) {
-	chomp;
-	my @f = split;
-	my ($ref, $s, $e) = split /[:-]/, $f[1];
-	my $res = $gene_coords->{$ref}->fetch($s, $e);
-	if ($res) {
-	    say join q{ }, @f;
-	    dd $res;
-	}
-    }
 }
