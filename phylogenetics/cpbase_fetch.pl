@@ -22,9 +22,6 @@ use LWP::UserAgent;
 use XML::LibXML;
 use Data::Dump;
 
-# given/when emits warnings in v5.18+
-no if $] >= 5.018, 'warnings', "experimental::smartmatch";
-
 my $db;
 my $all;
 my $type;
@@ -140,14 +137,23 @@ my $records = 0;
 my $genomes;
 
 # Set the CpBase database to search and type
-given ($db) {
-    when (/algae/i) {             $db = "Algae"; }
-    when (/red lineage/i) {       $db = "Red_Lineage"; }
-    when (/rhodophyta/i) {        $db = "Rhodophyta"; }
-    when (/stramenopiles/i) {     $db = "stramenopiles"; }
-    when (/non_viridiplantae/i) { $db = "NOT_Viridiplantae"; }
-    when (/viridiplantae/i) {     $db = "Viridiplantae"; }
-    default {                     die "Invalid name for option db."; }
+if ($db) {
+    my %dbtype = (
+	'algae'             => 'Algae',
+	'red lineage'       => 'Red_Lineage',
+	'rhodophyta'        => 'Rhodophyta',
+	'stramenopiles'     => 'stramenopiles',
+	'non_viridiplantae' => 'NOT_Viridiplantae',
+	'viridiplantae'     => 'Viridiplantae',
+    );
+
+    my $dbarg = lc($db);
+    if (exists $dbtype{$dbarg}) {
+	$db = $dbtype{$dbarg};
+    }
+    else {
+	die "ERROR: Invalid name for option db."; 
+    }
 }
 
 my $ua = LWP::UserAgent->new;
