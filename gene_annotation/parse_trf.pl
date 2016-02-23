@@ -63,6 +63,8 @@ while ( my $feat = $trf->next_result ) {
 	
 	#push @copy_num, $copy_number;
 	#push @period_size, $period_size;
+
+	## for finding consensus counts
 	#$monomers{$consensus_sequence}++;
     }
 }
