@@ -4,6 +4,7 @@ use 5.020;
 use strict;
 use warnings;
 use autodie;
+use File::Spec;
 use File::Find;
 use File::Basename;
 use Parallel::ForkManager;
@@ -19,22 +20,22 @@ my $usage    = "$0 ref\n";
 my $ref      = shift or die $usage;
 my $species  = 'scf7180038271797';
 my $dir      = 'cleaned_transcriptome_reads';
-my $bwa      = '/home/statonse/github/bwa/bwa';
-my $samtools = '/home/statonse/github/samtools/samtools';
-my $bcftools = '/home/statonse/github/bcftools/bcftools';
-my $vcfutils = '/home/statonse/github/bcftools/vcfutils.pl';
-my $threads  = 2;
+my $bwa      = File::Spec->catfile($ENV{HOME}, 'github', 'bwa', 'bwa');
+my $samtools = File::Spec->catfile($ENV{HOME}, 'github', 'samtools', 'samtools');
+my $bcftools = File::Spec->catfile($ENV{HOME}, 'github', 'bcftools', 'bcftools');
+my $vcfutils = File::Spec->catfile($ENV{HOME}, 'github', 'bcftools', 'vcfutils.pl');
+my $threads  = 12;
+my $excl     = 'EPSPS_reads|unpe|test';
+#index_ref($ref, $bwa, $samtools);
 
 find( sub { push @reads, $File::Find::name if -f and /\.fq$/ }, $dir );
 my @rawreads = grep { /[12]/ } 
-               grep { ! /EPSPS_reads|unpe|test/ } @reads;
-
-#dd \@rawreads and exit;
+               grep { ! /$excl/ } @reads;
 
 my @sreads = sort @rawreads;
 my $it = natatime 2, @sreads;
 
-my $pm = Parallel::ForkManager->new(12);
+my $pm = Parallel::ForkManager->new($threads);
 $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump) = @_;#
 			  say basename($ident)," just finished with PID $pid and exit code: $exit_code";
 		    } );
@@ -42,13 +43,8 @@ $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump
 while (my @vals = $it->()) {
     my ($f, $r) = @vals;
     my ($acc) = ($f =~ /[weedy|wild|elite]\.(.*)\.[12]\.fq$/);
-    #weedy.Academy2.1.fq
-    #@say "Debug: $f $r" and exit unless defined $acc;
     $pm->start($acc) and next;
-    #say $acc;
 
-    #index_ref($ref, $bwa, $samtools);
-    #say "DEBUG: $acc";
     my $bam = map_reads($ref, $acc, $bwa, $f, $r, $threads);
     my ($fvcf, $cvcf) = call_variants($ref, $bam, $samtools, $bcftools, $vcfutils);
     run_vep($fvcf, $cvcf, $species);
@@ -62,8 +58,7 @@ $pm->wait_all_children;
 # methods
 #
 sub call_variants ($ref, $bam, $samtools, $bcftools, $vcfutils) {
-    #say STDERR "===> Calling variants...";
-    
+    #say STDERR "===> Calling variants...";    
     my $bcf = $bam;
     $bcf =~ s/\.bam//;
     my $vcf = $bcf;
@@ -89,7 +84,6 @@ sub call_variants ($ref, $bam, $samtools, $bcftools, $vcfutils) {
 }
 
 sub map_reads ($ref, $acc, $bwa, $f, $r, $threads) {
-              #$ref, $acc, $bwa, $f, $r, $threads);
     #say STDERR "===> Mapping reads $f and $r to $ref ...";
     my $refbase = $ref;
     $refbase =~ s/\.fa.*//;
@@ -116,8 +110,7 @@ sub map_reads ($ref, $acc, $bwa, $f, $r, $threads) {
 }
 
 sub index_ref ($ref, $bwa, $samtools) {
-    #say STDERR "===> Indexing reference $ref ...";
- 
+    #say STDERR "===> Indexing reference $ref ..."; 
     ## index ref
     my $bcmd = "$bwa index $ref";
     my $scmd = "$samtools faidx $ref";
