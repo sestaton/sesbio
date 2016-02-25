@@ -20,10 +20,11 @@ my $usage    = "$0 ref\n";
 my $ref      = shift or die $usage;
 my $species  = 'scf7180038271797';
 my $dir      = 'cleaned_transcriptome_reads';
-my $bwa      = File::Spec->catfile($ENV{HOME}, 'github', 'bwa', 'bwa');
-my $samtools = File::Spec->catfile($ENV{HOME}, 'github', 'samtools', 'samtools');
-my $bcftools = File::Spec->catfile($ENV{HOME}, 'github', 'bcftools', 'bcftools');
-my $vcfutils = File::Spec->catfile($ENV{HOME}, 'github', 'bcftools', 'vcfutils.pl');
+my $github   = File::Spec->catfile($ENV{HOME}, 'github');
+my $bwa      = File::Spec->catfile($github, 'bwa', 'bwa');
+my $samtools = File::Spec->catfile($github, 'samtools', 'samtools');
+my $bcftools = File::Spec->catfile($github, 'bcftools', 'bcftools');
+my $vcfutils = File::Spec->catfile($github, 'bcftools', 'vcfutils.pl');
 my $threads  = 12;
 my $excl     = 'EPSPS_reads|unpe|test';
 #index_ref($ref, $bwa, $samtools);
@@ -67,6 +68,8 @@ sub call_variants ($ref, $bam, $samtools, $bcftools, $vcfutils) {
     $vcf .= "_filt.vcf";
     $calls .= "_calls.vcf";
 
+    ##NB: this is kind of a quick-and-dirty method, replace with GATK
+    ##    RNA-Seq pipeline for more important analyses
     my $cmd = "$samtools mpileup -d8000 -uf $ref $bam | $bcftools ";
     $cmd .= "view -c 0 -g \"^miss\" - > $bcf";
     run_cmd($cmd);
@@ -136,9 +139,9 @@ sub run_vep ($fvcf, $cvcf, $species) {
     unlink $cvep_stats if -e $cvep_stats;
     unlink $fvep_stats if -e $fvep_stats;
 
-    my $exe = "perl -I/home/statonse/apps/ensembl-tools-release-78/scripts/variant_effect_predictor";
-    my $vep = "/home/statonse/apps/ensembl-tools-release-78/scripts/variant_effect_predictor/";
-    $vep .= "variant_effect_predictor.pl";
+    my $veplib = File::Spec->catdir($ENV{HOME},'apps','ensembl-tools-release-78','scripts','variant_effect_predictor');
+    my $exe = "perl -I$veplib";
+    my $vep = File::Spec->catfile($veplib, 'variant_effect_predictor.pl');
     
     my $cmd = "$exe $vep --offline -i $fvcf --species $species -o $fvep_out";
     run_cmd($cmd);
