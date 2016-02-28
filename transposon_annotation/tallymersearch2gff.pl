@@ -239,22 +239,31 @@ if ($search) {
 
 exit;
 #
-# Subs
+# methods
 #
 sub findprog {
-    my $prog = shift;
-    my $path = capture("which $prog 2> /dev/null");
-    chomp $path;
-    if ( (! -e $path) && (! -x $path) ) {
-        die "\nERROR: Cannot find $prog binary. Exiting.\n\n";
-    } else {
-        return $path;
+    my ($prog) = @_;
+    my $exe;
+
+    my @path = split /\:|\;\/, $ENV{PATH};    
+    for my $p (@path) {
+        my $full_path  = File::Spec->catfile($p, $prog);
+	if (-e $full_path && -x $full_path) {
+	    $exe = $full_path;
+	}
+    }
+ 
+    if (! defined $exe) {
+	say STDERR "\nERROR: $prog could not be found. Try extending your PATH to the program. Exiting.\n";
+    }
+    else {
+	return $exe;
     }
 }
 
 sub split_mfasta {
-    my $seq = shift;
-    my $seq_in  = Bio::SeqIO->new( -format => 'fasta', -file => $seq);
+    my ($seq) = @_;
+    my $seq_in = Bio::SeqIO->new( -format => 'fasta', -file => $seq);
 
     my %seqregion;
     my %seq;
@@ -275,7 +284,7 @@ sub split_mfasta {
 }
 
 sub getFh {
-    my ($key) = shift;
+    my ($key) = @_;
     my $singleseq = $key.".fasta";           # fixed bug adding extra underscore 2/10/12
     #$seqhash->{$key} =~ s/(.{60})/$1\n/gs;   # may speed things up marginally to not format the sequence
     $seqhash->{$key} =~ s/.{60}\K/\n/g;      # v5.10 is required to use \K
@@ -287,7 +296,7 @@ sub getFh {
 }
 
 sub build_suffixarray {
-    my $db = shift;
+    my ($db) = @_;
     my $suffix = "$gt suffixerator ".
 	         "-dna ".
                  "-pl ".
@@ -309,7 +318,7 @@ sub build_suffixarray {
 }
 
 sub build_index {
-    my $db = shift;
+    my ($db) = @_;
     my $indexname = shift;
     my $index = "$gt tallymer ".
 	        "mkindex ".
