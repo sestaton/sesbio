@@ -102,17 +102,16 @@ my $sample;
 my $bases;
 my $reads;
 my $sample_cov;
-my $num_subsamples;    # Take this at the command line, the # of samples to take
+my $num_subsamples;
 my $consed;
-my $trimfile; # = "/home/jmblab/statonse/db/pIndigo_BAC536.fasta";   
+my $trimfile;
 
 GetOptions(#Required arguments 
 	   'i|infile=s'         => \$infile,
 	   'o|outfile=s'        => \$outfile,
-
 	   #Options
 	   't|trimfile=s'       => \$trimfile,
-	   'p|prefix=s' 	=> \$prefix,  # prefix for naming the assembly output directory
+	   'p|prefix=s' 	=> \$prefix,
 	   'sample'             => \$sample,
 	   'bases'      	=> \$bases,
 	   'reads'      	=> \$reads,
