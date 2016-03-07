@@ -80,8 +80,8 @@ for my $tir (keys %features) {
 
 my $stat = Statistics::Descriptive::Full->new;
 $stat->add_data(@lengths);
-my $min = $stat->min;
-my $max = $stat->max;
+my $min  = $stat->min;
+my $max  = $stat->max;
 my $mean = $stat->mean;
 
 say STDERR join q{ }, $min, $max, $mean;
