@@ -22,10 +22,8 @@ use Getopt::Long;
 use Data::Dump::Color;
 use experimental 'signatures';
 
-my $usage = basename($0).' -o resdir -r reference -u username [-t 8]';
+my $usage = basename($0).' -h host.name -d datadir -o resdir -r reference -u username [-t 8]';
 
-my $host     = shift or die $usage;
-my $datadir  = shift or die $usage;
 my $star     = File::Spec->catfile($ENV{HOME}, 'github', 'STAR', 'bin', 'Linux_x86_64', 'STAR');
 my $samtools = File::Spec->catfile($ENV{HOME}, 'github', 'samtools', 'samtools');
 my $java     = File::Spec->catfile('/', 'etc', 'alternatives', 'jre_1.8.0', 'bin', 'java');
@@ -35,13 +33,15 @@ my $frbayes  = File::Spec->catfile($ENV{HOME}, 'github', 'freebayes', 'bin', 'fr
 
 my %opt;
 GetOptions(
+    'h|host=s'      => \$opt{host},
+    'd|datadir=s'   => \$opt{datadir},
     'o|outdir=s'    => \$opt{outdir},
     'u|username=s'  => \$opt{username},
     'r|reference=s' => \$opt{reference},
     't|threads=i'   => \$opt{threads},
     );
 
-die $usage if !$opt{reference} or !$opt{username};
+die $usage if !$opt{reference} or !$opt{username} or !$opt{host} or !$opt{datadir};
 
 my $elitedir  = 'elite';
 my $wilddir   = 'wild';
@@ -69,8 +69,8 @@ for my $dir ($elitedir, $wilddir, $landrcdir) {
     }
 
     say STDERR "===> Transferring data for: $dir";
-    my $sftp = Net::SFTP::Foreign->new($host, user => $opt{username}, autodie => 1);
-    $sftp->setcwd($datadir) or die "unable to change cwd: " . $sftp->error;
+    my $sftp = Net::SFTP::Foreign->new($opt{host}, user => $opt{username}, autodie => 1);
+    $sftp->setcwd($opt{datadir}) or die "unable to change cwd: " . $sftp->error;
     my ($map) = copy_files($sftp, $dir);
     
     say STDERR "===> Mapping results for: $dir";
