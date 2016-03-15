@@ -245,7 +245,7 @@ sub findprog {
     my ($prog) = @_;
     my $exe;
 
-    my @path = split /\:|\;\/, $ENV{PATH};    
+    my @path = split /\:|\;/, $ENV{PATH};    
     for my $p (@path) {
         my $full_path  = File::Spec->catfile($p, $prog);
 	if (-e $full_path && -x $full_path) {
@@ -279,8 +279,7 @@ sub split_mfasta {
 	say "\n========> Running Tallymer Search on $seqct sequences." unless $quiet;
     } 
    
-    return(\%seq,\%seqregion,$seqct);
-	
+    return (\%seq, \%seqregion, $seqct);
 }
 
 sub getFh {
@@ -291,8 +290,8 @@ sub getFh {
     open my $tmpseq, '>', $singleseq or die "\nERROR: Could not open file: $singleseq\n";
     say $tmpseq join "\n", ">".$key, $seqhash->{$key};
     close $tmpseq;
-    return $singleseq;
-    
+
+    return $singleseq;    
 }
 
 sub build_suffixarray {
