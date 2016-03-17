@@ -28,7 +28,6 @@ for my $repeat_ratio (qw(0.30 0.40 0.50 0.60 0.70 0.80 0.90)) {
     my $diratio;
     my $monoratio;
 
-    say "===> Calculating simple repeats at ".($repeat_ratio * 100)."% : ";
     my $seqio = Bio::SeqIO->new( -fasta => 'fasta', -file => $fasta );
 
     while (my $seqin = $seqio->next_seq) {
@@ -57,11 +56,13 @@ for my $repeat_ratio (qw(0.30 0.40 0.50 0.60 0.70 0.80 0.90)) {
 	    $dict = 0;
 	}
     }
-
+   
     my $repfrac = sprintf("%.2f", $repct/$seqct*100);
-    say STDERR "Total sequences                        : $seqct" unless $hastot;
+    say STDERR "Total sequences                        : $seqct\n" unless $hastot;
+    say STDERR "===> Calculating simple repeats at ".($repeat_ratio * 100)."% : ";
     say STDERR "Num simple repeats filtered at ".($repeat_ratio * 100)."%     : $repct";
-    say STDERR "Repeat fraction at ".($repeat_ratio * 100)."%                 : $repfrac";
+    say STDERR "Repeat fraction at ".($repeat_ratio * 100)."%                 : $repfrac\n";
+
     $hastot  = 1;
     $repct   = 0;
     $repfrac = 0;
