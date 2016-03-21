@@ -1,23 +1,19 @@
 #!/bin/bash
 
-##NB: this is for human data with prebuilt database. Need to add method for
-##    installing/building database for new species.
+set -euo pipefail
 
-cd `pwd`
+VEP=/home/statonse/apps/ensembl-tools-release-84/scripts/variant_effect_predictor 
+vep_script=${VEP}/variant_effect_predictor.pl
 
-vep_dir=$HOME/apps/ensembl/ensembl-tools-release-75/scripts/variant_effect_predictor
+## build custom database
+perl -I$VEP $vep_script \
+-i /moonriseNFS/HA412/annotation/ubc_annotation/genes/Ha412v1r1_genes.gff3.gz \
+-f ~/db/Ha412v1r1_genome_no_cp-mt-rd_chr-q.fasta \
+-d 84 \
+-s sunflower 2>&1 > gff2vep.out 
 
-perl $vep_dir/variant_effect_predictor.pl \
---offline \
---no_stats \
---everything \
---xref_refseq \
---check_existing \
---total_length \
---allele_number \
---no_escape \
---fork 2 \
---fasta \
-~/.vep \
---input_file example.vcf \
---output_file example.vep.txt
+## run vep
+perl -I$VEP $vep_script -offline \
+-t Ha412v1r1_genome_no_cp-mt-rd_chr-q_gatk_rnaseq_vars/Ha412v1r1_genome_no_cp-mt-rd_chr-q_gatk_rnaseq_vars_merged_vars.vcf \
+--species sunflower \
+-o Ha412v1r1_genome_no_cp-mt-rd_chr-q_gatk_rnaseq_vars/Ha412v1r1_genome_no_cp-mt-rd_chr-q_gatk_rnaseq_vars_merged_vars_vep.txt 2>&1 > vep_gbautes_rnaseq.out
