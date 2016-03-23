@@ -4,8 +4,9 @@ use strict;
 use warnings;
 use File::Find;
 
-my $dir = shift;
-my $out = shift;
+my $usage = "$0 directory_of_bams output_merged.bam";
+my $dir = shift or die $usage;
+my $out = shift or die $usage;
 
 my @files;
 find( sub { push @files, $File::Find::name if -f and /\.bam$/ }, $dir);
@@ -16,7 +17,7 @@ if (@files > 0) {
 	$inc_str .= "I=$f ";
     }
     
-    my $cmd = "java -jar ~/apps/picard-tools-2.1.0/picard.jar MergeSamFiles ".
+    my $cmd = "java -jar picard.jar MergeSamFiles ".
 	"CREATE_INDEX=true ".
 	"$inc_str ".
 	"O=$out";
