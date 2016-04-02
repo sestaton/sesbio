@@ -1,13 +1,15 @@
 #!/usr/bin/env perl
 
 use 5.010;
+use strict;
+use warnings;
 use LWP::UserAgent;
 use HTML::TableExtract;
 use Data::Dump::Color;
 
-my $outfile = 'tair_tetable.html';
-my $ua = LWP::UserAgent->new;
-my $urlbase  = "https://www.arabidopsis.org/servlets/processor?type=transposonfamily&update_action=browse";
+my $outfile  = 'tair_tetable.html';
+my $ua       = LWP::UserAgent->new;
+my $urlbase  = 'https://www.arabidopsis.org/servlets/processor?type=transposonfamily&update_action=browse';
 my $response = $ua->get($urlbase);
 
 unless ($response->is_success) {
