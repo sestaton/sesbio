@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use autodie;
 
-my $usage = "$0 tirs.gff3";
+my $usage = "$0 tephra_ltrs.gff3";
 my $gff   = shift or die $usage;
 
 open my $in, '<', $gff;

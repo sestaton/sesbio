@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+##TODO: translate output, handle multiple sequences
+
 use 5.010;
 use strict;
 use warnings;
@@ -7,7 +9,7 @@ use File::Basename;
 use autodie qw(open);
 use Getopt::Long;
 use List::Util qw(min max);
-use Data::Dump;
+use Data::Dump::Color;
 
 my %opt;
 my %genes;

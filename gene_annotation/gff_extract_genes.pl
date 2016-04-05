@@ -7,58 +7,48 @@ use autodie qw(open);
 use File::Basename;
 use Getopt::Long;
 use Data::Dump;
+use Bio::Tools::GFF;
 
 my %opt;
 my %genes;
 
-GetOptions(\%opt, 'infile|i=s', 'fasta|f=s');
+GetOptions(\%opt, 'infile|i=s', 'fasta|f=s', 'outfile|o=s');
 
-usage() and exit(0) if !$opt{infile} or !$opt{fasta};
+usage() and exit(0) if !$opt{infile} or !$opt{fasta} or !$opt{outfile};
 
-open my $in, '<', $opt{infile};
-while (<$in>) {
-    chomp;
-    next if /^#/;
-    my @f = split;
-    my $id;
-    if ($f[2] eq 'gene') {
-	($id = $f[8]) =~ /ID=(\w+);/; 
-	$id =~ s/ID=//;
-	$genes{$id} = join "-", $f[3], $f[4];
+my $gffio = Bio::Tools::GFF->new( -file => $opt{infile}, -gff_version => 3 );
+
+while (my $feature = $gffio->next_feature()) {
+    if ($feature->primary_tag eq 'gene') {
+	my @string = split /\t/, $feature->gff_string;
+	my ($id) = ($string[8] =~ /ID=?\s+?(gene\d+)/);
+	my ($start, $end) = ($feature->start, $feature->end);
+	$genes{$id} = join "||", $string[0], $start, $end;
     }
 }
-close $in;
 
-#dd \%genes;
-my $seq = seq_to_str($opt{fasta});
+#dd \%genes and exit;
+open my $out, '>', $opt{outfile};
 
 for my $gene (sort keys %genes) {
-    my ($start, $end) = split /\-/, $genes{$gene};
-    my $length = $end - $start;
+    my ($src, $start, $end) = split /\|\|/, $genes{$gene};
+    my $tmp = $gene.".fasta";
+    system("samtools faidx $opt{fasta} $src:$start-$end > $tmp");
+    my $id = join "_", $gene, $src, $start, $end;
 
-    my $outfile = $gene.".fasta";
-    open my $out, '>', $outfile;
-    my $gene_seq = substr $seq, $start, $length;
-    $gene_seq =~ s/.{60}\K/\n/g;
-    say join ", ", $gene, $start, $end, length($gene_seq);
-    say $out join "\n", ">".$gene."_".$start."-".$end, $gene_seq;
-}
-
-sub seq_to_str {
-    my ($fasta) = @_;
-    open my $fas, '<', $fasta;
-    my $seq;
-
-    while (my $line = <$fas>) {
-	chomp $line;
-	unless ($line =~ /^>/) {
-	    $seq .= $line;
+    if (-s $tmp) {
+	my $seqio = Bio::SeqIO->new( -file => $tmp, -format => 'fasta' );
+	while (my $seqobj = $seqio->next_seq) {
+	    my $seq = $seqobj->seq;
+	    if ($seq) {
+		$seq =~ s/.{60}\K/\n/g;
+		say $out join "\n", ">$id", $seq;
+	    }
 	}
     }
-    close $fas;
-
-    return $seq;
+    unlink $tmp;
 }
+close $out;
 
 sub usage {
     my $script = basename($0);
@@ -68,6 +58,7 @@ USAGE: $script -i file.gff -f seqs.fas
 Required:
  -i|infile    :    GFF file to extract gene coordinates from
  -f|fasta     :    FASTA file to pull the gene regions from.
+ -o|outfile   :    The file to place gene sequences.
     
 Options:
  -h|help      :    Print usage statement (not implemented).
