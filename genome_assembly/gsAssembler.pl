@@ -210,13 +210,13 @@ if ($sample) {
 
 	if ($reads) {
 	    my $sff_cmd_reads = "sfffile -pickr $sample_cov -o sub_$its-$infile ../$infile";
-	    system($sff_cmd_reads);
+	    system($sff_cmd_reads) == 0 or die $!;
 	    print "\n";
 	}	
 	elsif ($bases) {
 	    my $sff_cmd_bases = "sfffile -pickb $sample_cov -o sub_$its-$infile ../$infile";    
 	    # 4m = 32x for a 125kb BAC
-	    system($sff_cmd_bases);
+	    system($sff_cmd_bases) == 0 or $!;
 	    print "\n";
 	}
 	if ( $it == $num_subsamples ) {
@@ -263,12 +263,12 @@ for my $f (@sub_sffs) {
 	    my $run_Assemb_consed_cmd;
 	    $run_Assemb_consed = "$runAssembly -o $output -consed -vt $trimfile $f" if $trimfile;
 	    $run_Assemb_consed = "$runAssembly -o $output -consed $f" if !$trimfile;
-	    system($run_Assemb_consed);
+	    system($run_Assemb_consed) == 0 or die $!;
 	    print "\n";
 	}
 	else {
 	    my $run_Assemb = "$runAssembly -o $output -vt $trimfile $f";
-	    system($run_Assemb);
+	    system($run_Assemb) == 0 or die $!;
 	    print "\n";
 	}
 	if ($outfile) {
@@ -283,9 +283,9 @@ for my $f (@sub_sffs) {
     }
 }
 
-system("cat *_parsed.txt > $outfile");
+system("cat *_parsed.txt > $outfile"); # shame! re-write this in perl
 unlink $infile;
-system("rm *_parsed.txt");
+system("rm *_parsed.txt");             # more shame
 
 if ($sample){
     say "\n============= Assembly complete for each of ", $num_subsamples,
@@ -298,7 +298,6 @@ else {
 # SUBROUTINES
 #-------------
 sub get_NewblerMetrics {
-
 	my ( $infile, $outfile, $parsed ) = @_;
 	$parsed .= "_parsed.txt";
 	open my $in, '<',  $infile or die "\nERROR: Could not open file: $infile\n";
@@ -460,7 +459,6 @@ sub get_NewblerMetrics {
 }
 
 sub usage {
-	
 	my $script = basename($0);
 	print STDERR <<END
 USAGE: $script [-i][-o][-n][-s][--sample][--reads][--bases][--consed]
