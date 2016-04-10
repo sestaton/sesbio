@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+## NB: Requires Picard (https://broadinstitute.github.io/picard) to be installed (TODO: Check if this is available)
+
 use strict;
 use warnings;
 use File::Find;
