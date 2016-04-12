@@ -1,8 +1,5 @@
 #!/usr/bin/env perl
 
-## NB: faSomeRecords from Kent source is the fastest for this task, but 
-##     this script works for FASTQ also and reads compressed files..
-
 use 5.010;
 use strict;
 use warnings;
@@ -68,7 +65,7 @@ exit;
 # methods
 #
 sub id2hash {
-    my $idlist = shift;
+    my ($idlist) = @_;
     open my $fh, '<', $idlist or die "\nERROR: Could not open file: $!\n";
 
     my %ids = map { chomp; $_ => 1 } <$fh>;
