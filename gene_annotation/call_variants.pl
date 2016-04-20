@@ -8,12 +8,11 @@ use File::Spec;
 use File::Find;
 use File::Basename;
 use Parallel::ForkManager;
+use Try::Tiny;
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(:all);
-use Try::Tiny;
 use List::MoreUtils     qw(natatime);
 use experimental 'signatures';
-use Data::Dump;
 
 my @reads;
 my $usage    = "$0 ref\n";
@@ -51,7 +50,6 @@ while (my @vals = $it->()) {
     run_vep($fvcf, $cvcf, $species);
 
     $pm->finish;
-    #exit;
 }
 $pm->wait_all_children;
 
