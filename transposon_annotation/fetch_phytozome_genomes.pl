@@ -40,6 +40,7 @@ for my $sample ($xmldoc->findnodes('/organismDownloads/folder')) {
 		    my $sp = $abrv_map->{ $sample->{name} };
 		    if (exists $gs_map->{ $opts{species} } && defined $sp && $sp eq $opts{species}) {
 			fetch_file($sample->{name}, $file->{url}, $file->{filename}, $cookie, $abrv_map);
+			unlink $cookie;
 			exit(0);
 		    }
 		}
@@ -67,6 +68,7 @@ sub fetch_file {
 
 sub generate_cookie {
     my ($user, $pass) = @_;
+    ##TODO: check if response was successful
     my $signon = 'https://signon.jgi.doe.gov/signon/create';
     my $cookie = 'jgi_cookie';
     system("curl -s $signon --data-urlencode 'login=$user' --data-urlencode 'password=$pass' -c $cookie 1> /dev/null") == 0
