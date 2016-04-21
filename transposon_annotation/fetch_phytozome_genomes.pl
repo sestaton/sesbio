@@ -1,11 +1,9 @@
-use 5.010;
 use strict;
 use warnings;
 use autodie;
 use File::Basename;
 use XML::LibXML;
 use Getopt::Long;
-use Data::Dump::Color;
 
 my %opts;
 GetOptions(\%opts, 
@@ -16,10 +14,10 @@ GetOptions(\%opts,
     );
 
 if (!$opts{user} || !$opts{password} || !$opts{xmlfile}) {
-    say "\nERROR: Command line not parsed correctly. Required arguments missing.\n";
-    say "USAGE: ".basename($0)." -u USER -p PASSWORD -f phytozome_dirlisting.xml\n\n". 
+    print "\nERROR: Command line not parsed correctly. Required arguments missing.\n\n";
+    print "USAGE: ".basename($0)." -u USER -p PASSWORD -f phytozome_dirlisting.xml\n\n". 
         "\tOptionally, you may select a single species to download:\n\n".
-	basename($0)." -u USER -p PASSWORD -f phytozome_dirlisting.xml -s 'genus species'\n";
+	basename($0)." -u USER -p PASSWORD -f phytozome_dirlisting.xml -s 'genus species'\n\n";
     exit(1);
 }
 
