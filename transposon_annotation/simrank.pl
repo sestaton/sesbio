@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+## The module required by this script: https://metacpan.org/pod/release/SHURIKO/String-Simrank-0.079/lib/String/Simrank.pm
+## Reference: http://bmcecol.biomedcentral.com/articles/10.1186/1472-6785-11-11
+
 use 5.010;
 use strict;
 use warnings;
