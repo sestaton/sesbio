@@ -4,6 +4,8 @@ script: get_intervals.pl
     - find replacement for Set::IntervalTree, which is not compiling (correction: with some c++ compilers).
 script: seqio_benchmarks.pl
     - add transposome seqfactory benchmarks, which are 3X faster than the transposome seqio methods
+script: clean_multifasta.pl
+    - make script work with protein sequences
 
 ## genome_assembly
 script: gsAssembler.pl
