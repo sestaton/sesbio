@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
 ##NB: This takes the first N bases of a sequence
+##    TODO: optionally take tail of sequence
 
 use 5.010;
 use strict;
