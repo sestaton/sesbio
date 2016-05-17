@@ -3,6 +3,7 @@
 use 5.022;
 use strict;
 use warnings;
+use autodie;
 use File::Find;
 use File::Spec;
 use File::Basename;
@@ -11,7 +12,7 @@ use IPC::System::Simple qw(system);
 use Set::IntervalTree;
 use Try::Tiny;
 use Getopt::Long;
-use Data::Dump;
+use Data::Dump::Color;
 use experimental 'signatures';
 
 my $usage    = basename($0).' -i bamdir -o cnvresdir -f ref_split_fas_dir';
