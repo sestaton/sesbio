@@ -21,5 +21,6 @@ while (my $line = <$in>) {
 	push @{$cls{$clusnum}}, $1;
     }
 }
+close $in;
 
 p %cls; # a nice hash with an array of read ids for values

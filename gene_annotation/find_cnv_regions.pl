@@ -24,7 +24,6 @@ my %gene_coords = (
 );
 
 my $samples = get_samplenames($map);
-#dd $samples and exit;
 parse_calls($cnvs, $samples, \%gene_coords);
 
 sub get_samplenames ($samplemap) {
@@ -50,14 +49,12 @@ sub parse_calls ($calls, $samples, $gene_coords) {
         chomp $line;
 	next if $line =~ /^seqnames/;
         my ($index, $chr, $start, $end, $width, $strand, $sample, $median, $mean, $cn) = split /\t/, $line;
-        #my ($ref, $s, $e) = split /[:-]/, $f[1];
         my $res = $gene_coords->{$chr}->fetch($start, $end);
         if (@$res) {
 	    my $id = $sample;
 	    $id =~ s/.*HT\d+_//;
 	    $id =~ s/_sort.*//;
 	    if (exists $samples->{$id}) {
-		#say STDERR "debug: $id";
 		my ($type, $what, $na, $date) = split /\|\|/, $samples->{$id};
 		#say "CNV on target region: ",@$res;
 		say join "\t", $index, $type, $what, $chr, $start, $end, $width, $strand, $sample, $median, $mean, $cn;

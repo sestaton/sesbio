@@ -180,10 +180,10 @@ $ua->env_proxy;
 
 my ($response, $results);
 if ($search_term) {
-    $response = $ua->get("http://pfam.sanger.ac.uk/search/keyword?query=$search_term");
+    $response = $ua->get("http://pfam.xfam.org/search/keyword?query=$search_term");
 }
 elsif ($family_term) {
-    $response = $ua->get("http://pfam.sanger.ac.uk/family/$family_term?output=xml");
+    $response = $ua->get("http://pfam.xfam.org/family/$family_term?output=xml");
     say $response->content;
 }
 
