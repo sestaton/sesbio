@@ -14,7 +14,9 @@ my ($name, $comm, $seq, $qual);
 
 my ($n_count, $total, $seq_ct, $n_ratio, $n_ratio_t, $n_perc, $n_perc_t, $gap_tot) = (0, 0, 0, 0, 0, 0, 0, 0);
 
-my $gapstr = 'N' x 73;
+my $gaplen = 73;
+my $gapstr = 'N' x $gaplen;
+
 say "Seq_ID\tLength\tfake-gap_count\tfake-gap_ratio\tfake-gap_perc";
 
 while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
@@ -23,7 +25,7 @@ while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
         $seq_ct++;
         $total += $seqlength;
 	$n_count = () = $seq =~ /[catg]$gapstr[catg]/ig;
-	$gap_tot = $n_count * 73; # 73 is the artificial gap size
+	$gap_tot = $n_count * $gaplen; # 73 is the artificial gap size
         $n_perc  = sprintf("%.2f",$gap_tot/$seqlength);
         $n_ratio = sprintf("%.2f",$gap_tot/($seqlength - $gap_tot));
         $n_ratio_t += $n_ratio;

@@ -1,138 +1,150 @@
 #!/usr/bin/env perl
 
-## features: LTRs, PBS/PPT, protein_domains
-##TODO: need to add feature name, element source, to header
-
 use 5.010;
-use strict;
-use warnings;
-use autodie qw(open);
-use File::Basename;
+use Sort::Naturally;
+use Number::Range;
+use File::Spec;
 use File::Find;
-use File::Path qw(make_path);
+use File::Basename;
+use Bio::DB::HTS::Kseq;
+use Bio::DB::HTS::Faidx;
+use Bio::GFF3::LowLevel qw(gff3_parse_feature);
+use File::Path          qw(make_path);
 use IPC::System::Simple qw(system);
-use Try::Tiny;
-use Getopt::Long;
-use Bio::Tools::GFF;
+use Parallel::ForkManager;
 use Cwd;
-use Data::Dump;
-use experimental 'signatures';
+use Try::Tiny;
+use Data::Dump::Color;
 
-my %opt;
-my %ltrs;
-my $ltrct = 0;
-my $hash;
+my $usage  = "$0 genome outdir sf_gff\n";
+my $fasta  = shift or die $usage;
+my $dir    = shift or die $usage;
+my $infile = shift or die $usage;
 
-GetOptions(\%opt, 'infile|i=s', 'fasta|f=s', 'dir|d=s');
+extract_features($fasta, $dir, $infile);
 
-usage() and exit(0) if !$opt{infile} or !$opt{fasta} or !$opt{dir};
-die "\nERROR: '$opt{dir}' already exists. Exiting." if -d $opt{dir};
+sub extract_features {
+    my ($fasta, $dir, $infile) = @_;
 
-unless ( -d $opt{dir} ) {
-    make_path( $opt{dir}, {verbose => 0, mode => 0771,} );
-}
+    my $index = _index_seq($fasta);
 
-extract_features($opt{fasta}, $opt{dir}, $opt{infile});
+    my ($name, $path, $suffix) = fileparse($infile, qr/\.[^.]*/);
+    my $type = ($name =~ /(?:gypsy|copia|unclassified)$/i);
+    die "\nERROR: Unexpected input. Should match /gypsy|copia|unclassified$/i. Exiting."
+	unless defined $type;
 
-sub extract_features ($fasta, $dir, $infile) {
-    my ($name, $path, $suffix) = fileparse($fasta, qr/\.[^.]*/);
-    my $comp = File::Spec->catfile($dir, $name."_complete.fasta")
-    my $ppts = File::Spec->catfile($dir, $name."_ppts.fasta");
-    my $pbs  = File::Spec->catfile($dir, $name."_ppts.fasta");
-    my $five_pr_ltrs  = File::Spec->catfile($dir, $name."_5prime-ltrs.fasta");
-    my $three_pr_ltrs = File::Spec->catfile($dir, $name."_3prime-ltrs.fasta");
-
-    open my $allfh, '>>', $comp;
-    open my $pptfh, '>>', $ppts;
-    open my $pbsfh, '>>', $pbs;
-    open my $fivefh, '>>', $five_pr_ltrs;
-    open my $threfh, '>>', $three_pr_ltrs;
+    my $resdir = File::Spec->catdir($dir, $name);
+    unless ( -d $resdir ) {
+	make_path( $resdir, {verbose => 0, mode => 0771,} );
+    }
     
-    my $gffio = Bio::Tools::GFF->new( -file => $infile, -gff_version => 3 );
+    my $comp = File::Spec->catfile($resdir, $name."_complete.fasta");
+    my $ppts = File::Spec->catfile($resdir, $name."_ppt.fasta");
+    my $pbs  = File::Spec->catfile($resdir, $name."_pbs.fasta");
+    my $five_pr_ltrs  = File::Spec->catfile($resdir, $name."_5prime-ltrs.fasta");
+    my $three_pr_ltrs = File::Spec->catfile($resdir, $name."_3prime-ltrs.fasta");
 
-    my ($start, $end, $region, $key, %feature);
-    while (my $feature = $gffio->next_feature()) {
-	if ($feature->primary_tag eq 'LTR_retrotransposon') {
-	    my @string = split /\t/, $feature->gff_string;
-	    ($region) = ($string[8] =~ /ID=?\s+?(LTR_retrotransposon\d+)/);
-	    ($start, $end) = ($feature->start, $feature->end);
-	    $key = join ".", $region, $start, $end;
-	    $ltrs{$key}{'full'} = join "-", $string[0], $feature->primary_tag, @string[3..4];
+    open my $allfh, '>>', $comp or die "\nERROR: Could not open file: $comp\n";
+    open my $pptfh, '>>', $ppts or die "\nERROR: Could not open file: $ppts\n";
+    open my $pbsfh, '>>', $pbs or die "\nERROR: Could not open file: $pbs\n";
+    open my $fivefh, '>>', $five_pr_ltrs or die "\nERROR: Could not open file: $five_pr_ltrs\n";
+    open my $threfh, '>>', $three_pr_ltrs or die "\nERROR: Could not open file: $three_pr_ltrs\n";
+
+    open my $gffio, '<', $infile or die $!;
+
+    my (%feature, %ltrs, %coord_map);
+    while (my $line = <$gffio>) {
+	chomp $line;
+	next if $line =~ /^#/;
+	my $feature = gff3_parse_feature( $line );
+	if ($feature->{type} eq 'LTR_retrotransposon') {
+	    my $elem_id = @{$feature->{attributes}{ID}}[0];
+	    my $key = join "||", $elem_id, $feature->{start}, $feature->{end};
+	    $ltrs{$key}{'full'} = join "||", @{$feature}{qw(seq_id type start end)};
+	    $coord_map{$elem_id} = join "||", @{$feature}{qw(seq_id start end)};
 	}
-	next unless defined $start && defined $end;
-	if ($feature->primary_tag eq 'long_terminal_repeat') {
-	    my @string = split /\t/, $feature->gff_string;
-	    if ($feature->start >= $start && $feature->end <= $end) {
-		push @{$ltrs{$key}{'ltrs'}}, 
-	            join "||", $string[0], $feature->primary_tag, @string[3..4];
+	if ($feature->{type} eq 'long_terminal_repeat') {
+	    my $parent = @{$feature->{attributes}{Parent}}[0];
+	    my ($seq_id, $pkey) = _get_parent_coords($parent, \%coord_map);
+	    if ($seq_id eq $feature->{seq_id}) {
+		my $ltrkey = join "||", @{$feature}{qw(seq_id type start end strand)};
+		push @{$ltrs{$pkey}{'ltrs'}}, $ltrkey;
 	    }
 	}
-	elsif ($feature->primary_tag eq 'primer_binding_site') {
-	    my @string = split /\t/, $feature->gff_string;
-	    if ($feature->start >= $start && $feature->end <= $end) {
-		my ($name) = ($string[8] =~ /trna \"?(\w+.*)\"?\s+\;/);
-		$ltrs{$key}{'pbs'} = 
-		    join "||", $string[0], $feature->primary_tag, $name, @string[3..4];
+	elsif ($feature->{type} eq 'primer_binding_site') {
+	    my $name = $feature->{attributes}{trna};
+	    my $parent = @{$feature->{attributes}{Parent}}[0];
+	    my ($seq_id, $pkey) = _get_parent_coords($parent, \%coord_map);
+            if ($seq_id eq $feature->{seq_id}) {
+		$ltrs{$pkey}{'pbs'} =
+		    join "||", $feature->{seq_id}, $feature->{type}, $name, $feature->{start}, $feature->{end};
 	    }
 	}
-	elsif ($feature->primary_tag eq 'protein_match') {
-	    my @string = split /\t/, $feature->gff_string;
-	    if ($feature->start >= $start && $feature->end <= $end) {
-		my ($name) = ($string[8] =~ /name \"?(\w+)\"?/);
-		push @{$ltrs{$key}{'pdoms'}},
-		    join "||", $string[0], $feature->primary_tag, $name, @string[3..4];
+	elsif ($feature->{type} eq 'protein_match') {
+	    my $name = @{$feature->{attributes}{name}}[0];
+	    my $parent = @{$feature->{attributes}{Parent}}[0];
+	    my ($seq_id, $pkey) = _get_parent_coords($parent, \%coord_map);
+            if ($seq_id eq $feature->{seq_id}) {
+		push @{$ltrs{$pkey}{'pdoms'}{$name}},
+		    join "||", @{$feature}{qw(seq_id type start end strand)};
 	    }
 	}
-	elsif ($feature->primary_tag eq 'RR_tract') {
-	    my @string = split /\t/, $feature->gff_string;
-	    if ($feature->start >= $start && $feature->end <= $end) {
-		$ltrs{$key}{'ppt'} =
-		    join "||", $string[0], $feature->primary_tag, @string[3..4];
+	elsif ($feature->{type} eq 'RR_tract') {
+	    my $parent = @{$feature->{attributes}{Parent}}[0];
+	    my ($seq_id, $pkey) = _get_parent_coords($parent, \%coord_map);
+            if ($seq_id eq $feature->{seq_id}) {
+		$ltrs{$pkey}{'ppt'} =
+		    join "||", @{$feature}{qw(seq_id type start end)};
 	    }
 	}
     }
 
-    my %pdoms;
-    
+    my (%pdoms, %seen_pdoms);
+    my $ltrct = 0;
     for my $ltr (sort keys %ltrs) {
+	my ($element, $rstart, $rend) = split /\|\|/, $ltr;
 	# full element
-	my ($source, $element, $start, $end) = split /\-/, $ltrs{$ltr}{'full'};
-	my $outfile = File::Spec->catfile($dir, $ltr.".fasta");
-	subseq($fasta, $source, $start, $end, $outfile, $allfh);
+	my ($source, $prim_tag, $fstart, $fend) = split /\|\|/, $ltrs{$ltr}{'full'};
+	subseq($index, $source, $element, $fstart, $fend, $allfh);
 
 	# pbs
 	if ($ltrs{$ltr}{'pbs'}) {
-	    my ($pbssource, $pbselement, $trna, $pbsstart, $pbsend) = split /\|\|/, $ltrs{$ltr}{'pbs'};
-	    my $pbs_tmp = File::Spec->catfile($dir, $ltr."_pbs.fasta");
-	    subseq($fasta, $pbssource, $pbsstart, $pbsend, $pbs_tmp, $pbsfh);
+	    my ($pbssource, $pbstag, $trna, $pbsstart, $pbsend) = split /\|\|/, $ltrs{$ltr}{'pbs'};
+	    subseq($index, $pbssource, $element, $pbsstart, $pbsend, $pbsfh);
 	}
-	
+
 	# ppt
 	if ($ltrs{$ltr}{'ppt'}) {
-	    my ($pptsource, $pptelement, $pptstart, $pptend) = split /\|\|/, $ltrs{$ltr}{'ppt'};
-	    my $ppt_tmp = File::Spec->catfile($dir, $ltr."_ppt.fasta");
-	    subseq($fasta, $source, $pptstart, $pptend, $ppt_tmp, $pptfh);
+	    my ($pptsource, $ppttag, $pptstart, $pptend) = split /\|\|/, $ltrs{$ltr}{'ppt'};
+	    subseq($index, $source, $element, $pptstart, $pptend, $pptfh);
 	}
-	
+
 	for my $ltr_repeat (@{$ltrs{$ltr}{'ltrs'}}) {
-	    my ($src, $ltre, $s, $e) = split /\|\|/, $ltr_repeat;
-	    if ($ltrct) { 
-		my $fiveprime_tmp = File::Spec->catfile($dir, $ltr."_5prime-ltr.fasta");
-		subseq($fasta, $src, $s, $e, $fiveprime_tmp, $fivefh);
+	    my ($src, $ltrtag, $s, $e, $strand) = split /\|\|/, $ltr_repeat;
+	    my $lfname = $ltr;
+	    if ($ltrct) {
+		$lfname .= "_5prime-ltr.fasta" if $strand eq '+';
+		$lfname .= "_3prime-ltr.fasta" if $strand eq '-';
+		subseq($index, $src, $element, $s, $e, $fivefh);
+		$ltrct = 0;
 	    }
 	    else {
-		my $threeprime_tmp = File::Spec->catfile($dir, $ltr."_3prime-ltr.fasta");
-		subseq($fasta, $src, $s, $e, $threeprime_tmp, $threfh);
+		$lfname .= "_3prime-ltr.fasta" if $strand eq '+';
+		$lfname .= "_5prime-ltr.fasta" if $strand eq '-';
+		subseq($index, $src, $element, $s, $e, $threfh);
 		$ltrct++;
 	    }
 	}
-	$ltrct = 0;
-	
+
 	if ($ltrs{$ltr}{'pdoms'}) {
-	    for my $ltr_repeat (@{$ltrs{$ltr}{'pdoms'}}) { 
-		my ($src, $what, $name, $s, $e ) = split /\|\|/, $ltr_repeat;
-		#"Ha10||protein_match||UBN2||132013916||132014240",
-		push @{$pdoms{$name}}, join "||", $src, $element, $s, $e;
+	    for my $model_name (keys %{$ltrs{$ltr}{'pdoms'}}) {
+		for my $ltr_repeat (@{$ltrs{$ltr}{'pdoms'}{$model_name}}) {
+		    my ($src, $pdomtag, $s, $e, $str) = split /\|\|/, $ltr_repeat;
+		    #"Ha10||protein_match||UBN2||132013916||132014240",
+		    next if $model_name =~ /transpos(?:ase)?|mule|(?:dbd|dde)?_tnp_(?:hat)?|duf4216/i; 
+		    # Do not classify elements based spurious matches 
+		    push @{$pdoms{$src}{$element}{$model_name}}, join "||", $s, $e, $str;
+		}
 	    }
 	}
     }
@@ -141,102 +153,107 @@ sub extract_features ($fasta, $dir, $infile) {
     close $pbsfh;
     close $fivefh;
     close $threfh;
-    
-    for my $pdom_type (keys %pdoms) {
-	my $pdom_file = File::Spec->catfile($dir, $pdom_type."_pdom.fasta");
-	open my $fh, '>>', $pdom_file;
-	for my $ltrpdom (@{$pdoms{$pdom_type}}) {
-	    my ($src, $elem, $s, $e) = split /\|\|/, $ltrpdom;
-	    my $tmp = File::Spec->catfile($dir, $elem."_".$pdom_type.".fasta");
-	    subseq($fasta, $src, $s, $e, $tmp, $fh);
+
+    ## This is where we merge overlapping hits in a chain and concatenate non-overlapping hits
+    ## to create a single domain sequence for each element
+    for my $src (keys %pdoms) {
+	for my $element (keys %{$pdoms{$src}}) {
+	    my ($pdom_s, $pdom_e, $str);
+	    for my $pdom_type (keys %{$pdoms{$src}{$element}}) {
+		my (%lrange, %seqs, $union);
+		my $pdom_file = File::Spec->catfile($resdir, $pdom_type."_pdom.fasta");
+		open my $fh, '>>', $pdom_file or die "\nERROR: Could not open file: $pdom_file\n";
+		for my $split_dom (@{$pdoms{$src}{$element}{$pdom_type}}) {
+		    ($pdom_s, $pdom_e, $str) = split /\|\|/, $split_dom;
+		    push @{$lrange{$src}{$element}{$pdom_type}}, "$pdom_s..$pdom_e";
+		}
+		
+		if (@{$lrange{$src}{$element}{$pdom_type}} > 1) {
+		    {
+			no warnings; # Number::Range warns on EVERY single interger that overlaps
+			my $range = Number::Range->new(@{$lrange{$src}{$element}{$pdom_type}});
+			$union    = $range->range;
+		    }
+		        
+		    for my $r (split /\,/, $union) {
+			my ($ustart, $uend) = split /\.\./, $r;
+			my $seq = $self->subseq_pdoms($fasta, $src, $element, $ustart, $uend);
+			my $k = join "_", $ustart, $uend;
+			$seqs{$k} = $seq;
+		    }
+		        
+		    concat_pdoms($src, $element, \%seqs, $fh);
+		}
+		else {
+		    my ($nustart, $nuend, $str) = split /\|\|/, @{$pdoms{$src}{$element}{$pdom_type}}[0];
+		    subseq($index, $src, $element, $nustart, $nuend, $fh);
+		}
+		close $fh;
+		%seqs   = ();
+		%lrange = ();
+		unlink $pdom_file if ! -s $pdom_file;
+	    }
 	}
-	close $fh;
     }
 
-    
+    for my $file ($comp, $ppts, $pbs, $five_pr_ltrs, $three_pr_ltrs) {
+	unlink $file if ! -s $file;
+    }
+
+    return $resdir
 }
 
-sub subseq ($fasta, $loc, $start, $end, $tmp, $out) {
-    my $cmd = "samtools faidx $fasta $loc:$start-$end > $tmp";
-    try {
-	system([0..5], $cmd);
+sub subseq_pdoms {
+    my ($index, $loc, $elem, $start, $end) = @_;
+
+    my $location = "$loc:$start-end";
+    my ($seq, $length) = $index->get_sequence($location);
+
+    return $seq;
+}
+
+sub concat_pdoms {
+    my ($src, $elem, $seqs, $fh_out) = @_;
+    my @ranges = map { split /\_/, $_ } keys %$seqs;
+    my $start  = min(@ranges);
+    my $end    = max(@ranges);
+    my $id     = join "_", $elem, $src, $start, $end;
+
+    my $concat_seq;
+    for my $seq (values %$seqs) {
+	$concat_seq .= $seq;
     }
-    catch {
-	die "\nERROR: $cmd failed on $tmp. Here is the exception: $_\n";
-    };
-    
-    my @aux = undef;
-    my ($name, $comm, $seq, $qual);
-    open my $in, '<', $tmp;
-    while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
+
+    $concat_seq =~ s/.{60}\K/\n/g;
+    say $fh_out join "\n", ">$id", $concat_seq;
+}
+
+sub subseq {
+    my ($index, $loc, $elem, $start, $end, $out) = @_;
+
+    my $location = "$loc:$start-end";
+    my ($seq, $length) = $index->get_sequence($location);
+
+    my $id = join "_", $elem, $loc, $start, $end;
+
+    if ($seq) {
 	$seq =~ s/.{60}\K/\n/g;
-	say $out join "\n", ">".$name, $seq;
+	say $out join "\n", ">$id", $seq;
     }
-    close $in;
-    unlink $tmp;
 }
 
-sub readfq {
-    my ($fh, $aux) = @_;
-    @$aux = [undef, 0] if (!@$aux);
-    return if ($aux->[1]);
-    if (!defined($aux->[0])) {
-        while (<$fh>) {
-            chomp;
-            if (substr($_, 0, 1) eq '>' || substr($_, 0, 1) eq '@') {
-                $aux->[0] = $_;
-                last;
-            }
-        }
-        if (!defined($aux->[0])) {
-            $aux->[1] = 1;
-            return;
-        }
-    }
-    my ($name, $comm);
-    defined $_ && do {
-        ($name, $comm) = /^.(\S+)(?:\s+)(\S+)/ ? ($1, $2) : 
-	                 /^.(\S+)/ ? ($1, '') : ('', '');
-    };
-    my $seq = '';
-    my $c;
-    $aux->[0] = undef;
-    while (<$fh>) {
-        chomp;
-        $c = substr($_, 0, 1);
-        last if ($c eq '>' || $c eq '@' || $c eq '+');
-        $seq .= $_;
-    }
-    $aux->[0] = $_;
-    $aux->[1] = 1 if (!defined($aux->[0]));
-    return ($name, $comm, $seq) if ($c ne '+');
-    my $qual = '';
-    while (<$fh>) {
-        chomp;
-        $qual .= $_;
-        if (length($qual) >= length($seq)) {
-            $aux->[0] = undef;
-            return ($name, $comm, $seq, $qual);
-        }
-    }
-    $aux->[1] = 1;
-    return ($name, $seq);
+sub _get_parent_coords {
+    my ($parent, $coord_map) = @_;
+
+    my ($seq_id, $start, $end) = split /\|\|/, $coord_map->{$parent};
+    my $pkey = join "||", $parent, $start, $end;
+
+   return ($seq_id, $pkey);
 }
 
-sub usage {
-    my $script = basename($0);
-    print STDERR <<END
-	
-USAGE: $script -i file.gff -f seqs.fas -d dirname
+sub _index_seq {
+    my ($fasta) = @_;
 
-Required:
- -i|infile    :    GFF file to extract gene coordinates from
- -f|fasta     :    FASTA file to pull the gene regions from.
- -d|dir       :    A directory name to place the resulting FASTA files.
-    
-Options:
- -h|help      :    Print usage statement (not implemented).
- -m|man       :    Print full documentation (not implemented).
-
-END
+    my $index = Bio::DB::HTS::Faidx->new($fasta);
+    return $index;
 }
