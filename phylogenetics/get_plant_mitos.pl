@@ -1,8 +1,7 @@
 #!/usr/bin/env perl
 
 use 5.020;
-use strict;
-use warnings;
+use warnings 'all';
 use autodie;
 use File::Basename;
 use HTTP::Tiny;
@@ -96,6 +95,7 @@ sub _get_lineage_for_id ($id) {
     }
     unlink $esumm;
 }
+
 sub _fetch_id_for_name ($genus, $species) {
     my $esearch = "esearch_$genus"."_"."$species.xml";
     my $urlbase = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi";
@@ -126,6 +126,7 @@ sub _fetch_file ($url, $file) {
 sub usage {
   my $script = basename($0);
   print STDERR <<END
+
 USAGE: $script -i file -o file
 
 Required:
@@ -135,5 +136,6 @@ Required:
 Options:
     -h|help      :    Print usage statement. (not implemented)
     -m|man       :    Print full documentation. (not implemented)
+
 END
 }
