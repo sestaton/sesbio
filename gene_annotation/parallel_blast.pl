@@ -193,7 +193,7 @@ $num_alignments //= 250;
 $num_descriptions //= 500;
 $evalue //= 1e-5;
 
-my ($seq_files,$seqct) = split_reads($infile,$outfile,$numseqs);
+my ($seq_files, $seqct) = split_reads($infile, $outfile, $numseqs);
 
 open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n"; 
 
@@ -311,17 +311,17 @@ sub split_reads {
 	if ($count % $numseqs == 0 && $count > 0) {
 	    $fcount++;
             $tmpiname = $iname."_".$fcount."_XXXX";
-            my $fname = File::Temp->new( TEMPLATE => $tmpiname,
-					 DIR => $cwd,
-					 SUFFIX => ".fasta",
-					 UNLINK => 0);
+            $fname = File::Temp->new( TEMPLATE => $tmpiname,
+				      DIR => $cwd,
+				      SUFFIX => ".fasta",
+				      UNLINK => 0);
 	    
 	    ##TODO: this part isn't necessary as File::Temp returns the fh
-	    #open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
+	    open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
 
-	    push @split_files, $fname->filename;
+	    push @split_files, $fname; #->filename;
 	}
-	say $fname join "\n", ">".$name, $seq;
+	say $out join "\n", ">".$name, $seq;
 	$count++;
     }
     close $in; 
