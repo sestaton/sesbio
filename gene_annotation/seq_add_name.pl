@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+## TODO: add optionto join id and name with a specified character
+
 use 5.010;
 use strict;
 use warnings;
