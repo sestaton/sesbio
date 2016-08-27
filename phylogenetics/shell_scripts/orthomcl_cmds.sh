@@ -4,6 +4,7 @@ set -euo pipefail
 
 orthoMCLdir=$HOME/apps/orthomcl/orthomclSoftware-v2.0.9/bin
 mcl=$HOME/apps/mcl-14-137/bin/mcl
+out=orthomcl 
 
 # log start
 start=$(date)
@@ -14,7 +15,7 @@ echo "=====> Starting OrthoMCL at $start."
 #mysql> GRANT SELECT,INSERT,UPDATE,DELETE,CREATE VIEW,CREATE, INDEX, DROP on orthomcl.* TO evan@localhost;
 #echo "Starting orthomclInstallSchema..."
 #time perl $orthoMCLdir/orthomclInstallSchema \
-#    orthomcl.config orthomcl/install_schema.log
+#    orthomcl.config $out/install_schema.log
 
 #echo "Done with orthomclInstallSchema."
 ## orthomclAdjustFasta
@@ -25,7 +26,7 @@ echo "=====> Starting OrthoMCL at $start."
 echo "Starting orthomclBlastParser..."
 time perl $orthoMCLdir/orthomclBlastParser \
     goodProteins_allvall.bln \
-    orthomcl > similarSequences.txt 2> blastparsed.out
+    $out > similarSequences.txt 2> blastparsed.out
 
 echo "Done with orthomclBlastParser."
 ## orthomclLoadBlast
@@ -39,7 +40,7 @@ echo "Done with orthomclLoadBlast."
 echo "Starting orthomclPairs..."
 time perl $orthoMCLdir/orthomclPairs \
     orthomcl.config \
-    orthomcl/pairs.log cleanup=no 2>&1 > pairs.out
+    $out/pairs.log cleanup=no 2>&1 > pairs.out
 
 echo "Done with orthomclPairs."
 ## orthomclDumpPairsFiles
@@ -50,14 +51,14 @@ time perl $orthoMCLdir/orthomclDumpPairsFiles \
 echo "Done with orthomclDumpPairsFiles."
 ## --- mcl ---
 echo "Starting mcl..."
-time $mcl mclInput --abc -I 1.5 -o orthomcl/mclOutput
+time $mcl mclInput --abc -I 1.5 -o $out/mclOutput
 
 echo "Done with mcl."
 ## orthomclMclToGroups
 echo "Starting orthomclMclToGroups..."
 time perl $orthoMCLdir/orthomclMclToGroups \
     orthoGroup \
-    1000 < orthomcl/mclOutput > orthocml/groups.txt
+    1000 < $out/mclOutput > $out/groups.txt
 
 echo "Done with orthomclMclToGroups."
 
