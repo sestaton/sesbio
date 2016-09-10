@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+## R code below is from the SeqGrapheR package by Petr Novak
+## http://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-378
+
 use 5.010;
 use strict;
 use warnings;
