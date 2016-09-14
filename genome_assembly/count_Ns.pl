@@ -22,7 +22,7 @@ while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
         $seq_ct++;
         $total += $seqlength;
         $n_count = ($seq =~ tr/Nn//);
-        $n_perc  = sprintf("%.2f",$n_count/$seqlength);
+        $n_perc  = sprintf("%.2f",($n_count/$seqlength)*100);
         $n_ratio = sprintf("%.2f",$n_count/($seqlength - $n_count));
         $n_ratio_t += $n_ratio;
         $n_perc_t  += $n_perc; 
