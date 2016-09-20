@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-## NB: This takes a GFF of LTR retrotransposons and a reference FASTA file,
+## NB: This takes a FASTA of LTR retrotransposons and a reference FASTA file,
 ##     and the result will be be a file of only the internal coding regions,
 ##     not the LTRs.
 
@@ -9,157 +9,95 @@ use strict;
 use warnings;
 use File::Basename;
 use autodie qw(open);
+use Bio::DB::HTS::Kseq;
+use Bio::DB::HTS::Faidx;
 use Getopt::Long;
+use Data::Dump::Color;
 
-my $annot_file;
+my $ltr_fasta;
 my $ref_fasta;
 my $te_fasta;
 my $out_file;
 my $help;
 
 GetOptions(
-	   'a|annot_file=s'  => \$annot_file,
-	   'r|ref_fasta=s'   => \$ref_fasta,
-	   't|te_fasta=s'    => \$te_fasta,
-	   'o|outfile=s'     => \$out_file,
-	   'h|help'          => \$help,
+	   'l|ltr_fasta=s'  => \$ltr_fasta,
+	   'r|ref_fasta=s'  => \$ref_fasta,
+	   't|te_fasta=s'   => \$te_fasta,
+	   'o|outfile=s'    => \$out_file,
+	   'h|help'         => \$help,
 	   );
 
 usage() and exit(0) if $help;
 
-if (!$annot_file || !$ref_fasta || !$te_fasta || !$out_file) {
+if (!$ltr_fasta || !$ref_fasta || !$te_fasta || !$out_file) {
     say "\nERROR: Command line not parsed correctly. Check input.";
     usage();
     exit(1);
 }
-							  
-open my $in, '<', $annot_file;
-open my $out, '>>', $out_file;
-my $tefas = get_fh($te_fasta);
 
-my $seqstore = store_seq($ref_fasta, $annot_file);
-my $seqidmap = seqid_map();
+open my $out, '>', $out_file;
 
-my @aux = undef;
-my ($name, $comm, $seq, $qual);
+my $faidx = Bio::DB::HTS::Faidx->new($ref_fasta);
 
-my %ltr_map;
-my ($mapped_ct, $notmapped_ct) = (0, 0);
+my $kseq = Bio::DB::HTS::Kseq->new($ltr_fasta);
+my $iter = $kseq->iterator();
 
-my $header = <$in>;
-while (<$in>) {
-    chomp;
-    my @f = split;
-    my ($element_start, $element_end, $element_length, $sequence, 
-	$lLTR_start, $lLTR_end, $lLTR_length, $rLTR_start, $rLTR_end) = @f[0..8];
-
-    $sequence = correct_ids($sequence, $seqidmap);
-
-    my $idkey = mk_key($element_start, $sequence);
-    $ltr_map{$idkey} = mk_key($lLTR_start, $lLTR_end, $rLTR_start, $rLTR_end, $element_length);
+my %coords;
+while (my $seqobj = $iter->next_seq) {
+    my $name = $seqobj->name;
+    #>3prime_RLG_family0_LTR_retrotransposon41304_HanXRQChr07_25192872_25193586
+    if ($name =~ /^([35]prime)_(RL[CGX]_family\d+_LTR_retrotransposon\d+)_(\w+\d+)_(\d+)_(\d+)/) {
+	my ($ltr, $elem, $chr, $start, $end) = ($1, $2, $3, $4, $5);
+	$coords{$elem}{$ltr} = join "||", $chr, $start, $end;
+    }
 }
-close $in;
 
+my $ckseq = Bio::DB::HTS::Kseq->new($te_fasta);
+my $citer = $ckseq->iterator();
 
-while (($name, $comm, $seq, $qual) = readfq(\*$tefas, \@aux)) {
-    if ($name =~ /^(RL.[-_][a-zA-Z]{1,7}[-_]\d+)[-_](.*)/) {
-	my ($famname, $contigname) = ($1, $2);
-	my ($start, $end) = $contigname =~ /_(\d+)_(\d+)$/;
-	my $pat = "_".$start."_".$end;
-	$contigname =~ s/$pat//;
-	$contigname = correct_ids($contigname, $seqidmap); 
-	my $idkey = mk_key($start, $contigname);
+while (my $seqobj = $citer->next_seq) {
+    my $name = $seqobj->name;
+    if ($name =~ /(RL[CGX]_family\d+_LTR_retrotransposon\d+)_(\w+\d+)_(\d+)_(\d+)/) {
+	my ($elem, $chr, $start, $end) = ($1, $2, $3, $4);
+	my $element_length = $end - $start + 1;
+	if (exists $coords{$elem}) {
+	    my ($lchr, $lstrt, $lend) = split /\|\|/, $coords{$elem}{'3prime'};
+	    my ($rchr, $rstrt, $rend) = split /\|\|/, $coords{$elem}{'5prime'};
 
-	if (exists $ltr_map{$idkey}) {
-	    $mapped_ct++;
-	    my ($lLTR_start, $lLTR_end, $rLTR_start, $rLTR_end, $element_length) = mk_vec($ltr_map{$idkey});
+	    my $lltr_len  = $lend - $lstrt + 1;
+            my $rltr_len  = $rend - $rstrt + 1;
 
-	    my $int_start = $lLTR_end + 1;
-	    my $int_end   = $rLTR_start - 1;
-	    my $int_len   = $int_end - $int_start;
+	    ## adjust for strand
+	    if ($lstrt > $rstrt) {
+		$rstrt = $lstrt;
+		$lend = $rend;
+	    }
 
-	    my $intseq = substr $seqstore->{$contigname}, $lLTR_end, $int_len;
-	    $intseq =~ s/.{60}\K/\n/g;
-	    my $intid = join "_", $famname, $contigname, $int_start, $int_end, "Int";
-	    say $out join "\n", ">".$intid, $intseq;
+	    my $int_start = $lend + 1;
+	    my $int_end   = $rstrt - 1;
+	    my $intlen    = $int_end - $int_start + 1;
+
+	    my ($intseq, $int_len) = $faidx->get_sequence("$chr:$int_start-$int_end");
 	    # for debugging
-	    say "SEQ:    $contigname";
-	    say "SEQLEN: $element_length";
-	    say "INTLEN: $int_len";
-	    say "-" x 20; 
-	}
-	else {
-	    $notmapped_ct++;
+	    #say "SEQ:      $lchr";
+	    #say "ELEM:     $elem";
+	    #say "SEQLEN:   $element_length";
+	    #say "LLTRLEN:  $lltr_len";
+	    #say "INTSTRT:  $int_start";
+	    #say "INTEND:   $int_end";
+	    #say "RLTRLEN:  $rltr_len";
+	    #say "INTLEN:   $int_len";
+	    #say "EXPLEN:   $intlen";
+	    #say "-" x 20; 
+		
+	    $intseq =~ s/.{60}\K/\n/g;
+	    my $intid = join "_", $elem, $lchr, $int_start, $int_end, "Int";
+	    say $out join "\n", ">".$intid, $intseq;
 	}
     }
 }
-close $tefas;
 close $out;
-
-# for debugging
-#say "NOT MAPPED: $notmapped_ct";
-#say "Number of elements mapped: $mapped_ct;";
-
-#
-# methods
-#
-sub mk_key { return join "||", map { $_ // " " } @_ }
-
-sub mk_vec { return split /\|\|/, shift }
-
-sub correct_ids {
-    my ($contigname, $seqidmap) = @_;
-
-    if (exists $seqidmap->{$contigname}) {
-	return $seqidmap->{$contigname};
-    }
-    else {
-	return $contigname;
-    }
-}
-    
-sub seqid_map {
-    # this is necessary because LTRdigest truncates the ref names in the GFF
-    my %idmap  = (
-		  'Contig112_HLAB-P189P24'   => 'Contig112_HLAB-P189P',
-		  'Contig169_HLAE-P339N08'   => 'Contig169_HLAE-P339N',
-		  'Contig23_HLAE-P245O15'    => 'Contig23_HLAE-P245O1',
-		  'Contig25_HLAE-P245O15'    => 'Contig25_HLAE-P245O1',
-		  'Contig283_HLAB-P94O19'    => 'Contig283_HLAB-P94O1',
-		  'Contig29_HLAB-P347L09'    => 'Contig29_HLAB-P347L0',
-		  'Contig36_HLAE-P245O15'    => 'Contig36_HLAE-P245O1', 
-		  'Contig40_HLAB-P347K03'    => 'Contig40_HLAB-P347K0',
-		  'Contig500_HLAE-P102A12'   => 'Contig500_HLAE-P102A',
-		  'Contig84_HLAE-P408L01'    => 'Contig84_HLAE-P408L0',
-		  'Contig86_HLAB-P392C18'    => 'Contig86_HLAB-P392C1',
-		  'RL11_sub1_30x_c2-a_c2588' => 'RL11_sub1_30x_c2-a_c',
-		  'Contig173_BWAZ_227-17'    => 'Contig173_BWAZ_227-1',
-		  'Contig37_HLAE-P245O15'    => 'Contig37_HLAE-P245O1',
-		  'RL11_sub1_30x_c3_c2588'   => 'RL11_sub1_30x_c3_c25',
-		  'RL11_sub1_30x_c1_c2588'   => 'RL11_sub1_30x_c1_c25',
-		  );
-
-    my %reversed_map = reverse %idmap;
-
-    return \%reversed_map;
-}
-
-sub store_seq {
-    my ($ref_fasta) = @_;
-    
-    my %seqstore;
-    my $reffh = get_fh($ref_fasta);
-    
-    my @aux = undef;
-    my ($name, $comm, $seq, $qual);
-
-    while (($name, $comm, $seq, $qual) = readfq(\*$reffh, \@aux)) {
-	$seqstore{$name} = $seq;
-    }
-    close $reffh;
-
-    return \%seqstore;
-}
 
 sub get_fh {
     my ($file) = @_;
@@ -181,67 +119,20 @@ sub get_fh {
     return $fh;
 }
 
-sub readfq {
-    my ($fh, $aux) = @_;
-    @$aux = [undef, 0] if (!@$aux);
-    return if ($aux->[1]);
-    if (!defined($aux->[0])) {
-        while (<$fh>) {
-            chomp;
-            if (substr($_, 0, 1) eq '>' || substr($_, 0, 1) eq '@') {
-                $aux->[0] = $_;
-                last;
-            }
-        }
-        if (!defined($aux->[0])) {
-            $aux->[1] = 1;
-            return;
-        }
-    }
-    my ($name, $comm);
-    defined $_ && do {
-        ($name, $comm) = /^.(\S+)(?:\s+)(\S+)/ ? ($1, $2) : 
-	                 /^.(\S+)/ ? ($1, '') : ('', '');
-    };
-    my $seq = '';
-    my $c;
-    $aux->[0] = undef;
-    while (<$fh>) {
-        chomp;
-        $c = substr($_, 0, 1);
-        last if ($c eq '>' || $c eq '@' || $c eq '+');
-        $seq .= $_;
-    }
-    $aux->[0] = $_;
-    $aux->[1] = 1 if (!defined($aux->[0]));
-    return ($name, $comm, $seq) if ($c ne '+');
-    my $qual = '';
-    while (<$fh>) {
-        chomp;
-        $qual .= $_;
-        if (length($qual) >= length($seq)) {
-            $aux->[0] = undef;
-            return ($name, $comm, $seq, $qual);
-        }
-    }
-    $aux->[1] = 1;
-    return ($name, $seq);
-}
-
 sub usage {
     my $script = basename($0);
     print STDERR <<END
 
-USAGE: $script -i -a annotation_file -r ref_fasta -t te_fasta -o outfile
+USAGE: $script -l ltr_fasta -r ref_fasta -t te_fasta -o outfile
 
 Required:
-     '-a|annot_file'   :   Tab-delimited annotation file ("*tabout.csv") produced by LTRdigest.
-     '-r|ref_fasta'    :   File of reference sequences used for identifying LTR sequences.
-     '-t|te_fasta'     :   File of full-length LTR sequences identified by LTRdigest.
-     '-o|outfile'      :   File to write internal LTR element regions to.
+     -l|ltr_file     :   File of exemplar LTR sequences.
+     -r|ref_fasta    :   File of reference sequences used for identifying LTR sequences.
+     -t|te_fasta     :   File of full-length LTR sequences identified by LTRdigest.
+     -o|outfile      :   File to write internal LTR element regions to.
 
 Options:
-    -h|help            :   Print a usage statement.
+    -h|help          :   Print a usage statement.
 
 END
 }
