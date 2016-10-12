@@ -1,5 +1,10 @@
 #!/usr/bin/env perl
 
+##NB: This script gives the same output as the following shell command;
+##    cat list | sort | uniq -c | sed 's/^ *//' | tr ' ' '\t' | sort -nrk1,1 | awk -F'\t' '{print $2,$1}'
+##
+##    Thus, I find it easier to rename this script, make it executable, and put it in your path to simplify the task.
+
 use 5.010;
 use strict;
 use warnings;
