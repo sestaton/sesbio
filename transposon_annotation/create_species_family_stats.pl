@@ -47,16 +47,11 @@ for my $spec (keys %$cvalh) {
 for my $file (@files) {
     my ($species) = split(/\_/, $file, 2);
     open my $in, '<', $file;
-    while (<$in>) {
-	chomp;
-	next if /^ReadNum/;
-	my @f = split "\t";
-	if (exists $df{$species}) {
-	    push @{$df{$species}}, { $f[2] => $f[5] };
-	}
-	else {
-	    $df{$species} = [ { $f[2] => $f[5] } ];
-	}
+    while (my $line = <$in>) {
+	chomp $line;
+	next if $line =~ /^ReadNum/;
+	my @f = split "\t", $line;
+	push @{$df{$species}}, { $f[2] => $f[5] };
     }
     close $in;
 }
@@ -72,7 +67,7 @@ my %species_map = (
     Saff      => 'Carthamus',
     Senecio   => 'Senecio',
     TKS       => 'Taraxacum',
-    );
+);
 
 
 my @fams;
