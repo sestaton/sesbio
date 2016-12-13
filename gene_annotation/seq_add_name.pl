@@ -38,9 +38,7 @@ GetOptions(# Required
 #
 usage() and exit(0) if $help;
 
-if (!$infile || !$outfile || 
-    !$name || 
-    !$start && !$end) {
+if (!$infile || !$outfile || !$name || (!$start && !$end)) {
     say "\nERROR: No input was given.";
     usage();
     exit(1);
