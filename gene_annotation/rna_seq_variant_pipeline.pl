@@ -1,7 +1,6 @@
 #!/usr/bin/env perl
 
 use 5.022;
-use strict;
 use warnings;
 use Cwd;
 use File::Find;
