@@ -21,7 +21,7 @@ or other predictions, will be output.
 my %opts;
 GetOptions(\%opts, 'gff|g=s', 'list|l=s', 'allfeatures|a');
 
-say $usage and exit(10) unless %opts;
+say $usage and exit(1) unless %opts;
 
 open my $in, '<', $opts{list};
 my %genelist = map { chomp; $_ => 1 } <$in>;
