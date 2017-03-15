@@ -3,19 +3,31 @@
 use 5.010;
 use strict;
 use warnings;
+use autodie;
+use File::Basename;
 use Sort::Naturally;
 use Bio::GFF3::LowLevel qw(gff3_parse_feature gff3_format_feature);
 #use Data::Dump::Color;
+use Getopt::Long;
 
-my $usage = "$0 gff list";
-my $gff   = shift or die $usage;
-my $list  = shift or die $usage;
+my $usage = "\nUSAGE: ".basename($0)." -g gff -l list <--allfeatures>
 
-open my $in, '<', $list;
+By default, only gene features are written to the output. With the 
+--allfeaures option, all other feautures in the GFF, like BLAST alignments
+or other predictions, will be output.
+
+";
+
+my %opts;
+GetOptions(\%opts, 'gff|g=s', 'list|l=s', 'allfeatures|a');
+
+say $usage and exit(10) unless %opts;
+
+open my $in, '<', $opts{list};
 my %genelist = map { chomp; $_ => 1 } <$in>;
 close $in;
 
-my ($header, $features) = collect_gff_features($gff, \%genelist);
+my ($header, $features) = collect_gff_features($opts{gff}, \%genelist);
 #dd $features and exit;
 say $header;
 
@@ -31,7 +43,8 @@ for my $chr (nsort keys %$features) {
 		if exists $genelist{$geneid};
 	}
 	else {
-	    _write_features($features->{$chr}{$id});
+	    _write_features($features->{$chr}{$id})
+		if $opts{allfeatures};
 	}
     }
 }
@@ -39,9 +52,10 @@ for my $chr (nsort keys %$features) {
 sub collect_gff_features {
     my ($gff, $genelist) = @_;
 
+    my $fh = _get_fh($gff);
+
     my $header;
-    open my $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";
-    while (<$in>) {
+    while (<$fh>) {
 	chomp;
 	next if /^###$/;
 	if (/^##?\w+/) {
@@ -51,10 +65,10 @@ sub collect_gff_features {
 	    last;
 	}
     }
-    close $in;
+    close $fh;
     chomp $header;
 
-    open my $gffio, '<', $gff or die "\nERROR: Could not open file: $gff\n";
+    my $gffio = _get_fh($gff);
 
     my $gct = 0;
     my ($geneid, $start, $end, $region, $key, $hash, $type, $source, 
@@ -100,4 +114,18 @@ sub _write_features {
 	say $gff3_str;
     }
     say '###';
+}
+
+sub _get_fh {
+    my ($gff) = @_;
+
+    my $fh;
+    if ($gff =~ /\.gz$/) {
+        open $fh, '-|', 'zcat', $gff;
+    }
+    else {
+        open $fh, '<', $gff;
+    }
+
+    return $fh;
 }
