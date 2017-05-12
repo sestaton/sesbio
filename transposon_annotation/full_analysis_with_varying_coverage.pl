@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
-#NB: This is a rewrite of: https://github.com/sestaton/transposome-scripts/blob/master/full_analysis_with_varying_coverage.pl
+#NB: This is a rewrite of: 
+# https://github.com/sestaton/transposome-scripts/blob/master/full_analysis_with_varying_coverage.pl
 # for comparing the performance of Transposome at different levels of coverage.
 
 ## pragmas and library imports
@@ -213,7 +214,8 @@ sub write_results {
     }
     close $sum;
 
-    say $out join "\t", "${xcov}X ($sample_size reads)", $clstot, $uclstot, $repfrac, $singfrac, $reptot, $annotot, $famct, $time, $mem;
+    say $out join "\t", "${xcov}X ($sample_size reads)", $clstot, $uclstot, $repfrac, $singfrac, $reptot, 
+        $annotot, $famct, $time, $mem;
 
     return;
 }
@@ -256,20 +258,24 @@ sub usage {
     my $script = basename($0);
     print STDERR <<END
 
-USAGE: $script -s seqs.fastq -o my_cluster_report.txt -n 25000 -c 2 -t 12 [-h]
+NB: This script depends on transposome, pairfq, and valgrind.
+
+USAGE: $script -a SRR486236 -o SRR486236_transposome_results -t 12 -db repdb.fasta -sf fastq -s zmays [-h]
 
 Required:
- -a|accession            :       A SRA accession. There should be two files found ending in '_1.fastq' and '_2.fastq'.
+ -a|accession            :       A SRA accession. There should be two files found ending in 
+                                 '_1.fastq' and '_2.fastq'.
  -o|output_dir           :       A name for the output to be written.
- -t|threads              :       The number of parallel blast processes to run.
-                                 (NB: threads X cpus should be less than or equal to the number
-                                 of CPUs on your machine.)
+ -t|threads              :       The number of parallel processes to run.
  -repdb|repeat_database  :       A sequence file of repeats to be used for annotation.
+ -s|species              :       The species being evaluated (for calculating X-coverage).
+ -sf|sequence_format     :       The sequence format. Must be 'fasta' or 'fastq' (Default: fasta).
 
 Options:
  -f|sequence_format      :       The input sequence format (Default: FASTA).
  -pid|percent_identity   :       Percent identity between pairwise matches in all vs. all blast (Default: 90).
- -fcov|fraction_coverage :       The fraction coverage between pairwise matches in all vs. all blast (Default: 0.55).
+ -fcov|fraction_coverage :       The fraction coverage between pairwise matches in all vs. all blast 
+                                 (Default: 0.55).
  -cls|cluster_size       :       The minimum size of a cluster to be used for annotation (Default: 100).
  -h|help                 :       Print a usage statement.
 
