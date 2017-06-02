@@ -9,16 +9,17 @@ use warnings;
 use autodie qw(open);
 use Net::FTP;
 
-my $host = "ftp.ncbi.nlm.nih.gov";
-my $dir  = "/refseq/release/plant";
+my $host = 'ftp.ncbi.nlm.nih.gov';
+my $dir  = '/refseq/release/plant';
 my $faa  = shift;
-$faa     //= "plant_refseq_all.faa.gz";
+$faa     //= 'plant_refseq_all.faa.gz';
 open my $outfh, '>>', $faa;
 
 my $ftp = Net::FTP->new($host, Passive => 1, Debug => 0)
     or die "Cannot connect to $host: $@";
 
-$ftp->login or die "Cannot login ", $ftp->message;
+$ftp->login 
+    or die "Cannot login ", $ftp->message;
 
 $ftp->cwd($dir)
     or die "Cannot change working directory ", $ftp->message;
@@ -31,8 +32,10 @@ my @sorted   = map  { $_->[0] }
 
 for my $file (@sorted) {
     $ftp->binary();
-    my $rsize = $ftp->size($file) or die "Could not get size ", $ftp->message;
-    $ftp->get($file) or die "get failed ", $ftp->message;
+    my $rsize = $ftp->size($file) 
+	or die "Could not get size ", $ftp->message;
+    $ftp->get($file) 
+	or die "get failed ", $ftp->message;
     my $lsize = -s $file;
     die "Failed to fetch complete file: $file (local size: $lsize, remote size: $rsize)"
 	unless $rsize == $lsize;
