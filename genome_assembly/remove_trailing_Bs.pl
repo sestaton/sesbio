@@ -8,7 +8,7 @@ use warnings;
 use autodie;
 use File::Basename;
 use Getopt::Long;
-use Bio::Kseq;
+use Bio::DB::HTS::Kseq;
 
 #
 # lexical vars
@@ -36,7 +36,7 @@ usage() and exit(1) if !$infile or !$outfile;
 $length //= '50';
 
 # create Bio::Kseq objects
-my $knseq = Bio::Kseq->new($infile);
+my $knseq = Bio::DB::HTS::Kseq->new($infile);
 my $nt_it = $knseq->iterator;
 
 my $out = get_outfh($outfile);
@@ -79,11 +79,12 @@ sub get_outfh {
 sub usage {
     my $script = basename($0);
     print STDERR<<EOF
+
 USAGE: $script [-i] [-o] [-l] [-h] [-m]
 
 Required:
-     -i|infile         :      A fastq file.
-     -o|outfile        :      A fastq file with trailing Bs as quality encodings removed.
+     -i|infile         :      A FASTQ file.
+     -o|outfile        :      A FASTQ file with trailing Bs as quality encodings removed.
 
 Options:
     -l|length         :       Minimum length threshold (Default: 50bp).
