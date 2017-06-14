@@ -38,13 +38,14 @@ for my $chr (nsort keys %$features) {
 		 keys %{$features->{$chr}} ) { 
 
 	my $geneid = (split /\|\|/, $id)[0];
-	if ($geneid =~ /gene/) {
-	    _write_features($features->{$chr}{$id})
-		if exists $genelist{$geneid};
-	}
-	else {
-	    _write_features($features->{$chr}{$id})
-		if $opts{allfeatures};
+	if (exists $genelist{$geneid}) { 
+	    if ($geneid =~ /gene/) {
+		_write_features($features->{$chr}{$id});
+	    }
+	    else {
+		_write_features($features->{$chr}{$id})
+		    if $opts{allfeatures};
+	    }
 	}
     }
 }
