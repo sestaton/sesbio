@@ -29,7 +29,7 @@ for my $chr (nsort keys %$windows) {
 	    map  { $_->[0] }
 	    sort { $a->[1] <=> $b->[1] }
 	    map  { [ $_, /\w+(?:\d+)?\|\|(\d+)\|\|\d+/ ] } 
-		  keys %$regions) {
+		  keys %$regions ) {
 
 	    my ($rregid, $rstart, $rend) = split /\|\|/, $rreg;
 	    if ($rstart >= $start && $rend <= $end) { 
@@ -48,12 +48,21 @@ for my $chr (nsort keys %$windows) {
 			 push @{$bins{$chr}{$window}{ $feature->{type} }},
 			     { length => $len, ID => @{$feature->{attributes}{superfamily}}[0] };
 		    }
-		    if ($feature->{type} =~ /non_LTR_retrotransposon|TRIM_retrotransposon|helitron|similarity|gene/) {
+		    if ($feature->{type} =~ /non_LTR_retrotransposon|TRIM_retrotransposon|helitron|similarity/) {
 			($seq_id, $source, $fstart, $fend) 
 			    = @{$feature}{qw(seq_id source start end)};
 			my $len = $fend-$fstart+1;
 			push @{$bins{$chr}{$window}{ $feature->{type} }}, 
 			    { length => $len, ID => @{$feature->{attributes}{ID}}[0] };
+		    }
+		    if ($feature->{type} eq 'gene') {
+                        ($seq_id, $source, $fstart, $fend)
+                            = @{$feature}{qw(seq_id source start end)};
+                        my $len = $fend-$fstart+1;
+			if ($len >= 500 && $len <= 20000) {
+			    push @{$bins{$chr}{$window}{ $feature->{type} }},
+			    { length => $len, ID => @{$feature->{attributes}{ID}}[0] };
+			}
 		    }
 		}
 	    }
@@ -69,7 +78,16 @@ for my $chr (nsort keys %bins) {
     for my $bin (nsort keys %{$bins{$chr}}) {
 	for my $type (keys %{$bins{$chr}{$bin}}) {
 	    for my $match (@{$bins{$chr}{$bin}{$type}}) {
-		my $id = $match->{ID} =~ /trim/i ? 'TRIM' : $util->map_superfamily_name($match->{ID});
+		my $id;
+		if ($match->{ID} =~ /trim/i) {
+		    $id = 'TRIM';
+		}
+		elsif ($match->{ID} =~ /^gene/) {
+		    $id = 'gene';
+		}
+		else {
+		    $id = $util->map_superfamily_name($match->{ID}); 
+		}
 		$reduced{$id}{$chr}{$bin} += $match->{length};
 	    }
 	}
@@ -130,26 +148,36 @@ sub collect_gff_features {
         chomp $line;
         next if $line =~ /^#/;
 	my $feature = gff3_parse_feature( $line );
-	if ($feature->{type} eq 'helitron') { 
+	if ($feature->{type} =~ /helitron|similarity|gene/) { 
 	    $region = @{$feature->{attributes}{ID}}[0];
 	    #$region = @{$feature->{attributes}{Ontology_term}}[0];
 	    $key = join "||", $region, $feature->{start}, $feature->{end};
 	    push @{$features{$feature->{seq_id}}{$key}}, $feature;
 	    next;
 	}
-	if ($feature->{type} eq 'similarity') {
-            $region = @{$feature->{attributes}{ID}}[0];
-            $key = join "||", $region, $feature->{start}, $feature->{end};
-            push @{$features{$feature->{seq_id}}{$key}}, $feature;
-            next;
-        }
+	#if ($feature->{type} eq 'similarity') {
+            #$region = @{$feature->{attributes}{ID}}[0];
+            #$key = join "||", $region, $feature->{start}, $feature->{end};
+            #push @{$features{$feature->{seq_id}}{$key}}, $feature;
+            #next;
+        #}
+	#if ($feature->{type} eq 'similarity') {
+            #$region = @{$feature->{attributes}{ID}}[0];
+            #$key = join "||", $region, $feature->{start}, $feature->{end};
+            #push @{$features{$feature->{seq_id}}{$key}}, $feature;
+            #next;
+        #}
         if ($feature->{type} eq 'repeat_region') {
             $region = @{$feature->{attributes}{ID}}[0];
             ($start, $end) = @{$feature}{qw(start end)};
 	    $key = join "||", $region, $start, $end;
 
         }
-	if ($feature->{type} ne 'repeat_region') {
+	if ($feature->{type} !~ /repeat_region|gene|exon|intron|_utr|cds|rna|similarity|helitron/i) {
+	    #next unless defined $start && defined $end && defined $key;
+	    #unless ($start) {
+		#dd $feature and exit;
+	    #}
             if ($feature->{start} >= $start && $feature->{end} <= $end) {
 		push @{$features{$feature->{seq_id}}{$key}}, $feature;
             }
