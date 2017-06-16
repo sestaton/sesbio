@@ -150,23 +150,10 @@ sub collect_gff_features {
 	my $feature = gff3_parse_feature( $line );
 	if ($feature->{type} =~ /helitron|similarity|gene/) { 
 	    $region = @{$feature->{attributes}{ID}}[0];
-	    #$region = @{$feature->{attributes}{Ontology_term}}[0];
 	    $key = join "||", $region, $feature->{start}, $feature->{end};
 	    push @{$features{$feature->{seq_id}}{$key}}, $feature;
 	    next;
 	}
-	#if ($feature->{type} eq 'similarity') {
-            #$region = @{$feature->{attributes}{ID}}[0];
-            #$key = join "||", $region, $feature->{start}, $feature->{end};
-            #push @{$features{$feature->{seq_id}}{$key}}, $feature;
-            #next;
-        #}
-	#if ($feature->{type} eq 'similarity') {
-            #$region = @{$feature->{attributes}{ID}}[0];
-            #$key = join "||", $region, $feature->{start}, $feature->{end};
-            #push @{$features{$feature->{seq_id}}{$key}}, $feature;
-            #next;
-        #}
         if ($feature->{type} eq 'repeat_region') {
             $region = @{$feature->{attributes}{ID}}[0];
             ($start, $end) = @{$feature}{qw(start end)};
@@ -174,10 +161,6 @@ sub collect_gff_features {
 
         }
 	if ($feature->{type} !~ /repeat_region|gene|exon|intron|_utr|cds|rna|similarity|helitron/i) {
-	    #next unless defined $start && defined $end && defined $key;
-	    #unless ($start) {
-		#dd $feature and exit;
-	    #}
             if ($feature->{start} >= $start && $feature->{end} <= $end) {
 		push @{$features{$feature->{seq_id}}{$key}}, $feature;
             }
