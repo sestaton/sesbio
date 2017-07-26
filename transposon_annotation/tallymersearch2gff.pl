@@ -232,7 +232,6 @@ sub split_mfasta {
 	$seqct++;
 	my $id = $seqobj->name;
 	my $seq = $seqobj->seq;
-	#next unless $id =~ /MtrunA17Chr0c01/;
 	$seq{$id} = $seq;
 	$seqregion{$id} = length($seq);
     }
