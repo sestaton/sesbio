@@ -28,7 +28,11 @@ Perl 5.16.0 (on Mac OS X 10.6.8 (Snow Leopard))
 
 =item *
 
-Perl 5.18.0 (on Red Hat Enterprise Linux Server release 5.9 (Tikanga)) 
+Perl 5.18.0 (on Red Hat Enterprise Linux Server release 5.9 (Tikanga))
+
+=item *                           
+
+Perl 5.24.1 (on CentOS 7.1)
 
 =back
 
@@ -167,7 +171,6 @@ for my $seqid (nsort keys %$seqreg) {
     say $out join q{ }, '##sequence-region', $seqid, '1', $seqreg->{$seqid};
 }
 
-#exit;
 for my $key (nsort keys %$seqhash) {
     say "\n========> Running Tallymer Search on sequence: $key" unless $quiet;
     my $oneseq = getFh($key);
@@ -177,10 +180,7 @@ for my $key (nsort keys %$seqhash) {
 	$feat_count = tallymersearch2gff($seqct, $matches, $out, $key, $ratio, $feat_count);
     }
     unlink $oneseq;
-    #exit;
 }
-
-#combine_gffs($gt, $outfile, \@gffs, \%seqreg);
 
 my @files;
 my $wanted  = sub { push @files, $File::Find::name
@@ -188,43 +188,11 @@ my $wanted  = sub { push @files, $File::Find::name
 my $process = sub { grep ! -d, @_ };
 find({ wanted => $wanted, preprocess => $process }, $dir);
 unlink @files;
-#unlink @gffs;
 
 exit;
 #
 # methods
 #
-sub combine_gffs {
-    my ($gt, $outfile, $gffs, $seqreg) = @_;
-
-    open my $out, '>', $outfile or die $!;
-    say $out '##gff-version 3';
-
-    for my $seqid (nsort keys %$seqreg) {
-	say $out join q{ }, '##sequence-region', $seqid, '1', $seqreg->{$seqid};
-    }
-
-    my $featct = 0;
-    for my $file (nsort @$gffs) {
-	open my $in, '<', $file or die $!;
-	while (my $line = <$in>) {
-	    chomp $line;
-	    next if $line =~ /^#/;
-	    my @f = split /\t/, $line;
-	    if (@f == 9) {
-		$featct++;
-		say $out join "\t", @f[0..7], "ID=mathematically_defined_repeat$featct;dbxref=SO:0001642";
-	    }
-	}
-	close $in;
-    }
-
-
-    #system([0..5], "$gt gff3 -sort -retainids @$gffs > $outfile");
-
-    return;
-}
-
 sub findprog {
     my ($prog) = @_;
     my $exe;
@@ -280,7 +248,6 @@ sub getFh {
     my ($key) = @_;
 
     my $cwd = getcwd();
-    ## File::Temp->new
     my $tmpiname = $key.'_tmp_XXXX';
     my $fname = File::Temp->new( TEMPLATE => $tmpiname,
                                  DIR      => $cwd,
@@ -290,10 +257,8 @@ sub getFh {
     open my $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
 
     my $seqfile = $fname->filename;
-    #my $singleseq = $key.'.fasta';           # fixed bug adding extra underscore 2/10/12
     $seqhash->{$key} =~ s/.{60}\K/\n/g;      # v5.10 is required to use \K
 
-    #open my $tmpseq, '>', $singleseq or die "\nERROR: Could not open file: $singleseq\n";
     say $out join "\n", ">".$key, $seqhash->{$key};
     close $out;
 
@@ -313,8 +278,6 @@ sub build_suffixarray {
                  "-db $db ".
                  "-indexname $db";
     $suffix .= " 2>&1 > /dev/null" if $quiet;
-
-    #say STDERR $suffix;
 
     my $exit_code;
     try {
@@ -342,8 +305,6 @@ sub build_index {
 
     say "\n========> Creating Tallymer index for mersize $k for sequence: $db";
 
-    #say STDERR $index;
-
     my $exit_code;
     try {
 	$exit_code = system([0..5], $index);
@@ -360,8 +321,6 @@ sub tallymer_search {
 
     my ($seqfile, $seqpath, $seqext) = fileparse($infile, qr/\.[^.]*/);
     my ($indfile, $indpath, $indext) = fileparse($indexname, qr/\.[^.]*/);
-    #say "========> $seqfile";
-    #say "========> $indfile";
     $seqfile =~ s/\.fa.*//;
     $indfile =~ s/\.fa.*//;
 
@@ -373,11 +332,6 @@ sub tallymer_search {
                  "-tyr $indexname ".
                  "-q $infile ".
                  "> $searchout";
-
-    #say "\n========> Searching $infile with $indexname" unless $quiet;
-    #say "\n========> Outfile is $searchout" unless $quiet;    # The Tallymer search output. 
-
-    #say STDERR $search;
 
     my $exit_code;
     try{
@@ -395,7 +349,6 @@ sub tallymersearch2gff {
 
     open my $mers, '<', $matches or die "\nERROR: Could not open file: $matches\n";
     
-    #my $count = 0;
     while (my $match = <$mers>) {
 	$feat_count++;
 	chomp $match;
@@ -415,8 +368,6 @@ sub tallymersearch2gff {
     }
     close $mers;
     unlink $matches; 
-
-    #say STDERR $out and exit;
 
     return $feat_count;
 }
