@@ -15,6 +15,7 @@ requires 'String::Simrank';
 requires 'XML::LibXML';
 requires 'XML::Twig';
 requires 'Try::Tiny';
+requires 'Net::FTP';
 requires 'List::MoreUtils';
 requires 'Sort::Naturally';
 requires 'Data::Dump::Color'; # used by some scripts for debugging/printing output
