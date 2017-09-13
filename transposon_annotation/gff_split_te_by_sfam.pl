@@ -1,95 +1,201 @@
 #!/usr/bin/env perl
 
+#TODO: Handle compressed input
+
 use 5.010;
 use strict;
 use warnings;
 use Sort::Naturally;
 use Bio::DB::HTS::Kseq;
 use Bio::GFF3::LowLevel qw(gff3_parse_feature gff3_format_feature);
+use List::Util          qw(uniq);
 use Tephra::Annotation::Util;
+use Statistics::Descriptive;
+use Getopt::Long;
 #use Data::Dump::Color;
 
-my $usage = "$0 genome sf_gff\n";
-my $seqfile = shift or die $usage;
-my $gfffile = shift or die $usage;
+my %opts;
+GetOptions(\%opts, 'gfffile|i=s', 'split|s');
 
-my ($header, $features) = collect_gff_features($gfffile);
+my $usage = "\nUSAGE: $0 -i genome.gff <--split>
 
-my $util = Tephra::Annotation::Util->new;
+NB: The optional '--split' argument will split each superfamily into separate GFF3 files.\n\n";
 
-my %sfams;
-my ($seq_id, $source, $fstart, $fend, $sfam);
-for my $chr (nsort keys %$features) {
-    for my $rreg (
-	map  { $_->[0] }
-	sort { $a->[1] <=> $b->[1] }
-	map  { [ $_, /\w+(?:\d+)?\|\|(\d+)\|\|\d+/ ] } 
-	keys %{$features->{$chr}} ) {
-	    
-	if ($rreg =~ /helitron|non_LTR_retrotransposon/i) {
-	    #dd $features->{$chr} and exit;
-	    my $feat = @{$features->{$chr}{$rreg}}[0];
-	    #dd $feat and exit;
-	    my $fam_id = @{$feat->{attributes}{family}}[0];
-
-	    my $sf;
-	    if (defined $fam_id && $fam_id !~ /^0$/) { 
-		$sf = $util->map_superfamily_name($fam_id);
-	    }
-	    elsif ($rreg =~ /helitron/) {
-		$sf = 'Helitron';
-	    }
-	    else {
-		$sf = 'LINE';
-	    }
-
-	    push @{$sfams{$sf}{$chr}}, $feat;
-	}
-	elsif ($rreg =~ /repeat_region/) {
-	    for my $feature (@{$features->{$chr}{$rreg}}) {
-		if ($feature->{type} =~ /^LTR_retrotransposon|TRIM_retrotransposon|terminal_inverted_repeat_element/) { 
-		    my $id = defined @{$feature->{attributes}{family}}[0] ? @{$feature->{attributes}{family}}[0] 
-		    : @{$feature->{attributes}{ID}}[0];
-		    $sfam = $util->map_superfamily_name($id);
-		    push @{$sfams{$sfam}{$chr}}, $features->{$chr}{$rreg};
-		}
-	    }
-	}
-    }	
+unless ($opts{gfffile} && -e $opts{gfffile}) {
+    say STDERR "\nERROR: --gfffile argument is missing or the file does not exist. Check input.\n";
+    say STDERR $usage;
+    exit(1);
 }
-#dd \%sfams and exit;
 
-for my $sfam (nsort keys %sfams) {
-    my $sfam_id = $sfam;
-    $sfam_id =~ s/\//-/;
-    my $outfile = $sfam_id.'_tephra_features.gff3';
-    open my $out, '>', $outfile or die $!;
-    say $out $header;
+my ($header, $features) = collect_gff_features($opts{gfffile});
+my $sfams = collate_features_by_superfamily($features);
+my ($stats, $total) = compute_feature_stats($sfams);
+write_te_stats($stats, $total);
 
-    for my $chr (nsort keys %{$sfams{$sfam}}) {
-	for my $elements (@{$sfams{$sfam}{$chr}}) {
-	    if (ref($elements) ne 'ARRAY') {
-		#dd $elements and exit;
-		my $gff_feats = gff3_format_feature($elements);
-		chomp $gff_feats;
-		say $out $gff_feats;
-	    }
-	    else {
-		for my $feat (@$elements) {
-		    my $gff_feats = gff3_format_feature($feat);
-		    chomp $gff_feats;
-		    say $out $gff_feats;
-		}
-	    }
-	}
-    }
-    close $out;
+if ($opts{split}) { 
+    split_gff3_by_superfamily($sfams);
 }
 
 exit;
 #
 # methods
 #
+sub compute_feature_stats {
+    my ($sfams) = @_;
+
+    my $util = Tephra::Annotation::Util->new;
+    my $repeat_map = $util->build_repeat_map;
+
+    my %stats;
+    for my $sfam (nsort keys %$sfams) {
+	my $sf_code = $util->map_superfamily_name_to_code($sfam);
+	my $sf_lineage = $repeat_map->{$sf_code};
+
+	$stats{ $sf_lineage->{class} }{ $sf_lineage->{repeat_name} }{order} = $sf_lineage->{order};
+
+	my %seen;
+	for my $chr (nsort keys %{$sfams->{$sfam}}) {
+	    for my $elements (@{$sfams->{$sfam}{$chr}}) {
+		if (ref($elements) ne 'ARRAY') {
+		    my $gff_feats = gff3_format_feature($elements);
+		    chomp $gff_feats;
+		    my @feats = split /\t/, $gff_feats;
+		    if ($feats[2] =~ /helitron|non_LTR_retrotransposon/i) {
+			my ($fam_id) = ($feats[8] =~ /family=(^[A-Z]{3}_\w+\d+?)\;/);
+			my $length = $feats[4] - $feats[3] + 1;
+			push @{$stats{ $sf_lineage->{class} }{ $sf_lineage->{repeat_name} }{lengths}}, $length;
+			push @{$stats{ $sf_lineage->{class} }{ $sf_lineage->{repeat_name} }{families}}, $fam_id;
+		    }
+		}
+		else {
+		    for my $feat (@$elements) {
+			if ($feat->{type} =~ /^LTR_retrotransposon|TRIM_retrotransposon|terminal_inverted_repeat_element/) {
+			    my $fam_id = @{$feat->{attributes}{family}}[0];
+			    my $length = $feat->{end} - $feat->{start} + 1;
+			    push @{$stats{ $sf_lineage->{class} }{ $sf_lineage->{repeat_name} }{lengths}}, $length;
+			    push @{$stats{ $sf_lineage->{class} }{ $sf_lineage->{repeat_name} }{families}}, $fam_id;
+			}
+			elsif ($feat->{type} =~ /protein_match/) {
+			    $stats{ $sf_lineage->{class} }{ $sf_lineage->{repeat_name} }{ 'protein_matches' }++;
+			}
+		    }
+		}
+	    }
+	}
+    }
+
+    my %reduced;
+    my $total = 0;
+    my $order;
+    for my $class (nsort keys %stats) {
+	for my $name (sort keys %{$stats{$class}}) {
+	    my @nosing_fams = grep { defined && ! /singleton/ } @{$stats{$class}{$name}{families}};
+	    my @fams = uniq(@nosing_fams);
+
+	    my $stat = Statistics::Descriptive::Full->new;
+	    $stat->add_data(@{$stats{$class}{$name}{lengths}});
+
+	    my $ave = $stat->mean;
+	    my $min = $stat->min;
+	    my $max = $stat->max;
+	    my $ct  = $stat->count;
+	    $total += $ct;
+
+	    $reduced{$class}{ $stats{$class}{$name}{order} }{$name}{families} = @fams;
+            $reduced{$class}{ $stats{$class}{$name}{order} }{$name}{count} = $ct;
+            $reduced{$class}{ $stats{$class}{$name}{order} }{$name}{length}{mean} = $ave;
+            $reduced{$class}{ $stats{$class}{$name}{order} }{$name}{length}{min} = $min;
+            $reduced{$class}{ $stats{$class}{$name}{order} }{$name}{length}{max} = $max;
+
+	    if (defined $stats{$class}{$name}{protein_matches}) {
+		$reduced{$class}{ $stats{$class}{$name}{order}  }{$name}{protein_matches} = $stats{$class}{$name}{protein_matches};
+	    }
+	}
+    }
+
+    return (\%reduced, $total);
+}
+
+sub collate_features_by_superfamily {
+    my ($features) = @_;
+
+    my $util = Tephra::Annotation::Util->new;
+
+    my %sfams;
+    my ($seq_id, $source, $fstart, $fend, $sfam);
+    for my $chr (nsort keys %$features) {
+	for my $rreg (
+	    map  { $_->[0] }
+	    sort { $a->[1] <=> $b->[1] }
+	    map  { [ $_, /\w+(?:\d+)?\|\|(\d+)\|\|\d+/ ] } 
+	    keys %{$features->{$chr}} ) {
+            
+	    if ($rreg =~ /helitron|non_LTR_retrotransposon/i) {
+		my $feat = @{$features->{$chr}{$rreg}}[0];
+		my $fam_id = @{$feat->{attributes}{family}}[0];
+		
+		my $sf;
+		if (defined $fam_id && $fam_id !~ /^0$/) { 
+		    $sf = $util->map_superfamily_name($fam_id);
+		}
+		elsif ($rreg =~ /helitron/) {
+		    $sf = 'Helitron';
+		}
+		else {
+		    $sf = 'LINE';
+		}
+		
+		push @{$sfams{$sf}{$chr}}, $feat;
+	    }
+	    elsif ($rreg =~ /repeat_region/) {
+		for my $feature (@{$features->{$chr}{$rreg}}) {
+		    if ($feature->{type} =~ /^LTR_retrotransposon|TRIM_retrotransposon|terminal_inverted_repeat_element/) { 
+			my $id = defined @{$feature->{attributes}{family}}[0] ? @{$feature->{attributes}{family}}[0] 
+			    : @{$feature->{attributes}{ID}}[0];
+			$sfam = $util->map_superfamily_name($id);
+			#say STDERR join q{ }, $id, $sfam;
+			push @{$sfams{$sfam}{$chr}}, $features->{$chr}{$rreg};
+		    }
+		}
+	    }
+	}   
+    }
+
+    return \%sfams;
+}
+
+sub split_gff3_by_superfamily {    
+    my ($sfams) = @_;
+
+    for my $sfam (nsort keys %$sfams) {
+	my $sfam_id = $sfam;
+	$sfam_id =~ s/\//-/;
+	my $outfile = $sfam_id.'_tephra_features.gff3';
+	open my $out, '>', $outfile or die $!;
+	say $out $header;
+	
+	for my $chr (nsort keys %{$sfams->{$sfam}}) {
+	    for my $elements (@{$sfams->{$sfam}{$chr}}) {
+		if (ref($elements) ne 'ARRAY') {
+		    my $gff_feats = gff3_format_feature($elements);
+		    chomp $gff_feats;
+		    say $out $gff_feats;
+		}
+		else {
+		    for my $feat (@$elements) {
+			my $gff_feats = gff3_format_feature($feat);
+			chomp $gff_feats;
+			say $out $gff_feats;
+		    }
+		}
+	    }
+	}
+	close $out;
+    }
+
+    return;
+}
+
 sub collect_gff_features {
     my ($gff) = @_;
 
@@ -141,4 +247,78 @@ sub collect_gff_features {
     close $gffio;
 
     return ($header, \%features);
+}
+
+sub write_te_stats {
+    my ($stats, $total) = @_;
+
+    my $util = Tephra::Annotation::Util->new;
+
+    my $pad = "\t" x 3;
+    my $s = "Total transposon number: $total\n\n";
+
+    my %seen;
+    for my $class (nsort keys %$stats) {
+
+	$s .= "- $class\n";
+	for my $order (nsort keys %{$stats->{$class}}) { 
+	    for my $name (nsort keys %{$stats->{$class}{$order}}) {
+		my $sf_name = $name;
+		$sf_name =~ s/\s+/_/g;
+		my $sf_code = $util->map_superfamily_name_to_code($sf_name);
+		if ($class =~ /Class I$/) {
+		    if ($order =~ /LTR/i) { 
+			$s .= "\t - Long Terminal Repeat (LTR) retrotransposons\n"
+			unless $seen{$order};
+			$s .= "\t\t$name ($sf_code):\n";
+		    }
+		    elsif ($order =~ /L1|LINE/i) {
+			$s .= "\t - non-Long Terminal Repeat (non-LTR) retrotransposons\n"
+			    unless $seen{$order};
+			$s .= "\t\t$name ($sf_code):\n";
+			
+		    }
+		    $seen{$order} = 1;
+		}
+		else {
+		    if ($order =~ /helitron/i) {
+			unless ($seen{$order}) {
+			    $s .= "\t - Subclass II\n";
+			    $s .= "\t\t - Helitron transposons\n";
+			}
+			$s .= "$pad - $name ($sf_code)\n";
+			
+		    }
+		    elsif ($order =~ /TIR/i) {
+			unless ($seen{$order}) {
+			    $s .= "\t - Subclass I\n";
+			    $s .= "\t\t - Terminal Inverted Repeat (TIR) transposons\n";
+			}
+			$s .= "$pad - $name ($sf_code)\n";
+		    }
+		    $seen {$order} = 1;
+		}
+		
+		$pad .= "\t" if $class =~ /Class II/;;
+		$s .= "${pad}Total number: $stats->{$class}{$order}{$name}{count}\n";
+		if (defined $stats->{$class}{$order}{$name}{protein_matches}) {
+		    $s .= "${pad}Elements with protein matches: $stats->{$class}{$order}{$name}{protein_matches}\n";
+		}
+		else {
+		    $s .= "${pad}Elements with protein matches: Undetermined\n";
+		}
+		$s .= "${pad}Number of families: $stats->{$class}{$order}{$name}{families}\n\n";
+		$s .= "${pad}Length distribution:\n";
+		$s .= "$pad\tMean: $stats->{$class}{$order}{$name}{length}{mean}\n";
+		$s .= "$pad\tMinimum: $stats->{$class}{$order}{$name}{length}{min}\n";
+		$s .= "$pad\tMaximum: $stats->{$class}{$order}{$name}{length}{max}\n";
+		$pad =~ s/\t$// if $class =~ /Class II/;
+	    }
+	}
+    }
+
+    chomp $s;
+    say $s;
+
+    return;
 }
