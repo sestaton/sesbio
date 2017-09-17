@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # original script by: chienchi@lanl.gov
-# modified by:  S. Evan Staton <statonse at gmail dot com>
+# modified by:  S. Evan Staton <evan at evanstaton dot com>
 
 use 5.010;
 use strict;
