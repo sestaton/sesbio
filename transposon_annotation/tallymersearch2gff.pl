@@ -16,7 +16,7 @@ plots with the results with, e.g. R).
 
 =head1 DEPENDENCIES
 
-Non-core Perl modules used are IPC::System::Simple and Try::Tiny.
+Non-core Perl modules used are IPC::System::Simple, Try::Tiny, Sort::Naturally and Bio::DB::HTS::Kseq.
 
 Tested with:
 
@@ -85,14 +85,22 @@ A file of WGS reads to index and search against the input Fasta.
 
 The k-mer length to use for building the index. Integer (Default: 20).
 
+=item -idx, --index
+
+Name of the index to use (instead of creating new index files each run).
+
+=item -r, --ratio
+
+Repeat ratio to use for filtering simple repeats (<float>, must be used with --filter; Default: 0.80).
+
+=item --filter
+
+Filter out simple repeats including di- and mononucleotides by --ratio (Default: 0.80 for each k-mer).
+
 =item --log
 
 Report the log number of counts instead of raw counts. This is often a good option with WGS
 data because many regions have very, very high coverage.
-
-=item --quiet
-
-Do not print progress of the program to the screen.
 
 =item --clean
 
@@ -123,46 +131,56 @@ use Bio::DB::HTS::Kseq;
 use Getopt::Long;
 
 my ($infile, $outfile, $k, $db, $help, $man, $clean, $debug);
-my ($log, $quiet, $filter, $matches, $ratio, @gffs);
+my ($log, $index, $filter, $matches, $ratio, @gffs);
 
 GetOptions(# Required
-	   'i|infile=s'           => \$infile,
-	   'o|outfile=s'          => \$outfile,
+	   'i|infile=s'  => \$infile,
+	   'o|outfile=s' => \$outfile,
 	   # Options
-	   't|target=s'           => \$db,
-	   'k|kmerlen=i'          => \$k,
-	   'r|repeat-ratio=f'     => \$ratio,
-	   'filter'               => \$filter,
-	   'log'                  => \$log,
-	   'quiet'                => \$quiet,
-	   'clean'                => \$clean,
-	   'debug'                => \$debug,
-	   'h|help'               => \$help,
-	   'm|man'                => \$man,
+	   't|target=s'  => \$db,
+	   'k|kmerlen=i' => \$k,
+	   'r|ratio=f'   => \$ratio,
+	   'idx|index=s' => \$index,
+	   'filter'      => \$filter,
+	   'log'         => \$log,
+	   'clean'       => \$clean,
+	   'debug'       => \$debug,
+	   'h|help'      => \$help,
+	   'm|man'       => \$man,
 );
 
 if (!$infile || !$outfile) {
-    say"\nERROR: No input or output was given.";
+    say STDERR "\nERROR: No input or output was given. Exiting.\n";
     usage();
     exit(1);
 }
 
-$k //= 20;
-$ratio //= 0.80;
-my $feat_count = 0;
-
-my $gt = findprog('gt');
-
+if (!$db && !$index) {
+    say STDERR "\nERROR: No target or index name was given. One is required for the search. Exiting.\n";
+    usage();
+    exit(1);
+}
+ 
 if ($filter && !$ratio) {
-    warn "\nWARNING: Using a simple repeat ratio of 0.80 for filtering since one was not specified.\n";
+    say STDERR "\nWARNING: Using a simple repeat ratio of 0.80 for filtering since one was not specified.\n";
+    $ratio = 0.80;
+}
+
+if (!$k) {
+    say STDERR "\nWARNING: Using a k-mer length of 20 since one was not specified.\n";
+    $k = 20;
 }
 
 # return reference of seq hash here and do tallymer search for each fasta in file
 my ($seqhash, $seqreg, $seqct) = split_mfasta($infile);
-my $dir = getcwd();
 
-build_suffixarray($gt, $db);
-build_index($gt, $db);
+# build appropriate indexes if they do not exist
+my $gt = findprog('gt');
+my $indexname = $index ? $index : $db;
+unless ($index) { 
+    build_suffixarray($gt, $db);
+    build_index($gt, $db);
+}
 
 open my $out, '>', $outfile or die $!;
 say $out '##gff-version 3';
@@ -171,53 +189,29 @@ for my $seqid (nsort keys %$seqreg) {
     say $out join q{ }, '##sequence-region', $seqid, '1', $seqreg->{$seqid};
 }
 
+my $feat_count = 0;
 for my $key (nsort keys %$seqhash) {
-    say "\n========> Running Tallymer Search on sequence: $key" unless $quiet;
+    say "\n========> Running Tallymer Search on sequence: $key"; # unless $quiet;
     my $oneseq = getFh($key);
-    my $matches = tallymer_search($gt, $oneseq, $db);
+    my $matches = tallymer_search($gt, $oneseq, $indexname);
     
     if (exists $seqreg->{$key}) {
-	$feat_count = tallymersearch2gff($seqct, $matches, $out, $key, $ratio, $feat_count);
+	$feat_count = tallymersearch2gff($filter, $log, $seqct, $matches, $out, $key, $ratio, $feat_count);
     }
     unlink $oneseq;
 }
 
-my @files;
-my $wanted  = sub { push @files, $File::Find::name
-			if -f && /\.llv|\.md5|\.prf|\.tis|\.suf|\.lcp|\.ssp|\.sds|\.des|\.dna|\.esq|\.prj|\.ois|\.mer|\.mbd|\.mct/ };
-my $process = sub { grep ! -d, @_ };
-find({ wanted => $wanted, preprocess => $process }, $dir);
-unlink @files;
+say "\n========> $feat_count features were written to $outfile.";
+
+if ($clean) {
+    my $dir = getcwd();
+    clean_indexes($dir);
+}
 
 exit;
 #
 # methods
 #
-sub findprog {
-    my ($prog) = @_;
-    my $exe;
-
-    my $gt = File::Spec->catfile($ENV{HOME}, '.tephra', 'gt', 'bin', 'gt');
-    if (-e $gt && -x $gt) {
-	return $gt;
-    }
-
-    my @path = split /\:|\;/, $ENV{PATH};    
-    for my $p (@path) {
-        my $full_path  = File::Spec->catfile($p, $prog);
-	if (-e $full_path && -x $full_path) {
-	    $exe = $full_path;
-	}
-    }
- 
-    if (! defined $exe) {
-	say STDERR "\nERROR: $prog could not be found. Try extending your PATH to the program. Exiting.\n";
-    }
-    else {
-	return $exe;
-    }
-}
-
 sub split_mfasta {
     my ($seq) = @_;
 
@@ -237,31 +231,10 @@ sub split_mfasta {
     }
 
     if ($seqct > 1) {
-	say "\n========> Running Tallymer Search on $seqct sequences." unless $quiet;
+	say "\n========> Running Tallymer Search on $seqct sequences."; # unless $quiet;
     } 
    
     return (\%seq, \%seqregion, $seqct);
-}
-
-sub getFh {
-    my ($key) = @_;
-
-    my $cwd = getcwd();
-    my $tmpiname = $key.'_tmp_XXXX';
-    my $fname = File::Temp->new( TEMPLATE => $tmpiname,
-                                 DIR      => $cwd,
-                                 UNLINK   => 0,
-                                 SUFFIX   => '.fasta');
-
-    open my $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
-
-    my $seqfile = $fname->filename;
-    $seqhash->{$key} =~ s/.{60}\K/\n/g;      # v5.10 is required to use \K
-
-    say $out join "\n", ">".$key, $seqhash->{$key};
-    close $out;
-
-    return $seqfile;    
 }
 
 sub build_suffixarray {
@@ -280,10 +253,10 @@ sub build_suffixarray {
 
     my $exit_code;
     try {
-	$exit_code = system([0..5], $suffix);
+	$exit_code = capture([0..5], $suffix);
     }
     catch {
-	say "ERROR: gt suffixerator failed with exit code: $exit_code. Here is the exception: $_.\n";
+	say STDERR "ERROR: gt suffixerator failed with exit code: $exit_code. Here is the exception: $_.\n";
     };
 
     return;
@@ -306,10 +279,10 @@ sub build_index {
 
     my $exit_code;
     try {
-	$exit_code = system([0..5], $index);
+	$exit_code = capture([0..5], $index);
     }
     catch {
-	say "ERROR: gt tallymer failed with exit code: $exit_code. Here is the exception: $_.\n";
+	say STDERR "ERROR: gt tallymer failed with exit code: $exit_code. Here is the exception: $_.\n";
     };
 
     return;
@@ -334,17 +307,17 @@ sub tallymer_search {
 
     my $exit_code;
     try{
-        $exit_code = system([0..5], $search);
+        $exit_code = capture([0..5], $search);
     }
     catch {
-	say "ERROR: gt tallymer failed with exit code: $exit_code. Here is the exception: $_.\n";
+	say STDERR "ERROR: gt tallymer failed with exit code: $exit_code. Here is the exception: $_.\n";
     };
 
     return $searchout;
 }
 
 sub tallymersearch2gff {
-    my ($seqct, $matches, $out, $seqid, $ratio, $feat_count) = @_;
+    my ($filter, $log, $seqct, $matches, $out, $seqid, $ratio, $feat_count) = @_;
 
     open my $mers, '<', $matches or die "\nERROR: Could not open file: $matches\n";
     
@@ -357,13 +330,19 @@ sub tallymersearch2gff {
 
 	if ($filter) {
 	    my $repeatseq = filter_simple($seq, $merlen, $ratio);
-	    unless (exists $repeatseq->{$seq} ) {
-		printgff($mer_ct, $feat_count, $seqid, $offset, $merlen, $out);
-	    }
-	} 
-	else {
-	    printgff($mer_ct, $feat_count, $seqid, $offset, $merlen, $out);
+	    next if exists $repeatseq->{$seq};
 	}
+	my ($strand) = ($offset =~ /^([+-])/);
+	$offset =~ s/^\+|\-//;
+	my $end = $offset+$merlen;
+
+	if ($log) {
+        # may want to consider a higher level of resolution than 2 sig digs
+	    eval { $mer_ct = sprintf("%.2f",log($mer_ct)) }; warn $@ if $@; 
+	}
+    
+	say $out join "\t", $seqid, "Tallymer", "mathematically_defined_repeat", $offset, $end, $mer_ct, $strand, ".",
+	    join ";", "ID=mathematically_defined_repeat$feat_count","dbxref=SO:0001642";
     }
     close $mers;
     unlink $matches; 
@@ -409,48 +388,83 @@ sub filter_simple {
     return \%simpleseqs;	    
 }
 
-sub printgff {
-    my ($mer_ct, $feat_count, $seqid, $offset, $merlen, $out) = @_;
+sub getFh {
+    my ($key) = @_;
 
-    my ($strand) = ($offset =~ /^([+-])/);
-    $offset =~ s/^\+|\-//;
-    #$offset = $offset > 0 ? $offset : 1;
-    $offset += 1;
-    my $end = $offset+$merlen;
+    my $cwd = getcwd();
+    my $tmpiname = $key.'_tmp_XXXX';
+    my $fname = File::Temp->new( TEMPLATE => $tmpiname,
+                                 DIR      => $cwd,
+                                 UNLINK   => 0,
+                                 SUFFIX   => '.fasta');
 
-    if ($log) {
-	# may want to consider a higher level of resolution than 2 sig digs
-	eval { $mer_ct = sprintf("%.2f",log($mer_ct)) }; warn $@ if $@; 
-    }
-    
-    say $out join "\t", $seqid, "Tallymer", "mathematically_defined_repeat", $offset, $end, $mer_ct, $strand, ".",
-                        join ";", "ID=mathematically_defined_repeat$feat_count","dbxref=SO:0001642";
+    open my $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
+
+    my $seqfile = $fname->filename;
+    $seqhash->{$key} =~ s/.{60}\K/\n/g;      # v5.10 is required to use \K
+
+    say $out join "\n", ">".$key, $seqhash->{$key};
+    close $out;
+
+    return $seqfile;    
+}
+
+sub clean_indexes {
+    my ($dir) = @_;
+
+    my @files;
+    my $wanted  = sub { push @files, $File::Find::name
+		    if -f && /\.llv|\.md5|\.prf|\.tis|\.suf|\.lcp|\.ssp|\.sds|\.des|\.dna|\.esq|\.prj|\.ois|\.mer|\.mbd|\.mct/ };
+    my $process = sub { grep ! -d, @_ };
+    find({ wanted => $wanted, preprocess => $process }, $dir);
+    unlink @files;
 
     return;
+}
+
+sub findprog {
+    my ($prog) = @_;
+    my $exe;
+
+    my $gt = File::Spec->catfile($ENV{HOME}, '.tephra', 'gt', 'bin', 'gt');
+    if (-e $gt && -x $gt) {
+        return $gt;
+    }
+
+    my @path = split /\:|\;/, $ENV{PATH};    
+    for my $p (@path) {
+        my $full_path  = File::Spec->catfile($p, $prog);
+        if (-e $full_path && -x $full_path) {
+            $exe = $full_path;
+        }
+    }
+ 
+    if (! defined $exe) {
+        say STDERR "\nERROR: $prog could not be found. Try extending your PATH to the program. Exiting.\n";
+    }
+    else {
+        return $exe;
+    }
 }
 
 sub usage {
     my $script = basename($0);
   print STDERR <<END
 
-USAGE: $script -i contig.fas -t target.fas -k 20 -o contig_target.gff [--log] [--filter] [--clean] [-r] [-s] [-e] [-idx]
+USAGE: $script -i contig.fas -t target.fas -k 20 -o contig_target.gff [--log] [--filter] [--clean] [--ratio] 
 
 Required:
-    -i|infile       :    Fasta file to search (contig or chromosome).
-    -o|outfile      :    File name to write the gff to.
+    -i|infile       :    FASTA file to search (contig or chromosome).
+    -o|outfile      :    File name to write the GFF3 to.
 
 Options:
-    -t|target       :    Fasta file of WGS reads to index.
-    -k|kmerlen      :    Kmer length to use for building the index.
-    -e|esa          :    Build the suffix array from the WGS reads (--target) and exit.
-    -s|search       :    Just search the (--infile). Must specify an existing index.
-    -r|ratio        :    Repeat ratio to use for filtering simple repeats (must be used with --filter).
-    -idx|index      :    Name of the index (if used with --search option, otherwise leave ignore this option).
-    --filter        :    Filter out simple repeats including di- and mononucleotides. (In testing phase)
+    -t|target       :    FASTA file of WGS reads to index.
+    -k|kmerlen      :    K-mer length to use for building the index (Default: 20).
+    -r|ratio        :    Repeat ratio to use for filtering simple repeats (<float>, must be used with --filter; Default: 0.80).
+    -idx|index      :    Name of the index to use (instead of creating new index files each run).
+    --filter        :    Filter out simple repeats including di- and mononucleotides.
     --log           :    Return the log number of matches instead of the raw count.
-    --clean         :    Remove all the files generated by this script. This does not currently touch any of
-                         the Tallymer suffix or index files. 			 
-    --quiet         :    Do not print progress or program output.
+    --clean         :    Remove all the files generated by this script.
 	
 END
 }
