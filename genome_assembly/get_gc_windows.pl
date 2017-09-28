@@ -4,17 +4,15 @@ use 5.010;
 use strict;
 use warnings;
 use autodie;
+use File::Basename;
 use Sort::Naturally;
 use Bio::DB::HTS::Kseq;
 use Bio::DB::HTS::Faidx;
-#use Data::Dump::Color;
 
-my $usage = "$0 seq";
+my $usage = "USAGE: perl ".basename($0)." genome.fasta\n";
 my $seqfile = shift or die $usage;
 
 my $windows = make_windows($seqfile);
-#dd $windows and exit(1);
-
 my $index = Bio::DB::HTS::Faidx->new($seqfile);
 
 my %bins;
@@ -27,7 +25,7 @@ for my $chr (nsort keys %$windows) {
 	my $id = "$chr:$start-$end";
 	my ($seq, $len)  = $index->get_sequence($id);
 	unless ($len) {
-	    say STDERR "DEBUG:\n$id has zero length.";
+	    say STDERR "DEBUG:\n$id has zero length. Exiting to avoid artifacts.\n";
 	    exit;
 	}
 	my $gc_num = $seq =~ tr/GCgc/GCgc/;
