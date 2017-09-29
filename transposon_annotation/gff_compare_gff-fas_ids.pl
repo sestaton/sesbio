@@ -16,7 +16,7 @@ use Bio::GFF3::LowLevel qw(gff3_parse_feature gff3_format_feature);
 #use Data::Dump::Color;
 use Carp 'croak';
 
-my $usage = "$0 gff.gz fasta.gz";
+my $usage = "USAGE: ".basename($0)." gff.gz fasta.gz";
 my $gff = shift or die $usage;
 my $fas = shift or die $usage;
 
