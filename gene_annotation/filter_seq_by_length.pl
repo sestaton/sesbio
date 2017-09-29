@@ -19,7 +19,7 @@ S. Evan Staton
 
 =head1 CONTACT
  
-statonse at gmail dot com
+evan at evanstaton dot com
 
 =head1 REQUIRED ARGUMENTS
 
