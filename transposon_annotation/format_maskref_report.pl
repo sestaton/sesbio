@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+## NB: for debugging 'tephra masref' please ignore
+
 use 5.010;
 use strict;
 use warnings;
