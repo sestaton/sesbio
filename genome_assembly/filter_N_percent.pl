@@ -69,11 +69,12 @@ sub get_outfh {
 sub usage {
     my $script = basename($0);
     print STDERR<<EOF
-USAGE: $script [-i] [-o] [-l] [-h] [-m]
+
+USAGE: $script [-i] [-o] [-p] [-h] [-m]
 
 Required:
-     -i|infile         :      A fastq file.
-     -o|outfile        :      A fastq file with trailing Bs as quality encodings removed.
+     -i|infile         :      A FASTQ file.
+     -o|outfile        :      The FASTQ file to filter by some N% threshold.
 
 Options:
     -p|percent        :       The threshold of N% above which reads will be discarded (Default: 50).
