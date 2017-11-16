@@ -16,62 +16,33 @@ use Bio::GFF3::LowLevel qw(gff3_parse_feature gff3_format_feature);
 #use Data::Dump::Color;
 use Carp 'croak';
 
-my $usage = "$0 gff.gz fasta.gz";
+my $usage = "USAGE: ".basename($0)." gff.gz fasta.gz";
 my $gff = shift or die $usage;
 my $fas = shift or die $usage;
 
 my ($header, $features) = collect_all_gff_features($gff);
 #dd $features and exit;
 my $fas_ids = get_ids($fas);
+#dd $fas_ids and exit;
 
 my $gff_ids = {};
-for my $rep_region (map  { $_->[0] }
-		    sort { ncmp($a->[1], $b->[1]) || $a->[2] <=> $b->[2] }
-		    map  { [ $_, /(\w+(?:\d+\w+)?(?:\d+)?)\|\|\w+\d+\|\|(\d+)\|\|\d+/ ] } keys %$features) {
-
+for my $rep_region (keys %$features) {
     my ($chr, $rreg_id, $rreg_start, $rreg_end) = split /\|\|/, $rep_region;
     my ($feats, $source, $region, $seq_id, $start, $end, $strand, $type);
-
-    if ($rreg_id =~ /DHH/) {
-        my $feature = shift @{$features->{$rep_region}};
-	my $region = @{$feature->{attributes}{ID}}[0];
-	my ($seq_id, $start, $end, $strand) = @{$feature}{qw(seq_id start end strand)}; 
-	my $id = join "_", $region, $seq_id, $start, $end;
-	$gff_ids->{$id} = 1;
-    }
-    else { 
-
-	for my $feature (@{$features->{$rep_region}}) {
-	    ($seq_id, $source, $start, $end, $strand)
-		= @{$feature}{qw(seq_id source start end strand)};
-	    
-	    if ($feature->{type} eq 'LTR_retrotransposon') {
-		$region = @{$feature->{attributes}{ID}}[0];
-		($seq_id, $start, $end) = @{$feature}{qw(seq_id start end)};
-		my $family = @{$feature->{attributes}{family}}[0];
-		my $id = join "_", $family, $region, $seq_id, $start, $end;
-		$gff_ids->{$id} = 1;
-	    }
-	    
-	    if ($feature->{type} eq 'non_LTR_retrotransposon') {
-		$region = @{$feature->{attributes}{ID}}[0];
-		my $superfamily = @{$feature->{attributes}{Name}}[0];
-		($seq_id, $start, $end) = @{$feature}{qw(seq_id start end)};
-		my $id = join "_", $superfamily, $region, $seq_id, $start, $end;
-		$gff_ids->{$id} = 1;
-	    }
-	    
-	    if ($feature->{type} eq 'terminal_inverted_repeat_element') {
-		#HanXRQCP TIRvish terminal_inverted_repeat_element 62679 64963 . ? . ID=terminal_inverted_repeat_element1;Parent=repeat_region1;superfamily=DTX;tir_similarity=89.66
-		$region = @{$feature->{attributes}{ID}}[0];
-		($seq_id, $start, $end, $strand) = @{$feature}{qw(seq_id start end strand)};
-		my $superfamily = @{$feature->{attributes}{superfamily}}[0];
-		my $id = join "_", $superfamily, $region, $seq_id, $start, $end;
-		$gff_ids->{$id} = 1;
-	    }
+    for my $feature (@{$features->{$rep_region}}) {
+	($seq_id, $source, $start, $end, $strand)
+	    = @{$feature}{qw(seq_id source start end strand)};
+	
+	if ($feature->{type} =~ /helitron|LTR_retrotransposon|TRIM_retrotransposon|terminal_inverted_repeat_element/) {
+	    $region = @{$feature->{attributes}{ID}}[0];
+	    my $family = @{$feature->{attributes}{family}}[0];
+	    ($seq_id, $start, $end) = @{$feature}{qw(seq_id start end)};
+	    my $id = join "_", $family, $region, $seq_id, $start, $end;
+	    $gff_ids->{$id} = 1;
 	}
+	
     }
-}
+
 
 say join "\n", scalar(keys %$fas_ids), scalar(keys %$gff_ids);
 use Test::More tests => 1;
@@ -122,7 +93,8 @@ sub collect_all_gff_features {
         chomp $line;
         next if $line =~ /^#/;
 	my $feature = gff3_parse_feature( $line );
-	if ($feature->{type} eq 'helitron') { 
+	next if $feature->{type} =~ /solo_LTR|similarity/;
+	if ($feature->{type} =~ /helitron|non_LTR_retrotransposon/) { 
 	    $region = @{$feature->{attributes}{ID}}[0];
 	    #$region = @{$feature->{attributes}{Ontology_term}}[0];
 	    $key = join "||", $feature->{seq_id}, $region, $start, $end;
@@ -135,7 +107,8 @@ sub collect_all_gff_features {
 	    $key = join "||", $feature->{seq_id}, $region, $start, $end;
 
         }
-	if ($feature->{type} ne 'repeat_region') {
+	if ($feature->{type} !~ /repeat_region|helitron|non_LTR_retrotransposon/) {
+	    dd $feature and exit unless defined $start and defined $end;
             if ($feature->{start} >= $start && $feature->{end} <= $end) {
 		push @{$features{$key}}, $feature;
             }

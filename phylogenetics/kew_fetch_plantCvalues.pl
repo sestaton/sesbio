@@ -17,18 +17,20 @@ each column are family, subfamily, tribe, genus, species, chromosome number, plo
 and genome size (listed as 1C (Mbp) estimates). 
 
 Note that some species have no ploidy level or chromosome number estimate as in the first 
-two species in the example below. This is because these values are not listed in the Kew database. 
-Also note that the subfamily and tribe for some species is not listed, as with the third and fourth 
-species below, because these species are not in the NCBI Entrez Taxonomy database. Please note that 
-neither of these features are because of an error with this script, but rather a reflection of what 
-information is present in each database. In addition,the subfamily and tribe may actually be incorrect 
-because these values are missing from NCBI so the taxonomic rank that is expected to be subfamily and 
-tribe is printed.
+two species in the example below (all missing information is indicated with a question mark). 
+This is because these values are not listed in the Kew database. 
 
-ASTERACEAE      Cichorioideae   Hypochaeridinae Leontodon       longirostris                    391
+Also note that the subfamily and tribe for some species is not listed, as with the third and fourth 
+species below, because these species are not in the NCBI Entrez Taxonomy database. Neither of these 
+examples are because of an error with this script, but rather a reflection of what 
+information is present in each database. In addition, the subfamily and tribe may actually be incorrect 
+because these values are missing from NCBI so the taxonomic rank that is expected to be subfamily and 
+tribe is printed. Use the full lineage information with caution.
+
+ASTERACEAE      Cichorioideae   Hypochaeridinae Leontodon       longirostris    ?       ?       391
 ASTERACEAE      Asteroideae     Senecioninae    Pericallis      appendiculata   60      6       533
-ASTERACEAE                                      Taraxacum       linearisquameum 16      2       866
-ASTERACEAE                                      Centaurea       cuneifolia      18      2       870
+ASTERACEAE      ?               ?               Taraxacum       linearisquameum 16      2       866
+ASTERACEAE      ?               ?               Centaurea       cuneifolia      18      2       870
 
 
 (...)
@@ -36,8 +38,8 @@ ASTERACEAE                                      Centaurea       cuneifolia      
 =head1 DEPENDENCIES
 
 This client uses URI to format data for a request, and HTTP::Tiny
-to perform a request. libxml2-devel is required (used by XML::LibXML)
-for parsing XML.
+to perform a request. HTML::TableExtract and libxml2-devel are required 
+(used by XML::LibXML) for parsing the response (the HTML and XML, respectively).
 
 =head1 LICENSE
 
@@ -85,20 +87,21 @@ Print the full documentation.
 
 =cut      
 
-##TODO: get return type (2C Mbp, 1C Mbp, etc...) Currently, 1C Mbp is returned 
-##      add method for donating or supporting Kew gardens, at least in the documentation
-##
-##      make returning full lineage an option rather than default
+##TODO: - get different return type (2C Mbp, 1C Mbp, etc...) Currently, 1C Mbp is returned 
+##      - make returning full lineage an option rather than default
+##      - add keys to form fields instead of redefining all fields for each database
 
 use 5.010;
 use strict;
 use warnings;
 use File::Basename;
+use HTML::TableExtract;
 use HTTP::Tiny;
 use XML::LibXML;
 use URI;
 use Pod::Usage;
 use Time::HiRes qw(gettimeofday);
+use open qw(:utf8);
 use Getopt::Long;
 
 my $family;
@@ -149,37 +152,38 @@ if ($db) {
 my $t0 = gettimeofday();
 my $records = 0;
 
+# Open output for results   
+open my $kew_results, '>', $outfile or die "\nERROR: Could not open file: $outfile\n";
+
 # Make the request
 my $url = geturlfordb($db,$email,$family);
 my $response = fetch_file($url, $kew_response);
 
-# Open and parse the results
-open my $xhtml, '<', $kew_response or die "\nERROR: Could not open file: $kew_response";
-open my $kew_results, '>', $outfile or die "\nERROR: Could not open file: $outfile";
+my $te = HTML::TableExtract->new( attribs => { class => q{listing} } );
+$te->parse_file($kew_response);
 
-while (my $cvalues = <$xhtml>) {
-    chomp $cvalues;
-    my $FAM = uc($family);
-    while ($cvalues =~ m/($FAM)<.*?><.*?>(\w+)<.*?><.*?>(\w+.*?)<.*?><.*?>(\d+|)<.*?><.*?>(\d+|)<.*?><.*?>(\d+)/g) {
+for my $ts ($te->tables) {
+    for my $row ($ts->rows) {
+	my ($kewfam, $genus, $species, $chrnum, $ploidy, $cval) = map { defined ? $_ : "?" } @$row;
+	next unless $kewfam =~ /$family/i;
 	$records++;
-	my ($kewfam, $genus, $species, $chrnum, $ploidy, $cval) = ($1, $2, $3, $4, $5, $6);
-	$species =~ s/\(.*//;
-	my $entrezid = search_by_name($genus, $species);
-	my $lineage = get_lineage_for_id($entrezid);
+	$species =~ s/\s+\(?.*//;
+
+	my ($web, $key) = search_by_name($genus, $species);
+	my $lineage = get_lineage_for_id($web, $key);
 	$lineage = $kewfam unless $lineage;
 	say $kew_results join "\t", $lineage, $genus, $species, $chrnum, $ploidy, $cval;
     }
 }
-
-close $xhtml;
 close $kew_results;
 unlink $kew_response;
 
 my $t1 = gettimeofday();
 my $elapsed = $t1 - $t0;
-my $time = sprintf("%.2f",$elapsed/60);
+my $time = sprintf("%.2f", $elapsed/60);
 
-say "Fetched $records records in $time m:s.";
+say "=====> Fetched $records records for ".ucfirst($family)." in $time (minutes:seconds)";
+say "=====> Consider donating to the Kew Gardens to support the Plant DNA C-values Database: https://support.kew.org/donate/givetokew";
 
 exit;
 #
@@ -210,16 +214,16 @@ sub search_by_name {
 
     $genus   = lcfirst($genus);
     $species = lc($species);
-    my $id   = fetch_id_for_name($genus, $species);
+    my ($id, $web, $key) = fetch_id_for_name($genus, $species);
 
-    return $id;
+    return ($id, $web, $key);
 }
 
 sub get_lineage_for_id {
-    my ($id) = @_;
-    my $esumm = "esumm_$id.xml"; 
+    my ($web, $key) = @_;
+    my $esumm = "esumm_$web.xml"; 
  
-    my $urlbase  = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=$id";
+    my $urlbase  = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&query_key=$key&WebEnv=$web";
     my $response = fetch_file($urlbase, $esumm);
 
     my $parser = XML::LibXML->new;
@@ -235,6 +239,7 @@ sub get_lineage_for_id {
 	#say "Full taxonomic lineage: $lineage";
     }
     unlink $esumm;
+
     if ($lineage) {
 	$lineage =~ s/;/\t/g;
 	return $lineage;
@@ -248,21 +253,24 @@ sub fetch_id_for_name {
     my ($genus, $species) = @_;
 
     my $esearch = "esearch_$genus"."_"."$species.xml";
-    my $urlbase = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?";
-    $urlbase    .= "db=taxonomy&term=$genus%20$species";
-    my $reponse = fetch_file($urlbase, $esearch);
+    my $urlbase = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?";
+    $urlbase    .= "db=taxonomy&term=$genus%20$species&usehistory=y";
+    my $response = fetch_file($urlbase, $esearch);
 
-    my $id;
+    #my $id;
+    my ($web, $key);
     my $parser = XML::LibXML->new;
     my $doc    = $parser->parse_file($esearch);
     
-    for my $node ( $doc->findnodes('//eSearchResult/IdList') ) {
-	($id) = $node->findvalue('Id/text()');
+    for my $node ( $doc->findnodes('//eSearchResult') ) {
+	#($id)  = $node->findvalue('IdList/Id/text()');
+	($web) = $node->findvalue('WebEnv/text()');
+	($key) = $node->findvalue('QueryKey/text()');
     }
-    
     unlink $esearch;
     
-    return $id;
+    #return $id;
+    return ($web, $key);
 }
 
 sub fetch_file {
@@ -289,7 +297,7 @@ sub geturlfordb {
 	$url->query_form(
 			 'generatedby'         => $database,  
 			 'querytype'           => "-1",    
-			 'txtEmail'            => $em,       # uri_escape() from URI::Escape is called automatically. Nice!
+			 'txtEmail'            => $em,   # uri_escape() from URI::Escape is called automatically. Nice!
 			 'chkFamily'           => "on",
 			 'selectfamilytype'    => "phyloFam",
 			 'chkGenus'            => "on",
@@ -312,7 +320,7 @@ sub geturlfordb {
 			 'txtFromPloidy'       => "",
 			 'txtToPloidy'         => "",
 			 'rdoVoucher'          => "2",
-			 'cmbLifeCycle'        => "0",    # different for algae
+			 'cmbLifeCycle'        => "0",   # different for algae
 			 'rdoAngioGroup'       => "3",
 			 'cmbSort'             => "0",
 			);

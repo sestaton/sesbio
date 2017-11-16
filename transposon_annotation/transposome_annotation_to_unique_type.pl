@@ -18,7 +18,7 @@ while (<$in>) {
     chomp;
     next if /^ReadNum/;
     my @f = split;
-    push @{$res{$f[1]}}, { $f[2] => $f[5] };
+    push @{$res{$f[1]}}, { $f[2] => $f[4] };
 }
 close $in;
 

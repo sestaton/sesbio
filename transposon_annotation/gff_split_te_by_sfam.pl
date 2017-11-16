@@ -6,7 +6,7 @@ use 5.010;
 use strict;
 use warnings;
 use Sort::Naturally;
-use Bio::DB::HTS::Kseq;
+use Bio::DB::HTS::Faidx;
 use Bio::GFF3::LowLevel qw(gff3_parse_feature gff3_format_feature);
 use List::Util          qw(uniq);
 use Tephra::Annotation::Util;
@@ -15,11 +15,11 @@ use Getopt::Long;
 #use Data::Dump::Color;
 
 my %opts;
-GetOptions(\%opts, 'gfffile|i=s', 'split|s');
+GetOptions(\%opts, 'gfffile|i=s', 'genome|g=s', 'split|s');
 
-my $usage = "\nUSAGE: $0 -i genome.gff <--split>
+my $usage = "\nUSAGE: $0 -i genome.gff -g genome.fas <--split>
 
-NB: The optional '--split' argument will split each superfamily into separate GFF3 files.\n\n";
+NB: The optional '--split' argument will split each superfamily into separate GFF3 and FASTA files.\n\n";
 
 unless ($opts{gfffile} && -e $opts{gfffile}) {
     say STDERR "\nERROR: --gfffile argument is missing or the file does not exist. Check input.\n";
@@ -27,13 +27,19 @@ unless ($opts{gfffile} && -e $opts{gfffile}) {
     exit(1);
 }
 
+if ($opts{split} && !$opts{genome}) { 
+    say STDERR "\nERROR: The --genome argument is required with the --split option. Check input.\n";
+    say STDERR $usage;
+    exit(1);
+}
+
 my ($header, $features) = collect_gff_features($opts{gfffile});
-my $sfams = collate_features_by_superfamily($features);
+my ($sfams, $coords) = collate_features_by_superfamily($features);
 my ($stats, $total) = compute_feature_stats($sfams);
 write_te_stats($stats, $total);
 
 if ($opts{split}) { 
-    split_gff3_by_superfamily($sfams);
+    split_gff3_by_superfamily($sfams, $coords, $opts{genome});
 }
 
 exit;
@@ -99,6 +105,7 @@ sub compute_feature_stats {
 	    my $min = $stat->min;
 	    my $max = $stat->max;
 	    my $ct  = $stat->count;
+	    my $sd  = $stat->standard_deviation;
 	    $total += $ct;
 
 	    $reduced{$class}{ $stats{$class}{$name}{order} }{$name}{families} = @fams;
@@ -106,6 +113,7 @@ sub compute_feature_stats {
             $reduced{$class}{ $stats{$class}{$name}{order} }{$name}{length}{mean} = $ave;
             $reduced{$class}{ $stats{$class}{$name}{order} }{$name}{length}{min} = $min;
             $reduced{$class}{ $stats{$class}{$name}{order} }{$name}{length}{max} = $max;
+	    $reduced{$class}{ $stats{$class}{$name}{order} }{$name}{length}{stddev} = $sd;
 
 	    if (defined $stats{$class}{$name}{protein_matches}) {
 		$reduced{$class}{ $stats{$class}{$name}{order}  }{$name}{protein_matches} = $stats{$class}{$name}{protein_matches};
@@ -121,7 +129,7 @@ sub collate_features_by_superfamily {
 
     my $util = Tephra::Annotation::Util->new;
 
-    my %sfams;
+    my (%sfams, %coords);
     my ($seq_id, $source, $fstart, $fend, $sfam);
     for my $chr (nsort keys %$features) {
 	for my $rreg (
@@ -132,8 +140,8 @@ sub collate_features_by_superfamily {
             
 	    if ($rreg =~ /helitron|non_LTR_retrotransposon/i) {
 		my $feat = @{$features->{$chr}{$rreg}}[0];
-		my $fam_id = @{$feat->{attributes}{family}}[0];
-		
+		my $fam_id = @{$feat->{attributes}{family}}[0];		
+
 		my $sf;
 		if (defined $fam_id && $fam_id !~ /^0$/) { 
 		    $sf = $util->map_superfamily_name($fam_id);
@@ -146,6 +154,7 @@ sub collate_features_by_superfamily {
 		}
 		
 		push @{$sfams{$sf}{$chr}}, $feat;
+		$coords{$sf}{ @{$feat->{attributes}{ID}}[0] } = join "||", $feat->{seq_id}, $fam_id, $feat->{start}, $feat->{end};
 	    }
 	    elsif ($rreg =~ /repeat_region/) {
 		for my $feature (@{$features->{$chr}{$rreg}}) {
@@ -155,17 +164,45 @@ sub collate_features_by_superfamily {
 			$sfam = $util->map_superfamily_name($id);
 			#say STDERR join q{ }, $id, $sfam;
 			push @{$sfams{$sfam}{$chr}}, $features->{$chr}{$rreg};
+			$coords{$sfam}{ @{$feature->{attributes}{ID}}[0] } = 
+			    join "||", $feature->{seq_id}, $id, $feature->{start}, $feature->{end};
 		    }
 		}
 	    }
 	}   
     }
 
-    return \%sfams;
+    return (\%sfams, \%coords);
 }
 
 sub split_gff3_by_superfamily {    
-    my ($sfams) = @_;
+    my ($sfams, $coords, $genome) = @_;
+
+    my $faidx = Bio::DB::HTS::Faidx->new($genome);
+
+    for my $sfam_id (nsort keys %$coords) {
+	my $outfile;
+	if ($sfam_id =~ /\//) {
+	    my $tmp_id = $sfam_id;
+	    $tmp_id =~ s/\//-/g;
+	    $outfile = $tmp_id.'_tephra_features.fasta';
+	}
+	else {
+	    $outfile = $sfam_id.'_tephra_features.fasta';
+	}
+	open my $outf, '>', $outfile or die $!;
+
+	for my $id (nsort keys %{$coords->{$sfam_id}}) {
+	    my ($chr, $fam_id, $start, $end) = split /\|\|/, $coords->{$sfam_id}{$id};
+	    my $idx = "$chr:$start-$end";
+	    my ($seq, $len) = $faidx->get_sequence($idx);
+	    my $seq_id = join "_", $fam_id, $id, $chr, $start, $end;
+	    $seq =~ s/.{60}\K/\n/g;
+
+	    say $outf join "\n", ">$seq_id", $seq;
+	}
+	close $outf;
+    }
 
     for my $sfam (nsort keys %$sfams) {
 	my $sfam_id = $sfam;
@@ -236,7 +273,6 @@ sub collect_gff_features {
             $region = @{$feature->{attributes}{ID}}[0];
             ($start, $end) = @{$feature}{qw(start end)};
 	    $key = join "||", $region, $start, $end;
-
         }
 	if ($feature->{type} !~ /repeat_region|gene|exon|intron|_utr|cds|rna|similarity|helitron|non_LTR_retrotransposon/i) {
             if ($feature->{start} >= $start && $feature->{end} <= $end) {
@@ -312,6 +348,7 @@ sub write_te_stats {
 		$s .= "$pad\tMean: $stats->{$class}{$order}{$name}{length}{mean}\n";
 		$s .= "$pad\tMinimum: $stats->{$class}{$order}{$name}{length}{min}\n";
 		$s .= "$pad\tMaximum: $stats->{$class}{$order}{$name}{length}{max}\n";
+		$s .= "$pad\tStandard deviation: $stats->{$class}{$order}{$name}{length}{stddev}\n";
 		$pad =~ s/\t$// if $class =~ /Class II/;
 	    }
 	}
