@@ -221,10 +221,10 @@ sub search_by_name {
 
 sub get_lineage_for_id {
     my ($web, $key) = @_;
-    my $esumm = "esumm_$web.xml"; 
- 
-    my $urlbase  = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&query_key=$key&WebEnv=$web";
-    #my $response = fetch_file($urlbase, $esumm);
+
+    my $esumm   = "esumm_$web.xml"; 
+    my $urlbase = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?";
+    $urlbase   .= "db=taxonomy&query_key=$key&WebEnv=$web";
 
     my $success = retry(3, \&fetch_file, $urlbase, $esumm);
     # TODO: if we fail, try other method before giving up
@@ -257,8 +257,7 @@ sub fetch_id_for_name {
 
     my $esearch = "esearch_$genus"."_"."$species.xml";
     my $urlbase = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?";
-    $urlbase    .= "db=taxonomy&term=$genus%20$species&usehistory=y";
-    #my $response = fetch_file($urlbase, $esearch);
+    $urlbase   .= "db=taxonomy&term=$genus%20$species&usehistory=y";
 
     my $success = retry(3, \&fetch_file, $urlbase, $esearch);
     # TODO: if we fail, try other method before giving up
