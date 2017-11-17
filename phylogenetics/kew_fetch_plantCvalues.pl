@@ -10,7 +10,7 @@ kew_fetch_plantCvalues.pl -f familyname -e email -o resultsfile
 
 =head1 DESCRIPTION
                                                                    
-This is a  web client to fetch C-values for a plant family from the Kew Royal Botanic 
+This is a web client to fetch C-values for a plant family from the Kew Royal Botanic 
 Gardens database (http://data.kew.org/cvalues/) that returns a file sorted by ascending 
 genome size for each species in the database as in the example shown below. The data in 
 each column are family, subfamily, tribe, genus, species, chromosome number, ploidy level, 
@@ -224,10 +224,13 @@ sub get_lineage_for_id {
     my $esumm = "esumm_$web.xml"; 
  
     my $urlbase  = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&query_key=$key&WebEnv=$web";
-    my $response = fetch_file($urlbase, $esumm);
+    #my $response = fetch_file($urlbase, $esumm);
+
+    my $success = retry(3, \&fetch_file, $urlbase, $esumm);
+    # TODO: if we fail, try other method before giving up
 
     my $parser = XML::LibXML->new;
-    my $doc    = $parser->parse_file($esumm);
+    my $doc = $parser->parse_file($esumm);
 
     my ($lineage, $family);
     for my $node ( $doc->findnodes('//TaxaSet/Taxon') ) {
@@ -255,12 +258,15 @@ sub fetch_id_for_name {
     my $esearch = "esearch_$genus"."_"."$species.xml";
     my $urlbase = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?";
     $urlbase    .= "db=taxonomy&term=$genus%20$species&usehistory=y";
-    my $response = fetch_file($urlbase, $esearch);
+    #my $response = fetch_file($urlbase, $esearch);
+
+    my $success = retry(3, \&fetch_file, $urlbase, $esearch);
+    # TODO: if we fail, try other method before giving up
 
     #my $id;
     my ($web, $key);
     my $parser = XML::LibXML->new;
-    my $doc    = $parser->parse_file($esearch);
+    my $doc = $parser->parse_file($esearch);
     
     for my $node ( $doc->findnodes('//eSearchResult') ) {
 	#($id)  = $node->findvalue('IdList/Id/text()');
@@ -289,8 +295,32 @@ sub fetch_file {
     return $response;
 }
 
+sub retry {
+    my ($attempts, $func, $urlbase, $outfile) = @_;
+    
+    attempt : {
+	my $result;
+
+      # if it works, return the result
+      return $result if eval { $result = $func->($urlbase, $outfile); 1 };
+
+      # if we have 0 remaining attempts, stop trying.
+      last attempt if $attempts < 1;
+
+      # sleep for 1 second, and then try again.
+      sleep 1;
+      $attempts--;
+      redo attempt;
+    }
+
+    say STDERR "\nERROR: Failed to get response after multiple attempts: $@. Will retry one more time.";
+    return 0;
+}
+
+
 sub geturlfordb {
     my ($database, $em, $fam) = @_;
+
     my $url = URI->new('http://data.kew.org/cvalues/CvalServlet');
     
     if ($database =~ m/angiosperm/i) {
