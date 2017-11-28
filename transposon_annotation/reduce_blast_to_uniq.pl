@@ -18,11 +18,12 @@
 use 5.010;
 use strict;
 use warnings;
+use autodie;
 use Sort::Naturally;
 use Bio::DB::HTS::Kseq;
 use Data::Dump::Color;
 
-my $usage = "fafile.faa blast.bln";
+my $usage = "query_protfile.faa blast.bln";
 my $fasta = shift or die $usage;
 my $blast = shift or die $usage;
 
