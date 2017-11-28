@@ -316,7 +316,6 @@ sub retry {
     return 0;
 }
 
-
 sub geturlfordb {
     my ($database, $em, $fam) = @_;
 
