@@ -62,25 +62,25 @@ while (<$in>) {
 	$saln_len = $f[9] - $f[8] + 1;
 	$sstrand = '+';
 	($saln_start, $saln_end) = @f[8,9];
-	$scoords = join"||", @f[8,9];
+	$scoords = join "||", @f[8,9];
     }
     if ($f[6] > $f[7]) {
 	$qaln_len = $f[6] - $f[7] + 1;
 	$qstrand = '-';
 	($qaln_start, $qaln_end) = @f[7,6];
-	$qcoords = join"||", @f[7,6];
+	$qcoords = join "||", @f[7,6];
     }
     else {
 	$qaln_len = $f[7] - $f[6] + 1;
 	$qstrand = '+';
 	($qaln_start, $qaln_end) = @f[6,7];
-	$qcoords = join"||", @f[6,7];
+	$qcoords = join "||", @f[6,7];
     }
  
     my $qaln_perc = sprintf("%.2f",($qaln_len/$qlen)*100);
     my $saln_perc = sprintf("%.2f",($saln_len/$slen)*100);
 
-    if ($qaln_perc >= 50 && $f[2] >= 50) { 
+    if ($qaln_perc == 100 && $f[2] >= 99.5) { 
 	push @{$hits{$f[1]}}, join "~~", @f[0..5], $qaln_start, $qaln_end, $saln_start, $saln_end, @f[10..11], $qstrand, $sstrand;
     }
 }
