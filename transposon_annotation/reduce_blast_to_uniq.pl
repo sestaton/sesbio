@@ -39,7 +39,7 @@ while (<$in>) {
     
     # adjust regex, which will inevitably be unique for nearly every genome
     ## TODO: print warning about ID formats, which need to be handling carefully for this to work
-    my ($chr, $sstart, $send) = ($f[1] =~ /(MtrunA17(?:MT|CP)?(?:Chr\d+)?(?:\w+\d+)?)_(\d+)_(\d+)(?:_fragment_)?/);
+    my ($chr, $sstart, $send) = ($f[1] =~ /(MtrunA17(?:MT|CP)?(?:Chr\d+)?(?:\w+\d+)?)_(\d+)_(\d+)$/);
     unless (defined $sstart && defined $send) {
 	say "\nERROR: $_";
 	exit;
