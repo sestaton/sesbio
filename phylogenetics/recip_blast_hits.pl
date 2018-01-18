@@ -39,10 +39,12 @@ while (my $qline = <$query>) {
     die "\nERROR: The input must be a tab-delimited BLAST report. Exiting.\n"
 	unless @query_fields == 12;
 
+    #$query_fields[0] =~ s/_.*//;
     my $hkey = join ",", @query_fields[0..1];
     $qhash{$hkey} = join "~~", @query_fields[2..3], @query_fields[10..11];
 }
 
+my %seen;
 say $out "Query\tHit\tPID_query\tHSP_len_query\tEval_query\tBits_query\tPID_hit\tHSP_len_hit\tEval_hit\tBits_hit";
 
 while (my $sline = <$subj>) {
@@ -51,14 +53,18 @@ while (my $sline = <$subj>) {
     my @subj_fields = split /\t/, $sline;
     die"\nERROR: The input must be a tab-delimited BLAST report. Exiting.\n"
 	unless @subj_fields == 12;
+    #$subj_fields[1] =~ s/_.*//;
+    next if exists $seen{$subj_fields[1]};
+    my $key = join ",", @subj_fields[0,1];
+    my $rkey = join ",",@subj_fields[1,0];
 
-    while (my ($qid, $qhit) = each %qhash) {
-	my ($qq, $qh) = split /\,/, $qid;
-	my ($qpid, $qaln_len, $qeval, $qbits) = split /\~\~/, $qhit;
-	if ($qq =~ /$subj_fields[1]/ && $qh =~ /$subj_fields[0]/) {
-	    $recip_hit++;
-	    say $out join "\t", $qq,$qh,$qpid,$qaln_len,$qeval,$qbits,@subj_fields[2..3],@subj_fields[10..11];
-	}
+    if (exists $qhash{$rkey}) {
+	my ($qq, $qh) = split /\,/, $rkey;
+	my ($qpid, $qaln_len, $qeval, $qbits) = split /\~\~/, $qhash{$rkey};
+
+	$recip_hit++;
+	say $out join "\t", $qq,$qh,$qpid,$qaln_len,$qeval,$qbits,@subj_fields[2..3],@subj_fields[10..11];
+	$seen{$subj_fields[1]} = 1;
     }
 }
 
