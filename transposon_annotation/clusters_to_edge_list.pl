@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
 ##NB: This script requires Graph::GEXF (https://github.com/sestaton/graph-gexf)
+##TODO: add example file formats and role into tests for this library
 
 use 5.012;
 use strict;
@@ -14,7 +15,7 @@ my $hitsort   = shift or die $usage;
 my $clsfile   = shift or die $usage;
 my $clusterid = shift;
 
-$clusterid //= 'CL100';
+$clusterid //= 'CL100'; 
 
 my %nodes;
 my %idmap;
@@ -45,7 +46,7 @@ my $node = 0;
 	my @ids = split /\s+/, $seqids;
 	my @edges;
 	my $graph = Graph::GEXF->new( visualization => 0, graph_mode => 'static' );
-	if ($id =~ /^$clusterid$/) {
+	if ($id eq $clusterid) { # this is just to demonstrate how to make a graph for one cluster
 	    for my $i (@ids) {
 		my $i_j = $idmap{$i};
 		if (exists $nodes{$i}) {
