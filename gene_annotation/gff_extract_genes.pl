@@ -23,10 +23,10 @@ while (my $line = <$in>) {
     next if $line =~ /^#/;
     last if $line =~ />/;
     my @string = split /\t/, $line; 
-    next if $string[0] =~ /HanXRQCP|HanXRQMT/;
+    #next if $string[0] =~ /CP|MT/;
     die $line unless defined $string[2];
     if ($string[2] eq 'gene') {
-	my ($id) = ($string[8] =~ /ID=(\w+\d+);/);
+	my ($id) = ($string[8] =~ /ID=(?:gene:)?(\w+\d+);/);
 	die $line unless defined $id;
 	my ($start, $end) = ($string[3], $string[4]);
 	$genes{$id} = join "||", $string[0], $start, $end;
