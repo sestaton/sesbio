@@ -12,14 +12,16 @@ my $pos = 0;
 
 my $gap_arr = parse_aln($infile);
 
-for my $hash (@$gap_arr) {
-    for my $key (%$hash) {
-	$pos++;
-	if (defined $hash->{$key}) {
-	    say "Looking at pos: $pos"," which contains: ", $hash->{$key};
-	}   
-    }
-}
+# NB: per column alignment results are not very useful, better to not print or give
+# HSP stats
+#for my $hash (@$gap_arr) {
+    #for my $key (%$hash) {
+	#$pos++;
+	#if (defined $hash->{$key}) {
+	    #say "Looking at pos: $pos"," which contains: ", $hash->{$key};
+	#}   
+    #}
+#}
 
 exit;
 #
@@ -35,15 +37,15 @@ sub parse_aln {
 	my $dive = 1-$sim;
 
 	say "align length is: ",$aln->length;
-	say "Num residues is: ",$aln->no_residues;
+	say "Num residues is: ",$aln->num_residues;
 	say "Is flush (bool): ",$aln->is_flush;
-	say "Num sequences:   ",$aln->no_sequences;
+	say "Num sequences:   ",$aln->num_sequences;
 	say "\nPercent ident:   ",sprintf("%.2f", $aln->percentage_identity);
 	say "Similarity:      ",$sim;
 	say "Divergence:      ",$dive,"\n";
 	#say "Cons string(50): ",$aln->consensus_string(50);
 	#say "Cons string: ",$aln->consensus_string;
-	return \$aln->gap_col_matrix;
+	return $aln->gap_col_matrix;
     }
 }
 
