@@ -23,7 +23,7 @@ my $allq = 0;
 my $uniqq = 0;
 my %seen = ();
 
-while (my $lin = <$in>) { 
+while (my $line = <$in>) { 
   chomp $line; 
   $allq++;
   my @blfields = split /\t/, $line;
