@@ -104,29 +104,20 @@ my ($n, $slen, $qlen) = (0, 0, 0);
 
 while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
     $fasnum++;
-    if ($name =~ m/\s+|\;|\:|\(|\)|\./g) {
+    if ($name =~ /\s+|\;|\:|\(|\)|\./) {
 	$headchar++;
-	$name =~ s/\s/\_/g;
-	$name =~ s/\;/\_/g;
-	$name =~ s/\:/\_/g;
-	$name =~ s/\(/\_/g;
-	$name =~ s/\)/\_/g;
-	$name =~ s/\./\_/g;
-	$name =~ s/\|/\_/g;
-	if ($name =~ m/\_+/g) {
-	    $name =~ s/\_+/\_/g;
-	}
+	$name =~ s/\s+|\;|\:|\(|\)|\./_/g;
 	# TODO: shorten the header, optionally
     }
 
-    if ($seq =~ m/\r|\n/) { # Mac
+    if ($seq =~ /\r|\n/) { # Mac
 	$seq =~ s/\r?//;    # PC
 	$seq =~ s/\n//;     # Unix
     }
  
     my @nt = split //, $seq;
     for my $base (@nt) {
-	if ($base !~ m/A|C|G|T|N|a|c|g|t|n/) {
+	if ($base !~ /[ACGTNacgtn]/) {
 	    $non_atgcn++;
 	    $base = "N";
 	}
