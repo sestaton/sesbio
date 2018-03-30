@@ -1,15 +1,19 @@
 #!/usr/bin/env perl
 
-## ABOUT: This is a script that takes a TBLASTN report (-outfmt 6) of protein alignments to a set of full-length TEs,
-##        and will remove overlapping, redundant alignments and also report the strand of the query and subject alignments (very
-##        useful to interpreting the potential role of the acquired gene products).
+## ABOUT: This is a script that takes a TBLASTN report (-outfmt 6) of protein alignments 
+## to a set of full-length TEs, and will remove overlapping, redundant alignments and also 
+## report the strand of the query and subject alignments (very useful to interpreting the 
+## potential role of the acquired gene products).
 ##
-## NB: As of now, there are hard-coded thresholds for 50% identity and 50% coverage of the query alignment to the subject (TE).
-##     This may be changed below but cautious if you reduce these thresholds as it will increase the error rate.
+## NB: As of now, there are hard-coded thresholds for 50% identity and 50% coverage of the 
+## query alignment to the subject (TE).
+## This may be changed below but be cautious if you reduce these thresholds as it will increase 
+## the error rate.
 ##
-##     Last, it is imperative to filter non-specific proteins, binding domains, and TE-related proteins from the report. 
-##     Otherwise, the amount of gene fragments acquired will be inflated. I may add this function in the future (currently handled
-##     by a separate script).
+## Last, it is imperative to filter non-specific proteins, binding domains, and TE-related 
+## proteins from the report. 
+## Otherwise, the amount of gene fragments acquired will be inflated. I may add this function in 
+## the future (currently handled by a separate script).
 ##
 ## AUTHOR: S. Evan Staton <evan at evanstaton.com>
 ## LINK: https://github/sestaton/sesbio
@@ -31,11 +35,13 @@ my $lens = get_lengths($fasta);
 
 open my $in, '<', $blast;
 
-say join "\t", "qid", "sid", "pid", "alnlen", "mism", "gaps", "qstart", "qend", "sstart", "send", "evalue", "bits", "qstrand", "sstrand";
+say join "\t", "qid", "sid", "pid", "alnlen", "mism", "gaps", "qstart", "qend", 
+    "sstart", "send", "evalue", "bits", "qstrand", "sstrand";
+
 my %hits;
-while (<$in>) {
-    chomp;
-    my @f = split /\t/;
+while (my $line = <$in>) {
+    chomp $line;
+    my @f = split /\t/, $line;
     
     # adjust regex, which will inevitably be unique for nearly every genome
     ## TODO: print warning about ID formats, which need to be handling carefully for this to work
