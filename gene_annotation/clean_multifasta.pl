@@ -104,15 +104,15 @@ my ($n, $slen, $qlen) = (0, 0, 0);
 
 while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
     $fasnum++;
-    if ($name =~ /\s+|\;|\:|\(|\)|\./) {
+    if ($name =~ /\s+|\;|\:|\(|\)|\[|\]|\./) {
 	$headchar++;
-	$name =~ s/\s+|\;|\:|\(|\)|\./_/g;
+	$name =~ s/\s+|\;|\:|\(|\)|\[|\]|\./_/g;
 	# TODO: shorten the header, optionally
     }
 
     if ($seq =~ /\r|\n/) { # Mac
-	$seq =~ s/\r?//;    # PC
-	$seq =~ s/\n//;     # Unix
+	$seq =~ s/\r?//;   # PC
+	$seq =~ s/\n//;    # Unix
     }
  
     my @nt = split //, $seq;
