@@ -5,10 +5,10 @@
 ## report the strand of the query and subject alignments (very useful to interpreting the 
 ## potential role of the acquired gene products).
 ##
-## NB: As of now, there are hard-coded thresholds for 50% identity and 50% coverage of the 
+## NB: As of now, there are hard-coded thresholds for 99.5% identity and 100% coverage of the 
 ## query alignment to the subject (TE).
-## This may be changed below but be cautious if you reduce these thresholds as it will increase 
-## the error rate.
+## This may be changed below (lines 35-36) but be cautious if you reduce these thresholds as 
+## it will increase the error rate.
 ##
 ## Last, it is imperative to filter non-specific proteins, binding domains, and TE-related 
 ## proteins from the report. 
@@ -23,13 +23,17 @@ use 5.010;
 use strict;
 use warnings;
 use autodie;
+use File::Basename;
 use Sort::Naturally;
 use Bio::DB::HTS::Kseq;
-use Data::Dump::Color;
+#use Data::Dump::Color;
 
-my $usage = "query_protfile.faa blast.bln";
+my $usage = "USAGE: perl ".basename($0)." query_protfile.faa prot_blast_to_te_db.bln";
 my $fasta = shift or die $usage;
 my $blast = shift or die $usage;
+
+my $cov_thresh = 100;  # coverage theshold
+my $pid_thresh = 99.5; # % identity threshold
 
 my $lens = get_lengths($fasta);
 
@@ -86,7 +90,7 @@ while (my $line = <$in>) {
     my $qaln_perc = sprintf("%.2f",($qaln_len/$qlen)*100);
     my $saln_perc = sprintf("%.2f",($saln_len/$slen)*100);
 
-    if ($qaln_perc == 100 && $f[2] >= 99.5) { 
+    if ($qaln_perc == $cov_thresh && $f[2] >= $pid_thresh) { 
 	push @{$hits{$f[1]}}, join "~~", @f[0..5], $qaln_start, $qaln_end, $saln_start, $saln_end, @f[10..11], $qstrand, $sstrand;
     }
 }
