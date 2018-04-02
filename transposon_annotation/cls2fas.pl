@@ -13,7 +13,7 @@ use File::Basename;
 use File::Path qw(make_path);
 use POSIX      qw(strftime);
 
-my $usage = "$0 -c cls_file -f fasta_file [-s]\n";
+my $usage = "USAGE: perl ".basename($0)." -c cls_file -f fasta_file [-s cluster_size (integer)]\n";
 my $cls_file;
 my $fas_file;
 my $cluster_size;
@@ -36,7 +36,7 @@ $cluster_size //= 500;
 
     open my $cls, '<', $cls_file;
 
-    my $str = POSIX::strftime("%m_%d_%Y_%H_%M_%S", localtime);
+    my $str = strftime("%m_%d_%Y_%H_%M_%S", localtime);
     my ($iname, $ipath, $isuffix) = fileparse($cls_file, qr/\.[^.]*/);
     my $cls_dir_base = $iname;
     $cls_dir_base =~ s/\.[^.]+$//;
@@ -77,7 +77,7 @@ sub fas2hash {
 
     my %seqhash;
     while (my $line = <$fas>) {
-	my ($seqid, $seq) = split /\n/, $line;;
+	my ($seqid, $seq) = split /\n/, $line;
 	$seqhash{$seqid} = $seq;
     }
     close $fas;
