@@ -5,7 +5,6 @@ use strict;
 use warnings;
 use LWP::UserAgent;
 use HTML::TableExtract;
-use Data::Dump::Color;
 
 my $outfile  = 'tair_tetable.html';
 my $ua       = LWP::UserAgent->new;
