@@ -3,7 +3,7 @@
 
 # 2. Run PRINSEQ to quality trim the data.
 # NB: Check for updates, as this program is updated very frequently.
-# See: https://github.com/sestaton/sesbio/blob/master/genome_assembly/genome_assembly_shell_scripts/prinseq.sh
+# See: https://github.com/sestaton/sesbio/blob/master/genome_assembly/shell_scripts/prinseq.sh
  
 # 3. Trim the first 15 bases (NB: the actual need for this step and lengths will be data-dependent).
 awk 'NR % 2 == 0 { print substr($1, 16, 150 - 15) } NR % 2 == 1' \

@@ -1,6 +1,8 @@
 #!/bin/bash
 
-
+# NB: Inspired by SeqClean, but this seems to be more efficient. There are certainly more 
+#     efficient approaches now but this may be useful in certain applications.
+#
 # -- screening searches: large contaminant hit expected; that is, 
 #    at least 60% of the query should get a hit of at least 96% identity
 #
@@ -52,7 +54,7 @@ fastaext=$(echo ${1##*.})
 
 bl=$fasta"_bl_screendb_tmp.mbln"
 filtered=$fasta"_filteredall.fas"
-fh=$HOME/github/sesbio/genome_assembly/genome_assembly_shell_scripts/filter_hits.sh
+fh=$HOME/github/sesbio/genome_assembly/shell_scripts/filter_hits.sh
 
 #for i in {1..$2}
 for i in $(seq $2)
