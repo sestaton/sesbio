@@ -1,11 +1,18 @@
 #!/usr/bin/env perl
 
+## NB: This script will grab all the Transposome annotation summary files in the working directory
+##     and calculate the transposon abundance for each species (where each file is assumed to 
+##     be from a different species) and write the results in tab-delimited format to STDOUT.
+##
+##     The number of expected species is hard-coded at 15 on line 21. This is a test to make sure you are
+##     not grabbing more files than expected. Change as need for the number of species.
+
 use 5.010;
 use strict;
 use warnings;
 use autodie qw(open);
 use Statistics::Descriptive;
-use Data::Dump;
+#use Data::Dump::Color;
 
 my $usage = "perl $0\n";
 
