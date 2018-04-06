@@ -11,12 +11,11 @@ use Parallel::ForkManager;
 use IPC::System::Simple qw(system);
 use Capture::Tiny       qw(:all);
 use experimental 'signatures';
-use Data::Dump;
+#use Data::Dump::Color;
 
 my @reads;
 my $usage = "perl ".basename($0)." dir_with_bams\n";
-my $dir   = shift;      
-$dir //= '/moonriseNFS2/grassa/Highcopy_survey/';
+my $dir   = shift or die $usage;      
 my $samtools = findprog('samtools');
 my $threads  = 1;
 
@@ -43,14 +42,10 @@ $pm->wait_all_children;
 sub bam2fq ($bam, $samtools) {
     my $wd = getcwd();
     my ($name, $path, $suffix) = fileparse($bam, qr/\.[^.]*/);
-    my $fq  = File::Spec->catfile($wd, $name.".fq");
+    my $fq  = File::Spec->catfile($wd, $name.".fq.bz2");
     my $sfq = File::Spec->catfile($wd, $name."_s.fq");
 
-    my $cmd = "$samtools bam2fq -O -s $sfq $bam > $fq";
-    run_cmd($cmd);
-    undef $cmd;
-
-    $cmd = "bzip2 $fq";
+    my $cmd = "$samtools bam2fq -O -s $sfq $bam | bzip2 > $fq";
     run_cmd($cmd);
     undef $cmd;
 
