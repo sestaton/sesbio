@@ -274,7 +274,7 @@ sub collect_gff_features {
             ($start, $end) = @{$feature}{qw(start end)};
 	    $key = join "||", $region, $start, $end;
         }
-	if ($feature->{type} !~ /repeat_region|gene|exon|intron|_utr|cds|rna|similarity|helitron|non_LTR_retrotransposon/i) {
+	if ($feature->{type} !~ /repeat_region|gene|exon|intron|_utr|cds|rna|similarity|helitron|non_LTR_retrotransposon|solo_LTR/i) {
             if ($feature->{start} >= $start && $feature->{end} <= $end) {
 		push @{$features{$feature->{seq_id}}{$key}}, $feature;
             }
