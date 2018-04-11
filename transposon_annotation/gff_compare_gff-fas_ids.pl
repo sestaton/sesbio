@@ -39,14 +39,15 @@ for my $rep_region (keys %$features) {
 	    ($seq_id, $start, $end) = @{$feature}{qw(seq_id start end)};
 	    my $id = join "_", $family, $region, $seq_id, $start, $end;
 	    $gff_ids->{$id} = 1;
-	}
-	
+	}	
     }
+}
 
-
-say join "\n", scalar(keys %$fas_ids), scalar(keys %$gff_ids);
-use Test::More tests => 1;
-is_deeply($fas_ids, $gff_ids, 'FASTA and GFF3 IDs are the same');
+if (%$fas_ids && %$gff_ids) {
+    say join "\n", scalar(keys %$fas_ids), scalar(keys %$gff_ids);
+    use Test::More tests => 1;
+    is_deeply($fas_ids, $gff_ids, 'FASTA and GFF3 IDs are the same');
+}
 
 exit;
 #
@@ -68,9 +69,15 @@ sub get_ids {
 
 sub collect_all_gff_features {
     my ($gff) = @_;
-    my $header;
-    #open my $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";
-    open my $in, '-|', 'zcat', $gff or die $!;
+
+    my ($in, $gffio, $header);
+    if ($gff =~ /\.gz/) {
+        open $in, '-|', 'zcat', $gff or die "\nERROR: Could not open file: $gff\n";
+    }
+    else {
+        open $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";
+    }
+
     while (my $line = <$in>) {
 	chomp $line;
 	next if $line =~ /^###$/;
@@ -81,12 +88,15 @@ sub collect_all_gff_features {
 	    last;
 	}
     }
-    #close $in;
-    close $in or $? != 0 or die "close: $!";
+    close $in;
     chomp $header;
 
-    #open my $gffio, '<', $gff or die "\nERROR: Could not open file: $gff\n";
-    open my $gffio, '-|', 'zcat', $gff or die $!;
+    if ($gff =~ /\.gz/) {
+        open $gffio, '-|', 'zcat', $gff or die "\nERROR: Could not open file: $gff\n";
+    }
+    else {
+        open $gffio, '<', $gff or die "\nERROR: Could not open file: $gff\n";
+    }
 
     my ($start, $end, $region, $key, %features);
     while (my $line = <$gffio>) {
