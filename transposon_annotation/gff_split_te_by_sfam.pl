@@ -236,9 +236,13 @@ sub split_gff3_by_superfamily {
 sub collect_gff_features {
     my ($gff) = @_;
 
-    my $header;
-    open my $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";
-    #open my $in, '-|', 'zcat', $gff or die $!;
+    my ($in, $gffio, $header);
+    if ($gff =~ /\.gz/) { 
+	open $in, '-|', 'zcat', $gff or die "\nERROR: Could not open file: $gff\n";
+    }
+    else {
+	open $in, '<', $gff or die "\nERROR: Could not open file: $gff\n";
+    }
 
     while (my $line = <$in>) {
 	chomp $line;
@@ -251,11 +255,15 @@ sub collect_gff_features {
 	}
     }
     close $in;
-    #close $in or $? != 0 or die "close: $!";
     chomp $header;
 
-    open my $gffio, '<', $gff or die "\nERROR: Could not open file: $gff\n";
-    #open my $gffio, '-|', 'zcat', $gff or die $!;
+
+    if ($gff =~ /\.gz/) {
+	open $gffio, '-|', 'zcat', $gff or die "\nERROR: Could not open file: $gff\n";
+    }
+    else { 
+	open $gffio, '<', $gff or die "\nERROR: Could not open file: $gff\n";
+    }
 
     my ($start, $end, $region, $key, %features);
     while (my $line = <$gffio>) {
