@@ -33,7 +33,7 @@ do
     echo "=====> working on $file"
     base=$(echo ${file%.*})
     before=$(grep -v "^#" $file | awk '$3 == "gene"' | wc -l)
-    perl gff_filter_gene_listv7.pl $file $list > ${base}_filtered.gff3
+    perl gff_filter_gene_list.pl -g $file -l $list > ${base}_filtered.gff3
     after=$(grep -v "^#" ${base}_filtered.gff3 | awk '$3 == "gene"' | wc -l)
     echo "===> Before filtering: $before"
     echo "===> After filtering : $after"
