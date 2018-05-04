@@ -33,11 +33,17 @@ for my $rep_region (keys %$features) {
 	($seq_id, $source, $start, $end, $strand)
 	    = @{$feature}{qw(seq_id source start end strand)};
 	
-	if ($feature->{type} =~ /helitron|LTR_retrotransposon|TRIM_retrotransposon|terminal_inverted_repeat_element/) {
+	if ($feature->{type} =~ /helitron|(?:LARD|LTR|TRIM)_retrotransposon|non_LTR_retrotransposon|terminal_inverted_repeat_element|similarity/) {
 	    $region = @{$feature->{attributes}{ID}}[0];
-	    my $family = @{$feature->{attributes}{family}}[0];
 	    ($seq_id, $start, $end) = @{$feature}{qw(seq_id start end)};
-	    my $id = join "_", $family, $region, $seq_id, $start, $end;
+	    my $id;
+	    if (defined $feature->{attributes}{family}) {
+		my $family = @{$feature->{attributes}{family}}[0];
+		$id = join "_", $family, $region, $seq_id, $start, $end;
+	    }
+	    else {
+		$id = join "_", $region, $seq_id, $start, $end;
+	    }
 	    $gff_ids->{$id} = 1;
 	}	
     }
@@ -103,10 +109,10 @@ sub collect_all_gff_features {
         chomp $line;
         next if $line =~ /^#/;
 	my $feature = gff3_parse_feature( $line );
-	next if $feature->{type} =~ /solo_LTR|similarity/;
-	if ($feature->{type} =~ /helitron|non_LTR_retrotransposon/) { 
+	#next if $feature->{type} =~ /solo_LTR|similarity/;
+	if ($feature->{type} =~ /helitron|non_LTR_retrotransposon|similarity/) { 
+	    ($start, $end) = @{$feature}{qw(start end)};
 	    $region = @{$feature->{attributes}{ID}}[0];
-	    #$region = @{$feature->{attributes}{Ontology_term}}[0];
 	    $key = join "||", $feature->{seq_id}, $region, $start, $end;
 	    push @{$features{$key}}, $feature;
 	    next;
@@ -117,8 +123,8 @@ sub collect_all_gff_features {
 	    $key = join "||", $feature->{seq_id}, $region, $start, $end;
 
         }
-	if ($feature->{type} !~ /repeat_region|helitron|non_LTR_retrotransposon/) {
-	    dd $feature and exit unless defined $start and defined $end;
+	if ($feature->{type} !~ /repeat_region|helitron|non_LTR_retrotransposon|similarity/) {
+	    #dd $feature and exit unless defined $start and defined $end;
             if ($feature->{start} >= $start && $feature->{end} <= $end) {
 		push @{$features{$key}}, $feature;
             }
