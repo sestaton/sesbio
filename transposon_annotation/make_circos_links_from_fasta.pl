@@ -64,6 +64,7 @@ sub get_fragments {
 	my $len = length($seq);
 	#NB: ID format should be modified to be more abstract
 	next if $id =~ /MT|CP|Chr0/;
+	next unless $id =~ /fragment/;
 	my ($schr, $sstart, $send, $fchr, $fstart, $fend) = 
 	    ($id =~ /(MtrunA17(?:MT|CP)?(?:Chr\d+)?(?:\w+\d+)?)_(\d+)_(\d+)_fragment_.*(MtrunA17(?:MT|CP)?(?:Chr\d+)?(?:\w+\d+)?)_(\d+)_(\d+)$/);
 	my $flen = $fend - $fstart + 1;
