@@ -25,17 +25,15 @@ my ($header, $features) = collect_all_gff_features($gff);
 my $fas_ids = get_ids($fas);
 #dd $fas_ids and exit;
 
+my $re = qr/helitron|(?:LARD|LTR|TRIM)_retrotransposon|non_LTR_retrotransposon|terminal_inverted_repeat_element|similarity/;
+
 my $gff_ids = {};
 for my $rep_region (keys %$features) {
     my ($chr, $rreg_id, $rreg_start, $rreg_end) = split /\|\|/, $rep_region;
-    my ($feats, $source, $region, $seq_id, $start, $end, $strand, $type);
-    for my $feature (@{$features->{$rep_region}}) {
-	($seq_id, $source, $start, $end, $strand)
-	    = @{$feature}{qw(seq_id source start end strand)};
-	
-	if ($feature->{type} =~ /helitron|(?:LARD|LTR|TRIM)_retrotransposon|non_LTR_retrotransposon|terminal_inverted_repeat_element|similarity/) {
-	    $region = @{$feature->{attributes}{ID}}[0];
-	    ($seq_id, $start, $end) = @{$feature}{qw(seq_id start end)};
+     for my $feature (@{$features->{$rep_region}}) {
+	 if ($feature->{type} =~ /$re/) { 
+	    my $region = @{$feature->{attributes}{ID}}[0];
+	    my ($seq_id, $start, $end) = @{$feature}{qw(seq_id start end)};
 	    my $id;
 	    if (defined $feature->{attributes}{family}) {
 		my $family = @{$feature->{attributes}{family}}[0];
@@ -48,6 +46,7 @@ for my $rep_region (keys %$features) {
 	}	
     }
 }
+#dd $gff_ids and exit;
 
 if (%$fas_ids && %$gff_ids) {
     say join "\n", scalar(keys %$fas_ids), scalar(keys %$gff_ids);
