@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
-# Take a GFF3 and FASTA from Tephra and compare them to ensure the number of elements
-# and the IDs in each file are the same. 
+# Purpose: Take a GFF3 and FASTA from Tephra (or any source that confines to the Sequence Ontology) 
+# and compare them to ensure the number of elements and the IDs in each file are the same. 
 #
 # TODO: Add checks for length, overlap 
 
@@ -25,26 +25,31 @@ my ($header, $features) = collect_all_gff_features($gff);
 my $fas_ids = get_ids($fas);
 #dd $fas_ids and exit;
 
-my $re = qr/helitron|(?:LARD|LTR|TRIM)_retrotransposon|non_LTR_retrotransposon|terminal_inverted_repeat_element|similarity/;
+my $re = qr/helitron|(?:non_)?(?:LARD|LTR|TRIM)_retrotransposon|terminal_inverted_repeat_element|MITE/;
 
 my $gff_ids = {};
+my $id;
 for my $rep_region (keys %$features) {
     my ($chr, $rreg_id, $rreg_start, $rreg_end) = split /\|\|/, $rep_region;
-     for my $feature (@{$features->{$rep_region}}) {
-	 if ($feature->{type} =~ /$re/) { 
-	    my $region = @{$feature->{attributes}{ID}}[0];
-	    my ($seq_id, $start, $end) = @{$feature}{qw(seq_id start end)};
-	    my $id;
-	    if (defined $feature->{attributes}{family}) {
-		my $family = @{$feature->{attributes}{family}}[0];
-		$id = join "_", $family, $region, $seq_id, $start, $end;
-	    }
-	    else {
-		$id = join "_", $region, $seq_id, $start, $end;
-	    }
-	    $gff_ids->{$id} = 1;
-	}	
+    if ($rreg_id =~ /fragment/) {
+	$id = join "_", $rreg_id, $chr, $rreg_start, $rreg_end;
     }
+    else {
+	for my $feature (@{$features->{$rep_region}}) {
+	    if ($feature->{type} =~ /$re/) { 
+		my $region = @{$feature->{attributes}{ID}}[0];
+		my ($seq_id, $start, $end) = @{$feature}{qw(seq_id start end)};
+		if (defined $feature->{attributes}{family}) {
+		    my $family = @{$feature->{attributes}{family}}[0];
+		    $id = join "_", $family, $region, $seq_id, $start, $end;
+		}
+		else {
+		    $id = join "_", $region, $seq_id, $start, $end;
+		}
+	    }	
+	}
+    }
+    $gff_ids->{$id} = 1;
 }
 #dd $gff_ids and exit;
 
@@ -109,7 +114,7 @@ sub collect_all_gff_features {
         next if $line =~ /^#/;
 	my $feature = gff3_parse_feature( $line );
 	#next if $feature->{type} =~ /solo_LTR|similarity/;
-	if ($feature->{type} =~ /helitron|non_LTR_retrotransposon|similarity/) { 
+	if ($feature->{type} =~ /helitron|non_LTR_retrotransposon|similarity|solo_LTR/) { 
 	    ($start, $end) = @{$feature}{qw(start end)};
 	    $region = @{$feature->{attributes}{ID}}[0];
 	    $key = join "||", $feature->{seq_id}, $region, $start, $end;
@@ -122,7 +127,7 @@ sub collect_all_gff_features {
 	    $key = join "||", $feature->{seq_id}, $region, $start, $end;
 
         }
-	if ($feature->{type} !~ /repeat_region|helitron|non_LTR_retrotransposon|similarity/) {
+	if ($feature->{type} !~ /repeat_region|helitron|non_LTR_retrotransposon|similarity|solo_LTR/) {
 	    #dd $feature and exit unless defined $start and defined $end;
             if ($feature->{start} >= $start && $feature->{end} <= $end) {
 		push @{$features{$key}}, $feature;
