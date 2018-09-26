@@ -1,27 +1,40 @@
 #!/usr/bin/env perl
 
-#TODO: - Handle compressed input
-#      - The text output is very nice but we should just write JSON, what way we can go between formats
-#        and make it presentable in graphs more easily
+#TODO: - Handle compressed input.
+#      - Consider removing the text output since it is redundant with the JSON output now; this 
+#        would simplify the usage.
 
 use 5.010;
 use strict;
 use warnings;
+use autodie;
 use Sort::Naturally;
 use Bio::DB::HTS::Faidx;
 use Bio::GFF3::LowLevel qw(gff3_parse_feature gff3_format_feature);
 use List::Util          qw(uniq);
 use Tephra::Annotation::Util;
 use Statistics::Descriptive;
+use JSON ();
 use Getopt::Long;
 #use Data::Dump::Color;
 
 my %opts;
-GetOptions(\%opts, 'gfffile|i=s', 'genome|g=s', 'split|s');
+GetOptions(\%opts, 'gfffile|i=s', 'genome|g=s', 'json|j=s', 'split|s', 'compactjson');
 
-my $usage = "\nUSAGE: $0 -i genome.gff -g genome.fas <--split>
+my $usage = "\nUSAGE: $0 -i tephra_transposons.gff3 -g genome.fas -j stats.json <--split>
 
-NB: The optional '--split' argument will split each superfamily into separate GFF3 and FASTA files.\n\n";
+Notes on usage:
+
+* The optional '--split' argument will split each superfamily into separate GFF3 and FASTA files.
+
+* The default JSON output is pretty-printed for reading, but the '--compactjson' argument will
+print a compact, space-free file if this is not for human consumption.
+
+* A human readable structured representation of the stats will be printed to STDOUT, 
+which is a good thing to save with the GFF3 like so:
+
+$0 -i tephra_transposons.gff3 -g genome.fas \
+  -j tephra_transposons.gff3.stats.json --split > tephra_transposons.gff3.stats\n\n";
 
 unless ($opts{gfffile} && -e $opts{gfffile}) {
     say STDERR "\nERROR: --gfffile argument is missing or the file does not exist. Check input.\n";
@@ -39,6 +52,13 @@ my ($header, $features) = collect_gff_features($opts{gfffile});
 my ($sfams, $coords) = collate_features_by_superfamily($features);
 my ($stats, $total) = compute_feature_stats($sfams);
 write_te_stats($stats, $total);
+
+if ($opts{json}) {
+    open my $jfh, '>', $opts{json};
+    my $utf8_encjson = $opts{compactjson} ? JSON->new->encode($stats) : JSON->new->pretty->encode($stats);
+    say $jfh $utf8_encjson;
+    close $jfh;
+}
 
 if ($opts{split}) { 
     split_gff3_by_superfamily($sfams, $coords, $opts{genome});
