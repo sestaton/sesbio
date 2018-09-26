@@ -1,6 +1,8 @@
 #!/usr/bin/env perl
 
-#TODO: Handle compressed input
+#TODO: - Handle compressed input
+#      - The text output is very nice but we should just write JSON, what way we can go between formats
+#        and make it presentable in graphs more easily
 
 use 5.010;
 use strict;
