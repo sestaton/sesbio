@@ -55,7 +55,7 @@ sub split_gff {
 	    close $out if openhandle($out);
 	    open $out, '>', $outfile or die $!;
 	    say $out '##gff-version 3';
-	    say $out join q{ }, '##sequence-region', '1', $regions{$f[0]};
+	    say $out join q{ }, '##sequence-region', '1', $f[0], $regions{$f[0]};
 	    $seen{$f[0]} = 1;
 	}
 	say $out join "\t", @f;
