@@ -8,10 +8,12 @@ use strict;
 use warnings;
 use Sort::Naturally;
 
-my @gffs = glob "Ha*gth.gff3";
+my $usage = "$0 indir\n";
+my $indir = shift or die $usage;
+my @gffs = glob "$indir/*gth.gff3";
 
 if (@gffs < 1) {
-    say "\nERROR: Expecting GFF files matching 'Ha*gth.gff3'. Exiting.\n";
+    say "\nERROR: Expecting GFF files matching '*gth.gff3'. Exiting.\n";
     exit(1);
 }
 
@@ -23,7 +25,8 @@ for my $gff (nsort @gffs) {
 	chomp $line;
 	if ($line =~ /^##sequence-region/) {
 	    my ($sr, $loc, $s, $e) = split /\s+/, $line;
-	    my ($reg) = ($loc =~ /(Ha\d+)/);
+	    # be careful here; it is assumed the chr IDs are like Ha1 or Chr1
+	    my ($reg) = ($loc =~ /(\d+)/);
 	    $header .= join q{ }, $sr, $reg, $s, $e."\n";
 	}
     }
@@ -43,7 +46,7 @@ for my $gff (nsort @gffs) {
 	chomp $line;
 	next if $line =~ /^#/;
 	my @feats = split /\t/, $line;
-	my ($reg) = ($feats[0] =~ /(Ha\d+)/);
+	my ($reg) = ($feats[0] =~ /(\d+)/);
 	if ($feats[2] eq 'gene') {
 	    $genes++;
 	}
