@@ -97,7 +97,7 @@ sub compute_feature_stats {
 		}
 		else {
 		    for my $feat (@$elements) {
-			if ($feat->{type} =~ /^LTR_retrotransposon|TRIM_retrotransposon|terminal_inverted_repeat_element/) {
+			if ($feat->{type} =~ /^(?:LTR|LARD|TRIM)_retrotransposon|terminal_inverted_repeat_element|MITE/) {
 			    my $fam_id = @{$feat->{attributes}{family}}[0];
 			    my $length = $feat->{end} - $feat->{start} + 1;
 			    push @{$stats{ $sf_lineage->{class} }{ $sf_lineage->{repeat_name} }{lengths}}, $length;
@@ -180,7 +180,7 @@ sub collate_features_by_superfamily {
 	    }
 	    elsif ($rreg =~ /repeat_region/) {
 		for my $feature (@{$features->{$chr}{$rreg}}) {
-		    if ($feature->{type} =~ /^LTR_retrotransposon|TRIM_retrotransposon|terminal_inverted_repeat_element/) { 
+		    if ($feature->{type} =~ /^(?:LTR|LARD|TRIM)_retrotransposon|terminal_inverted_repeat_element|MITE/) { 
 			my $id = defined @{$feature->{attributes}{family}}[0] ? @{$feature->{attributes}{family}}[0] 
 			    : @{$feature->{attributes}{ID}}[0];
 			$sfam = $util->map_superfamily_name($id);
@@ -276,7 +276,8 @@ sub collect_gff_features {
 	    last;
 	}
     }
-    close $in;
+    #close $in;
+    #close $in or $? != 0 or die "close: $!";
     chomp $header;
 
 
@@ -310,7 +311,7 @@ sub collect_gff_features {
             }
         }
     }
-    close $gffio;
+    #close $gffio;
 
     return ($header, \%features);
 }
