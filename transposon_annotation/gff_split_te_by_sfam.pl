@@ -81,6 +81,7 @@ sub compute_feature_stats {
 
 	$stats{ $sf_lineage->{class} }{ $sf_lineage->{repeat_name} }{order} = $sf_lineage->{order};
 
+	my $has_pdoms = 0;
 	my %seen;
 	for my $chr (nsort keys %{$sfams->{$sfam}}) {
 	    for my $elements (@{$sfams->{$sfam}{$chr}}) {
@@ -104,10 +105,14 @@ sub compute_feature_stats {
 			    push @{$stats{ $sf_lineage->{class} }{ $sf_lineage->{repeat_name} }{families}}, $fam_id;
 			}
 			elsif ($feat->{type} =~ /protein_match/) {
-			    $stats{ $sf_lineage->{class} }{ $sf_lineage->{repeat_name} }{ 'protein_matches' }++;
+			    $has_pdoms = 1;
+			    $stats{ $sf_lineage->{class} }{ $sf_lineage->{repeat_name} }{ 'protein_domains_total' }++;
 			}
 		    }
 		}
+		$stats{ $sf_lineage->{class} }{ $sf_lineage->{repeat_name} }{ 'protein_matches' }++
+		    if $has_pdoms;
+		$has_pdoms = 0;
 	    }
 	}
     }
@@ -139,6 +144,7 @@ sub compute_feature_stats {
 
 	    if (defined $stats{$class}{$name}{protein_matches}) {
 		$reduced{$class}{ $stats{$class}{$name}{order}  }{$name}{protein_matches} = $stats{$class}{$name}{protein_matches};
+		$reduced{$class}{ $stats{$class}{$name}{order}  }{$name}{protein_domains_total} = $stats{$class}{$name}{protein_domains_total};
 	    }
 	}
     }
@@ -277,7 +283,7 @@ sub collect_gff_features {
 	}
     }
     #close $in;
-    #close $in or $? != 0 or die "close: $!";
+    #close $in or $? == 0 or die "close: $!";
     chomp $header;
 
 
@@ -370,6 +376,7 @@ sub write_te_stats {
 		$s .= "${pad}Total number: $stats->{$class}{$order}{$name}{count}\n";
 		if (defined $stats->{$class}{$order}{$name}{protein_matches}) {
 		    $s .= "${pad}Elements with protein matches: $stats->{$class}{$order}{$name}{protein_matches}\n";
+		    $s .= "${pad}Total number of protein domains: $stats->{$class}{$order}{$name}{protein_domains_total}\n";
 		}
 		else {
 		    $s .= "${pad}Elements with protein matches: Undetermined\n";
