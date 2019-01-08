@@ -43,6 +43,10 @@ for my $rep_region (keys %$features) {
 		    my $family = @{$feature->{attributes}{family}}[0];
 		    $id = join "_", $family, $region, $seq_id, $start, $end;
 		}
+		elsif (defined $feature->{attributes}{superfamily} && not defined $feature->{attributes}{family}) {
+		    my $sfamily = @{$feature->{attributes}{superfamily}}[0];
+                    $id = join "_", $sfamily, $region, $seq_id, $start, $end;
+		}
 		else {
 		    $id = join "_", $region, $seq_id, $start, $end;
 		}
