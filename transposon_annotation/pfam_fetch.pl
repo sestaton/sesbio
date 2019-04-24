@@ -135,7 +135,7 @@ use HTML::TableExtract;
 use XML::LibXML;
 use Getopt::Long;
 use Pod::Usage;
-#use Data::Dump::Color;
+use Data::Dump::Color;
 
 my $search_term;
 my $fetch_results;
