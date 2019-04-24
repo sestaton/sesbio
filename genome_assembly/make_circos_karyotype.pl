@@ -14,7 +14,7 @@ my $lengths = get_lengths($seqfile);
 
 my $idx = 1;
 for my $id (nsort keys %$lengths) {
-    next if $id =~ /Chr0/; # unplaced scaffolds
+    next if $id =~ /Chr00/; # unplaced scaffolds
     #chr - chr01 1 0 153905722 black
     say join q{ }, 'chr', '-', $id, $idx, '0', $lengths->{$id}, 'black'; 
     $idx++;
