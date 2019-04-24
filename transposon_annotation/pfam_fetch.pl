@@ -66,7 +66,7 @@ This project includes the same functionality as this script and is maintained.
 
 =head1 LICENSE
 
-Copyright (C) 2013-2017 S. Evan Staton
+Copyright (C) 2013-2019 S. Evan Staton
 
 This program is distributed under the MIT (X11) License: http://www.opensource.org/licenses/mit-license.php
 
@@ -135,7 +135,7 @@ use HTML::TableExtract;
 use XML::LibXML;
 use Getopt::Long;
 use Pod::Usage;
-use Data::Dump;
+#use Data::Dump::Color;
 
 my $search_term;
 my $fetch_results;
