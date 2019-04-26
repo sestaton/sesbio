@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 
+##TODO: - take length bins as an option and print those to stderr
+##      - do not hard code chromosome ID format
+
 use 5.010;
 use strict;
 use warnings;
@@ -63,7 +66,7 @@ sub get_fragments {
 	my $seq = $seqobj->seq;
 	my $len = length($seq);
 	#NB: ID format should be modified to be more abstract
-	next if $id =~ /MT|CP|Chr0/;
+	next if $id =~ /MT|CP|Chr00/;
 	next unless $id =~ /fragment/;
 	my ($schr, $sstart, $send, $fchr, $fstart, $fend) = 
 	    ($id =~ /(MtrunA17(?:MT|CP)?(?:Chr\d+)?(?:\w+\d+)?)_(\d+)_(\d+)_fragment_.*(MtrunA17(?:MT|CP)?(?:Chr\d+)?(?:\w+\d+)?)_(\d+)_(\d+)$/);
