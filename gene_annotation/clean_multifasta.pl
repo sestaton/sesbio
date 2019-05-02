@@ -118,7 +118,6 @@ while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
 	$headchar++ if $comm;
 
 	$name = join '_', $name, $comm if $comm;
-	# TODO: shorten the header, optionally
 	if ($length) {
 	    $name = substr($name, 0, $length);
 	}
