@@ -1,3 +1,7 @@
+#!/usr/bin/env perl
+
+##TODO: Use new Phytomine API via Webservice::InterMine (https://metacpan.org/pod/Webservice::InterMine)
+
 use strict;
 use warnings;
 use autodie;
