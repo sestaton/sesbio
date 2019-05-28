@@ -58,9 +58,14 @@ for my $rep_region (keys %$features) {
 #dd $gff_ids and exit;
 
 if (%$fas_ids && %$gff_ids) {
-    say join "\n", scalar(keys %$fas_ids), scalar(keys %$gff_ids);
-    use Test::More tests => 1;
-    is_deeply($fas_ids, $gff_ids, 'FASTA and GFF3 IDs are the same');
+    my $fas_idct = keys %$fas_ids;
+    my $gff_idct = keys %$gff_ids;
+    say "=== $fas_idct FASTA IDs ===";
+    say "=== $gff_idct  GFF3 IDs ===";
+
+    require Test::More;
+    Test::More::is_deeply($fas_ids, $gff_ids, 'FASTA and GFF3 IDs are the same');
+    Test::More::done_testing();
 }
 
 exit;
