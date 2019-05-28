@@ -60,8 +60,10 @@ for my $rep_region (keys %$features) {
 if (%$fas_ids && %$gff_ids) {
     my $fas_idct = keys %$fas_ids;
     my $gff_idct = keys %$gff_ids;
-    say "=== $fas_idct FASTA IDs ===";
-    say "=== $gff_idct  GFF3 IDs ===";
+    my $fas_file = basename($fas);
+    my $gff_file = basename($gff);
+    say "===== $fas_idct FASTA IDs ($fas_file)";
+    say "===== $gff_idct  GFF3 IDs ($gff_file)";
 
     require Test::More;
     Test::More::is_deeply($fas_ids, $gff_ids, 'FASTA and GFF3 IDs are the same');
