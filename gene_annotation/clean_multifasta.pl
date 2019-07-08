@@ -42,6 +42,11 @@ A file to place the cleaned sequences.
 
 =over 2
 
+=item -l, --idlength
+
+The length the ID should be truncated to. This is useful for sequences from public
+databases which may have many identifers, long descriptions, and odd characters.
+
 =item -h, --help
 
 Print a usage statement. 
@@ -68,6 +73,7 @@ use Pod::Usage;
 #
 my $infile;
 my $outfile;
+my $length;
 my $help;
 my $man;
 
@@ -75,6 +81,7 @@ GetOptions(# Required
 	   'i|infile=s'   => \$infile,
 	   'o|outfile=s'  => \$outfile,
 	   # Options
+	   'l|idlength=i' => \$length,
 	   'h|help'       => \$help,
 	   'm|man'        => \$man,
 	   );
@@ -104,10 +111,16 @@ my ($n, $slen, $qlen) = (0, 0, 0);
 
 while (($name, $comm, $seq, $qual) = readfq(\*$in, \@aux)) {
     $fasnum++;
-    if ($name =~ /\s+|\;|\:|\(|\)|\[|\]|\./) {
+    if ($name =~ /\s+|\;|\:|\(|\)|\[|\]|\./ || (defined $comm && $comm =~ /\s+|\;|\:|\(|\)|\[|\]|\./)) {
 	$headchar++;
 	$name =~ s/\s+|\;|\:|\(|\)|\[|\]|\./_/g;
-	# TODO: shorten the header, optionally
+	$comm =~ s/\s+|\;|\:|\(|\)|\[|\]|\./_/g if $comm;
+	$headchar++ if $comm;
+
+	$name = join '_', $name, $comm if $comm;
+	if ($length) {
+	    $name = substr($name, 0, $length);
+	}
     }
 
     if ($seq =~ /\r|\n/) { # Mac
@@ -163,7 +176,7 @@ sub readfq {
 	    return;
 	}
     }
-    my ($name, $comm) = /^.(\S+)(?:\s+)(\S+)/ ? ($1, $2) : 
+    my ($name, $comm) = /^.(\S+)(?:\s+)(.*)/ ? ($1, $2) : 
 	                /^.(\S+)/ ? ($1, '') : ('', '');
     my $seq = '';
     my $c;
@@ -200,6 +213,7 @@ Required:
     -o|outfile   :    File to place the filtered reads or contigs.
     
 Options:
+    -l|idlength  :    The length to truncate the ID to (Default: print full ID).
     -h|help      :    Print usage statement.
     -m|man       :    Print full documentation.
 END

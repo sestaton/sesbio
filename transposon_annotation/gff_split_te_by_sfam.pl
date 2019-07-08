@@ -1,7 +1,6 @@
 #!/usr/bin/env perl
 
-#TODO: - Handle compressed input.
-#      - Consider removing the text output since it is redundant with the JSON output now; this 
+#TODO: - Consider removing the text output since it is redundant with the JSON output now; this 
 #        would simplify the usage.
 
 use 5.010;
@@ -21,7 +20,7 @@ use Getopt::Long;
 my %opts;
 GetOptions(\%opts, 'gfffile|i=s', 'genome|g=s', 'json|j=s', 'split|s', 'compactjson');
 
-my $usage = "\nUSAGE: $0 -i tephra_transposons.gff3 -g genome.fas -j stats.json <--split>
+my $usage = "\nUSAGE: $0 -i tephra_transposons.gff3.gz -g genome.fas.gz -j stats.json <--split>
 
 Notes on usage:
 
