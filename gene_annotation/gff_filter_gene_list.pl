@@ -10,11 +10,14 @@ use Bio::GFF3::LowLevel qw(gff3_parse_feature gff3_format_feature);
 #use Data::Dump::Color;
 use Getopt::Long;
 
-my $usage = "\nUSAGE: ".basename($0)." -g gff -l list <--allfeatures>
+my $usage = "\nUSAGE: ".basename($0)." -g gff -l list <--allfeatures> > filtered.gff3
 
 By default, only gene features are written to the output. With the 
 --allfeaures option, all other feautures in the GFF, like BLAST alignments
 or other predictions, will be output.
+
+The output is written to STDOUT, so redirect the output to a file as shown
+above.
 
 ";
 
@@ -91,7 +94,8 @@ sub collect_gff_features {
             $features{$seqid}{$key}{parent} = $feature;
 	}
 	if (defined $feature->{type} && 
-	    $feature->{type} =~ /CDS|exon|five_prime_UTR|match_part|mRNA|three_prime_UTR/) {
+	    $feature->{type} =~ /CDS|exon|intron|UTR|match|mRNA/) { # matches: five_prime_UTR and three_prime_UTR; 
+                                                                    # match and match_part
 	    if (defined $start && $feature->{start} >= $start && 
 		defined $end   && $feature->{end}   <= $end) {
 		push @{$features{$seqid}{$key}{parts}}, $feature;
