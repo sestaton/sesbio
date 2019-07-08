@@ -49,7 +49,9 @@ if ($opts{split} && !$opts{genome}) {
 }
 
 my ($header, $features) = collect_gff_features($opts{gfffile});
+#dd $features and exit;
 my ($sfams, $coords) = collate_features_by_superfamily($features);
+#dd $sfams and exit;
 my ($stats, $total) = compute_feature_stats($sfams);
 write_te_stats($stats, $total);
 
@@ -84,9 +86,9 @@ sub compute_feature_stats {
 	my $has_pdoms = 0;
 	my %seen;
 	for my $chr (nsort keys %{$sfams->{$sfam}}) {
-	    for my $elements (@{$sfams->{$sfam}{$chr}}) {
-		if (ref($elements) ne 'ARRAY') {
-		    my $gff_feats = gff3_format_feature($elements);
+	    unless (ref($sfams->{$sfam}{$chr}) eq 'HASH') {
+		for my $element (@{$sfams->{$sfam}{$chr}}) {
+		    my $gff_feats = gff3_format_feature($element);
 		    chomp $gff_feats;
 		    my @feats = split /\t/, $gff_feats;
 		    if ($feats[2] =~ /helitron|non_LTR_retrotransposon/i) {
@@ -96,7 +98,11 @@ sub compute_feature_stats {
 			push @{$stats{ $sf_lineage->{class} }{ $sf_lineage->{repeat_name} }{families}}, $fam_id;
 		    }
 		}
-		else {
+		next;
+	    }
+
+	    for my $rep_region (nsort keys %{$sfams->{$sfam}{$chr}}) { 
+		for my $elements (@{$sfams->{$sfam}{$chr}{$rep_region}}) {
 		    for my $feat (@$elements) {
 			if ($feat->{type} =~ /^(?:LTR|LARD|TRIM)_retrotransposon|terminal_inverted_repeat_element|MITE/) {
 			    my $fam_id = @{$feat->{attributes}{family}}[0];
@@ -109,10 +115,10 @@ sub compute_feature_stats {
 			    $stats{ $sf_lineage->{class} }{ $sf_lineage->{repeat_name} }{ 'protein_domains_total' }++;
 			}
 		    }
+		    $stats{ $sf_lineage->{class} }{ $sf_lineage->{repeat_name} }{ 'protein_matches' }++
+			if $has_pdoms;
+		    $has_pdoms = 0;
 		}
-		$stats{ $sf_lineage->{class} }{ $sf_lineage->{repeat_name} }{ 'protein_matches' }++
-		    if $has_pdoms;
-		$has_pdoms = 0;
 	    }
 	}
     }
@@ -143,8 +149,10 @@ sub compute_feature_stats {
 	    $reduced{$class}{ $stats{$class}{$name}{order} }{$name}{length}{stddev} = $sd;
 
 	    if (defined $stats{$class}{$name}{protein_matches}) {
-		$reduced{$class}{ $stats{$class}{$name}{order}  }{$name}{protein_matches} = $stats{$class}{$name}{protein_matches};
-		$reduced{$class}{ $stats{$class}{$name}{order}  }{$name}{protein_domains_total} = $stats{$class}{$name}{protein_domains_total};
+		$reduced{$class}{ $stats{$class}{$name}{order}  }{$name}{protein_matches} = 
+		    $stats{$class}{$name}{protein_matches};
+		$reduced{$class}{ $stats{$class}{$name}{order}  }{$name}{protein_domains_total} = 
+		    $stats{$class}{$name}{protein_domains_total};
 	    }
 	}
     }
@@ -157,14 +165,15 @@ sub collate_features_by_superfamily {
 
     my $util = Tephra::Annotation::Util->new;
 
-    my (%sfams, %coords);
-    my ($seq_id, $source, $fstart, $fend, $sfam);
+    my (%sfams, %coords, $fstart, $fend, $sfam);
+
     for my $chr (nsort keys %$features) {
 	for my $rreg (
 	    map  { $_->[0] }
-	    sort { $a->[1] <=> $b->[1] }
-	    map  { [ $_, /\w+(?:\d+)?\|\|(\d+)\|\|\d+/ ] } 
+	    sort { defined $_->[1] and $a->[1] <=> $b->[1] }
+	    map  { [ $_, /\S+\|\|\S+\|\|\S+\|\|(\d+)\|\|\d+\|\|\S+\|\|.\|\|\S+\|\|\w+(?:\d+)?/ ] } 
 	    keys %{$features->{$chr}} ) {
+	    # $seq_id, $source, $type, $start, $end, $score, $strand, $phase, $region;
             
 	    if ($rreg =~ /helitron|non_LTR_retrotransposon/i) {
 		my $feat = @{$features->{$chr}{$rreg}}[0];
@@ -185,22 +194,38 @@ sub collate_features_by_superfamily {
 		$coords{$sf}{ @{$feat->{attributes}{ID}}[0] } = join "||", $feat->{seq_id}, $fam_id, $feat->{start}, $feat->{end};
 	    }
 	    elsif ($rreg =~ /repeat_region/) {
-		for my $feature (@{$features->{$chr}{$rreg}}) {
-		    if ($feature->{type} =~ /^(?:LTR|LARD|TRIM)_retrotransposon|terminal_inverted_repeat_element|MITE/) { 
-			my $id = defined @{$feature->{attributes}{family}}[0] ? @{$feature->{attributes}{family}}[0] 
-			    : @{$feature->{attributes}{ID}}[0];
-			$sfam = $util->map_superfamily_name($id);
-			#say STDERR join q{ }, $id, $sfam;
-			push @{$sfams{$sfam}{$chr}}, $features->{$chr}{$rreg};
-			$coords{$sfam}{ @{$feature->{attributes}{ID}}[0] } = 
-			    join "||", $feature->{seq_id}, $id, $feature->{start}, $feature->{end};
-		    }
-		}
+		my ($seq_id, $source, $type, $start, $end, $score, $strand, $phase, $region) = split /\|\|/, $rreg;
+		$phase //= '.';
+		$score //= '.';
+
+		my $key = join "||", $seq_id, $source, $type, $start, $end, $score, $strand, $phase, $region;
+		my ($sfam, $element_id, $element_coords) = get_sfam(\@{$features->{$chr}{$rreg}}, $util);
+		$coords{$sfam}{ $element_id } = $element_coords;
+
+		push @{$sfams{$sfam}{$chr}{$key}}, $features->{$chr}{$rreg};
 	    }
 	}   
     }
 
     return (\%sfams, \%coords);
+}
+
+sub get_sfam {
+    my ($ref, $util) = @_;
+
+    my ($sfam, $element_id, $element_coords);
+    for my $feature (@$ref) {
+	if ($feature->{type} =~ /^(?:LTR|LARD|TRIM)_retrotransposon|terminal_inverted_repeat_element|MITE/) {
+	    my $id = defined @{$feature->{attributes}{family}}[0] ? @{$feature->{attributes}{family}}[0]
+		: @{$feature->{attributes}{ID}}[0];
+	    $sfam = $util->map_superfamily_name($id);
+	    
+	    $element_id = @{$feature->{attributes}{ID}}[0];
+	    $element_coords = join "||", $feature->{seq_id}, $id, $feature->{start}, $feature->{end};
+	}
+    }
+
+    return ($sfam, $element_id, $element_coords);
 }
 
 sub split_gff3_by_superfamily {    
@@ -231,7 +256,7 @@ sub split_gff3_by_superfamily {
 	}
 	close $outf;
     }
-
+    
     for my $sfam (nsort keys %$sfams) {
 	my $sfam_id = $sfam;
 	$sfam_id =~ s/\//-/;
@@ -240,24 +265,32 @@ sub split_gff3_by_superfamily {
 	say $out $header;
 	
 	for my $chr (nsort keys %{$sfams->{$sfam}}) {
-	    for my $elements (@{$sfams->{$sfam}{$chr}}) {
-		if (ref($elements) ne 'ARRAY') {
+	    if (ref($sfams->{$sfam}{$chr}) ne 'HASH') {
+		for my $elements (@{$sfams->{$sfam}{$chr}}) { 
 		    my $gff_feats = gff3_format_feature($elements);
 		    chomp $gff_feats;
 		    say $out $gff_feats;
 		}
-		else {
+		next;
+	    }
+
+	    for my $rep_region (nsort keys %{$sfams->{$sfam}{$chr}}) {
+		my @rep_region_parts = split /\|\|/, $rep_region;
+		$rep_region_parts[8] =~ s/^/ID=/;
+		say $out join "\t", @rep_region_parts;
+		
+		for my $elements (@{$sfams->{$sfam}{$chr}{$rep_region}}) {
 		    for my $feat (@$elements) {
 			my $gff_feats = gff3_format_feature($feat);
 			chomp $gff_feats;
 			say $out $gff_feats;
 		    }
-		}
+		}		  
 	    }
 	}
 	close $out;
     }
-
+    
     return;
 }
 
@@ -294,7 +327,7 @@ sub collect_gff_features {
 	open $gffio, '<', $gff or die "\nERROR: Could not open file: $gff\n";
     }
 
-    my ($start, $end, $region, $key, %features);
+    my  ($seq_id, $start, $end, $phase, $score, $source, $strand, $type, $region, $key, %features);
     while (my $line = <$gffio>) {
         chomp $line;
         next if $line =~ /^#/;
@@ -308,8 +341,12 @@ sub collect_gff_features {
 	}
         if ($feature->{type} eq 'repeat_region') {
             $region = @{$feature->{attributes}{ID}}[0];
-            ($start, $end) = @{$feature}{qw(start end)};
-	    $key = join "||", $region, $start, $end;
+	    ($seq_id, $start, $end, $phase, $score, $source, $strand, $type) = 
+	        @{$feature}{qw(seq_id start end phase score source strand type)};
+	    $phase //= '.';
+	    $score //= '.';
+            
+	    $key = join "||", $seq_id, $source, $type, $start, $end, $score, $strand, $phase, $region;
         }
 	if ($feature->{type} !~ /repeat_region|gene|exon|intron|_utr|cds|rna|similarity|helitron|non_LTR_retrotransposon|solo_LTR/i) {
             if ($feature->{start} >= $start && $feature->{end} <= $end) {
