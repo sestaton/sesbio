@@ -37,6 +37,7 @@ open my $in, '<', $opts{gff} or die "\nERROR: Could not open file: $opts{gff}\n"
 while (my $line = <$in>) {
     chomp $line;
     next if $line =~ /^#/;
+    next unless $line =~ /\S/;
     say $out $line;
 }
 
