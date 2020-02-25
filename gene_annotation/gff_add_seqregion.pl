@@ -38,6 +38,7 @@ while (my $line = <$in>) {
     chomp $line;
     next unless $line =~ /\S/;
     next if $line =~ /^#/;
+    next unless $line =~ /\S/;
     say $out $line;
 }
 
