@@ -32,7 +32,7 @@ Most scripts have at least minimal documentation that can be accessed by typing 
 
 **LICENSE AND COPYRIGHT**
 
-Copyright (C) 2013-2018 S. Evan Staton
+Copyright (C) 2013-2020 S. Evan Staton
 
 This program is distributed under the MIT (X11) License, which should be distributed with the package. 
 If not, it can be found here: http://www.opensource.org/licenses/mit-license.php
