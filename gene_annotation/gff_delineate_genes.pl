@@ -7,7 +7,7 @@ use autodie;
 use File::Basename;
 use Sort::Naturally;
 use Bio::GFF3::LowLevel qw(gff3_parse_feature gff3_format_feature);
-use Data::Dump::Color;
+#use Data::Dump::Color;
 use Getopt::Long;
 
 my $usage = "\nUSAGE: ".basename($0)." -g gff\n";
@@ -121,34 +121,6 @@ sub collect_gff_features {
     }
 
     return ($header, \%features);
-}
-
-sub _process_feature_args {
-    my ($features, $chr, $id, $geneid, $allfeatures) = @_; 
-
-    if ($geneid =~ /gene/) {
-	_write_features($features->{$chr}{$id});
-    }
-    else {
-	_write_features($features->{$chr}{$id})
-	    if $allfeatures;
-    }
-
-    return;
-}
-
-sub _write_features {
-    my ($ref) = @_;
-    my $parent_feat = gff3_format_feature($ref->{parent});
-    chomp $parent_feat;
-    say $parent_feat;
-    
-    for my $feat (@{$ref->{parts}}) {
-	my $gff3_str = gff3_format_feature($feat);
-	chomp $gff3_str;
-	say $gff3_str;
-    }
-    say '###';
 }
 
 sub _get_fh {
