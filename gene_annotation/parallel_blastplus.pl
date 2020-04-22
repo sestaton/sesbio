@@ -80,7 +80,7 @@ open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
 my $pm = Parallel::ForkManager->new($thread);
 $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
-			  or my $bl (sort keys %$data_ref) {
+			  for my $bl (sort keys %$data_ref) {
 			      open my $report, '<', $bl or die "\nERROR: Could not open file: $bl\n";
 			      print $out $_ while <$report>;
 			      print $out "\n\n" if $blast_format == 0;
@@ -148,6 +148,7 @@ sub run_blast {
 		    "-num_threads $cpu ". 
 		    "-max_target_seqs 100000";
 
+    my $exit_value;
     try {
 	$exit_value = system([0..5],$blast_cmd);
     }
