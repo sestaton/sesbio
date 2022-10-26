@@ -76,7 +76,7 @@ $thread //= 1;
 
 my ($seq_files, $seqct) = split_reads($infile, $outfile, $numseqs);
 
-open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n"; 
+open my $out, '>>', $outfile or die "\nERROR: Could not open file: $outfile\n";
 
 my $pm = Parallel::ForkManager->new($thread);
 $pm->run_on_finish( sub { my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
@@ -98,7 +98,7 @@ for my $seqs (@$seq_files) {
     my $blast_out = run_blast($seqs, $database, $cpu, $blast_program, $blast_format,
 			      $num_alignments, $num_descriptions, $evalue);
     $blasts{$blast_out} = 1;
-    
+
     unlink $seqs;
     $pm->finish(0, \%blasts);
 }
@@ -117,12 +117,12 @@ exit;
 #
 # Subs
 #
-sub run_blast {    
+sub run_blast {
     my ($subseq_file, $database, $cpu, $blast_program, $blast_format,
 	$num_alignments, $num_descriptions, $evalue) = @_;
 
     $blast_program //= 'blastp';
-    $blast_format  //= '8';       
+    $blast_format  //= '6';
     $num_alignments //= '250';
     $num_descriptions //= '500';
     $evalue //= '1e-5';
@@ -131,11 +131,11 @@ sub run_blast {
     my ($subfile, $subdir, $subext) = fileparse($subseq_file, qr/\.[^.]*/);
 
     my $suffix;
-    if ($blast_format == 8) {
-	$suffix = ".bln";
+    if ($blast_format == 6) {
+        $suffix = ".bln";
     }
     elsif ($blast_format == 7) {
-	$suffix = ".blastxml";
+        $suffix = ".blastxml";
     }
     my $subseq_out = $subfile."_".$dbfile.$suffix;
 
@@ -143,17 +143,17 @@ sub run_blast {
 	            "-dust no ".
 	            "-query $subseq_file ".
 		    "-db $database ".
-		    "-outfmt \"6 qseqid qlen qstart qend sseqid slen sstart send pident bitscore evalue qframe\" ". 
+		    "-outfmt 6". #\"6 qseqid qlen qstart qend sseqid slen sstart send pident bitscore evalue qframe\" ".
 		    "-out $subseq_out ".
-		    "-num_threads $cpu ". 
+		    "-num_threads $cpu ".
 		    "-max_target_seqs 100000";
 
     my $exit_value;
     try {
-	$exit_value = system([0..5],$blast_cmd);
+        $exit_value = system([0..5],$blast_cmd);
     }
     catch {
-	"\nERROR: BLAST exited with exit value $exit_value. Here is the exception: $_\n";
+        "\nERROR: BLAST exited with exit value $exit_value. Here is the exception: $_\n";
     };
 
     return $subseq_out;
@@ -163,13 +163,13 @@ sub split_reads {
     my ($infile, $outfile, $numseqs) = @_;
 
     my ($iname, $ipath, $isuffix) = fileparse($infile, qr/\.[^.]*/);
-    
+
     my $out;
     my $count = 0;
     my $fcount = 1;
     my @split_files;
     $iname =~ s/\.fa.*//;     # clean up file name like seqs.fasta.1
-    
+
     my $cwd = getcwd();
 
     my $tmpiname = $iname."_".$fcount."_XXXX";
@@ -178,7 +178,7 @@ sub split_reads {
 				 SUFFIX => ".fasta",
 				 UNLINK => 0);
     open $out, '>', $fname or die "\nERROR: Could not open file: $fname\n";
-    
+
     push @split_files, $fname;
     my $in = get_fh($infile);
     my @aux = undef;
@@ -249,6 +249,24 @@ sub readfq {
     return ($name, $seq);
 }
 
+sub get_fh {
+    my ($file) = @_;
+
+    my $fh;
+    if ($file =~ /\.gz$/) {
+        open $fh, '-|', 'zcat', $file or die "\nERROR: Could not open file: $file\n";
+    }
+    elsif ($file =~ /\.bz2$/) {
+        open $fh, '-|', 'bzcat', $file or die "\nERROR: Could not open file: $file\n";
+    }
+    else {
+        open $fh, '<', $file or die "\nERROR: Could not open file: $file\n";
+    }
+
+    return $fh;
+}
+
+
 sub usage {
     my $script = basename($0);
     print STDERR <<END
@@ -256,7 +274,7 @@ sub usage {
 USAGE: $script -i seqs.fas -d db -o blast_result -n num [-t] [-a] [-b] [-v] [-p] [-bf] [-e] [-h] [-m]
 
 Required:
-    -i|infile        :    Fasta file to search (contig or chromosome).
+    -i|infile        :    FASTA/Q file to search (contig, chromosome, or reads).
     -o|outfile       :    File name to write the blast results to.
     -d|database      :    Database to search.
     -n|numseqs       :    The number of sequences to write to each split.
@@ -267,10 +285,10 @@ Options:
     -b|num_aligns    :    Number of alignments to keep (Default: 250).
     -v|num_desc      :    Number of descriptions to keep (Default: 500).
     -p|blast_prog    :    BLAST program to execute (Default: blastp).
-    -bf|blast_format :    BLAST output format (Default: 8. Type --man for more details).
+    -bf|blast_format :    BLAST output format (Default: 6. Type --man for more details).
     -e|evalue        :    The e-value threshold (Default: 1e-5).
     -h|help          :    Print a usage statement.
-    -m|man           :    Print the full documentation. 
+    -m|man           :    Print the full documentation.
 
 END
 }
